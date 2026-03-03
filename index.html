@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V12.5</title>
+    <title>BASKETMASTER AVABRA V13.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -88,15 +88,24 @@
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0 };
+        let abaAtiva = 'racha';
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) d = data.data;
             render();
         }
+        
+        // MOTOR DE ATUALIZAÇÃO AUTOMÁTICA (10 SEGUNDOS)
+        setInterval(() => {
+            // Só atualiza sozinho se estiver na aba Racha ou Stats, para não atrapalhar o cadastro
+            if (abaAtiva !== 'atletas') { load(); }
+        }, 10000);
+
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         window.mudarAba = (aba) => {
+            abaAtiva = aba;
             document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
             document.getElementById('view-stats').style.display = aba === 'stats' ? 'block' : 'none';
             document.getElementById('view-atletas').style.display = aba === 'atletas' ? 'block' : 'none';
