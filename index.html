@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V8.8</title>
+    <title>BASKETMASTER AVABRA V9.5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
         
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
@@ -19,7 +19,6 @@
 
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #222; }
 
-        /* Estilo RACHA (Times) */
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .info { flex: 1; text-align: left; }
@@ -40,16 +39,12 @@
         .btn-sub { font-size: 10px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 2px 5px; border-radius: 3px; margin-top: 2px; font-weight: bold; }
         .azul .btn-sub { border-color: rgba(255,255,255,0.3); color: #fff; }
 
-        /* Lista Disponíveis no Racha */
         .lista-disp { background: #1a1a1a; padding: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .btn-entrar { background: var(--orange); color: #fff; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-entrar { background: #2e7d32; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; }
 
-        /* Aba Atletas */
         #view-atletas { display: none; padding: 20px; }
-        #btn-add-global { background: #2e7d32; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
-        .card-cadastrado { background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--orange); }
-
-        /* Rodapé */
+        #btn-add-global { background: var(--orange); color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; text-transform: uppercase; }
+        
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 15px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
@@ -60,7 +55,7 @@
     <div id="view-racha">
         <div class="header">
             <div class="logo">BASKETMASTER 50+</div>
-            <button style="background:#333;color:#fff;border:none;padding:5px 10px;border-radius:4px;" onclick="resetar()">STATS</button>
+            <button style="background:#333;color:#fff;border:none;padding:5px 10px;border-radius:4px;" onclick="resetarRacha()">LIMPAR JOGO</button>
         </div>
 
         <div class="vitoria-btns">
@@ -68,31 +63,31 @@
             <button class="btn-v btn-blue" onclick="vitoria('A')">VITORIA AZUL</button>
         </div>
 
-        <div class="faixa">Time Branco</div>
+        <div class="faixa">Time Branco (Em Quadra)</div>
         <div id="w-list"></div>
 
-        <div class="faixa">Time Azul</div>
+        <div class="faixa">Time Azul (Em Quadra)</div>
         <div id="a-list"></div>
 
-        <div class="faixa">Fila de Espera</div>
-        <div id="q-list" style="padding: 12px; color: var(--orange); font-weight: bold; font-size: 14px; background: #0a0a0a;"></div>
+        <div class="faixa">Lista de Espera (Fila)</div>
+        <div id="q-list" style="padding: 12px; color: var(--orange); font-weight: bold; font-size: 14px; background: #0a0a0a;">Vazio</div>
 
-        <div class="faixa">Atletas Disponíveis (Para entrar no jogo)</div>
+        <div class="faixa">Atletas no Ginásio (Clique para entrar no Racha)</div>
         <div id="disp-list"></div>
     </div>
 
     <div id="view-atletas">
-        <div class="logo" style="margin-bottom: 20px; text-align: center;">CADASTRO NO SISTEMA</div>
-        <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
-        <div class="faixa" style="background:transparent; padding-left:0;">Atletas no Banco de Dados:</div>
+        <div class="logo" style="margin-bottom: 20px; text-align: center;">BANCO DE DADOS 50+</div>
+        <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO NOME</button>
+        <div class="faixa" style="background:transparent; padding:0; margin-bottom:10px;">Nomes Cadastrados:</div>
         <div id="lista-cadastrados"></div>
     </div>
 
     <div style="height:100px"></div>
 
     <div class="rodape">
-        <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">RACHA</div>
-        <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">ATLETAS</div>
+        <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">RACHA (JOGO)</div>
+        <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">ATLETAS (CADASTRO)</div>
     </div>
 
     <script>
@@ -103,15 +98,11 @@
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {} };
 
         async function load() {
-            const { data, error } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
+            const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) {
                 d = data.data;
-                if (!d.all) d.all = [];
-                if (!d.white) d.white = [];
-                if (!d.blue) d.blue = [];
-                if (!d.queue) d.queue = [];
-                if (!d.points) d.points = {};
-                if (!d.fouls) d.fouls = {};
+                if(!d.all) d.all = []; if(!d.white) d.white = []; if(!d.blue) d.blue = [];
+                if(!d.queue) d.queue = []; if(!d.points) d.points = {}; if(!d.fouls) d.fouls = {};
             }
             render();
         }
@@ -129,17 +120,16 @@
         };
 
         window.cadastrarNovo = () => {
-            const n = prompt("NOME COMPLETO DO ATLETA:");
+            const n = prompt("NOME DO ATLETA:");
             if (!n) return;
             const nome = n.toUpperCase().trim();
             if (!d.all.includes(nome)) {
                 d.all.push(nome);
                 sync();
-            } else { alert("Já cadastrado!"); }
+            } else { alert("Nome já cadastrado!"); }
         };
 
         window.entrarNoJogo = (nome) => {
-            if (d.white.includes(nome) || d.blue.includes(nome) || d.queue.includes(nome)) return;
             d.points[nome] = 0; d.fouls[nome] = 0;
             if (d.white.length < 5) d.white.push(nome);
             else if (d.blue.length < 5) d.blue.push(nome);
@@ -162,13 +152,12 @@
 
         function render() {
             const drawRow = (list, id, azul) => {
-                const el = document.getElementById(id);
-                el.innerHTML = list.map(p => `
+                document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${azul ? 'azul' : ''}">
                         <div class="info">
                             <span class="nome">${p} <b>(${d.points[p]||0})</b></span>
                             <span class="stats">F: ${d.fouls[p]||0}</span>
-                            <button class="btn-sub" onclick="subPt('${p}')">Ponto -</button>
+                            <button class="btn-sub" onclick="subPt('${p}')">PONTO -</button>
                         </div>
                         <div class="acoes">
                             <div class="f-box" onclick="addFl('${p}')"><b>F+</b><s>-F</s></div>
@@ -183,29 +172,29 @@
 
             drawRow(d.white, 'w-list', false);
             drawRow(d.blue, 'a-list', true);
-            document.getElementById('q-list').innerText = d.queue.join(' - ') || 'Vazio';
+            document.getElementById('q-list').innerText = d.queue.join(' - ') || 'Ninguém na fila';
 
+            // LISTA DE DISPONÍVEIS (Nomes cadastrados que ainda não clicaram em Entrar)
             const jogando = [...d.white, ...d.blue, ...d.queue];
             const disponiveis = d.all.filter(p => !jogando.includes(p)).sort();
-            
-            // Renderiza na aba Racha (Disponíveis para entrar)
             document.getElementById('disp-list').innerHTML = disponiveis.map(p => `
                 <div class="lista-disp">
                     <span>${p}</span>
-                    <button class="btn-entrar" onclick="entrarNoJogo('${p}')">ENTRAR NO JOGO</button>
+                    <button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button>
                 </div>
             `).join('');
 
-            // Renderiza na aba Atletas (Banco de Dados Total)
+            // LISTA GERAL NA ABA ATLETAS
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `
-                <div class="card-cadastrado">
-                    <span>${p}</span>
-                    <span style="font-size:10px; color:#666;">CADASTRADO</span>
-                </div>
+                <div style="padding:10px; border-bottom:1px solid #333; color:#aaa;">${p}</div>
             `).join('');
         }
 
-        window.resetar = () => { if(confirm("ZERAR RACHA? (Os atletas cadastrados continuarão no sistema)")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; sync(); } };
+        window.resetarRacha = () => { 
+            if(confirm("LIMPAR JOGO? (Os nomes cadastrados continuam no banco)")) { 
+                d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; sync(); 
+            } 
+        };
 
         load();
     </script>
