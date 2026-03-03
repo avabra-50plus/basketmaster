@@ -3,173 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER 50+</title>
+    <title>BASKETMASTER AVABRA V7.6.5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff6b00; --blue: #2962ff; }
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
-        .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; }
-        .stats-btn { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 5px 12px; border-radius: 4px; font-size: 11px; }
-        .top-btns { display: flex; gap: 5px; padding: 10px; }
-        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; }
+        :root { --orange: #ff6b00; --blue: #2962ff; --white: #ffffff; }
+        body { font-family: 'Arial', sans-serif; background: #000; color: #fff; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        /* Cabeçalho identico à foto */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; }
+        .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
+        .stats-btn { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 5px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+
+        /* Botões de Vitória */
+        .top-actions { display: flex; gap: 5px; padding: 10px; }
+        .btn-win { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
-        .sub-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
-        .btn-s { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-        .section-title { background: #0a0a0a; color: #444; padding: 5px 15px; font-size: 10px; text-transform: uppercase; text-align: left; }
-        .row { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
-        .row.blue-row { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
+
+        /* Menu de Meio */
+        .mid-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
+        .btn-mid { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer; }
+
+        /* Faixas de Time */
+        .team-label { background: #0a0a0a; color: #555; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #111; }
+
+        /* Linha do Jogador - O Layout da Foto */
+        .player-row { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
+        .player-row.blue-theme { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
+        
         .p-info { flex: 1; text-align: left; }
-        .p-name { font-weight: bold; font-size: 13px; display: block; }
+        .p-name { font-weight: bold; font-size: 14px; display: block; }
         .p-stats { font-size: 12px; font-weight: bold; }
-        .p-stats b { color: #ff0000; }
-        .blue-row .p-stats b { color: #ffeb3b; }
-        .p-actions { display: flex; gap: 4px; align-items: center; }
-        .btn-icon { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
-        .blue-row .btn-icon { background: rgba(255,255,255,0.2); border: none; color: #fff; }
-        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; }
-        .foul-trigger b { display: block; font-size: 12px; }
-        .foul-trigger small { font-size: 8px; opacity: 0.7; }
-        .pt-group { display: flex; gap: 2px; }
-        .btn-pt { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; }
-        .btn-pt small { display: block; font-size: 7px; color: #666; font-weight: normal; margin-top: -2px; }
-        .btn-pt.orange { background: var(--orange); }
-        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; }
-        .nav-btn { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; }
-        .nav-btn.active { color: var(--orange); }
+        .p-stats span { color: #ff0000; } /* Cor da pontuação no branco */
+        .blue-theme .p-stats span { color: #ffeb3b; } /* Cor da pontuação no azul */
+
+        .p-btns { display: flex; gap: 4px; align-items: center; }
+        .btn-tool { background: #efefef; border: 1px solid #ccc; padding: 8px; border-radius: 4px; font-size: 14px; cursor: pointer; }
+        .blue-theme .btn-tool { background: rgba(255,255,255,0.2); border: none; color: #fff; }
+
+        .foul-box { background: #8b0000; color: #fff; padding: 5px 8px; border-radius: 4px; text-align: center; cursor: pointer; min-width: 35px; }
+        .foul-box b { display: block; font-size: 12px; }
+        .foul-box small { font-size: 8px; opacity: 0.8; display: block; margin-top: -2px; }
+
+        .pts-group { display: flex; gap: 3px; }
+        .btn-pts { width: 38px; height: 38px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; }
+        .btn-pts small { display: block; font-size: 7px; color: #777; font-weight: normal; margin-top: -3px; }
+        .btn-pts.orange { background: var(--orange); }
+
+        /* Rodapé fixo */
+        .footer-nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 15px 0; z-index: 100; }
+        .nav-link { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; }
+        .nav-link.active { color: var(--orange); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">BASKETMASTER <span style="font-size:10px; background:#222; color:#fff; padding:1px 4px; border-radius:3px;">50+</span></div>
-        <button class="stats-btn" onclick="resetSystem()">STATS</button>
+        <div class="logo">BASKETMASTER <span style="font-size:10px; background:#222; color:#fff; padding:2px 5px; border-radius:3px; vertical-align:middle;">50+</span></div>
+        <button class="stats-btn" onclick="resetarTudo()">STATS</button>
     </div>
 
-    <div class="top-btns">
-        <button class="btn-v btn-white" onclick="winGame('B')">VITORIA BRANCO</button>
-        <button class="btn-v btn-blue" onclick="winGame('A')">VITORIA AZUL</button>
+    <div class="top-actions">
+        <button class="btn-win btn-white" onclick="vitoria('B')">VITORIA BRANCO</button>
+        <button class="btn-win btn-blue" onclick="vitoria('A')">VITORIA AZUL</button>
     </div>
 
-    <div class="sub-menu">
-        <button class="btn-s">T (BR+)</button>
-        <button class="btn-s">T (AZ+)</button>
-        <button class="btn-s" onclick="addPlayer()">+ ATLETA</button>
+    <div class="mid-menu">
+        <button class="btn-mid">T (BR+)</button>
+        <button class="btn-mid">T (AZ+)</button>
+        <button class="btn-mid" onclick="novoAtleta()">+ ATLETA</button>
     </div>
 
-    <div class="section-title">Time Branco</div>
-    <div id="w-list"></div>
+    <div class="team-label">Time Branco</div>
+    <div id="lista-branco"></div>
 
-    <div class="section-title">Time Azul</div>
-    <div id="a-list"></div>
+    <div class="team-label">Time Azul</div>
+    <div id="lista-azul"></div>
 
-    <div style="height:80px"></div>
+    <div style="height: 100px;"></div>
 
-    <div class="nav">
-        <div class="nav-btn active">RACHA</div>
-        <div class="nav-btn" id="q-label">ATLETAS (0)</div>
+    <div class="footer-nav">
+        <div class="nav-link active">RACHA</div>
+        <div class="nav-link" id="count-fila">ATLETAS (0)</div>
     </div>
 
     <script>
-        const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
-        const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        // Configurações do Supabase
+        const URL_DB = "https://zjkiujzoualdumzmwmgl.supabase.co";
+        const KEY_DB = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
+        const sb = supabase.createClient(URL_DB, KEY_DB);
 
-        let state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
+        // Estado inicial do racha
+        let racha = { branco: [], azul: [], fila: [], pontos: {}, faltas: {} };
 
-        async function load() {
+        // Função para carregar dados da nuvem
+        async function carregarDados() {
             try {
-                const { data } = await supabaseClient.from('racha_session').select('data').eq('id', 1).maybeSingle();
-                if (data && data.data) { state = data.data; }
-                render();
-            } catch (e) { render(); }
+                const { data, error } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
+                if (data && data.data) {
+                    racha = data.data;
+                    desenharTela();
+                }
+            } catch (err) {
+                console.log("Erro ao carregar:", err);
+            }
         }
 
-        async function sync() {
-            render();
-            await supabaseClient.from('racha_session').update({ data: state }).eq('id', 1);
+        // Função para salvar dados na nuvem
+        async function salvar() {
+            desenharTela(); // Atualiza o visual primeiro para ser rápido
+            await sb.from('racha_session').update({ data: racha }).eq('id', 1);
         }
 
-        window.addPlayer = function() {
-            const n = prompt("NOME DO ATLETA:");
-            if (!n) return;
-            const name = n.toUpperCase();
-            if (!state.points) state.points = {};
-            if (!state.fouls) state.fouls = {};
-            state.points[name] = 0;
-            state.fouls[name] = 0;
-            if (state.white.length < 5) state.white.push(name);
-            else if (state.blue.length < 5) state.blue.push(name);
-            else state.queue.push(name);
-            sync();
+        // Adicionar novo jogador
+        window.novoAtleta = function() {
+            const nomeInput = prompt("NOME DO ATLETA:");
+            if (!nomeInput) return;
+            const nome = nomeInput.toUpperCase();
+            
+            if (!racha.pontos) racha.pontos = {};
+            if (!racha.faltas) racha.faltas = {};
+            
+            racha.pontos[nome] = 0;
+            racha.faltas[nome] = 0;
+
+            if (racha.branco.length < 5) racha.branco.push(nome);
+            else if (racha.azul.length < 5) racha.azul.push(nome);
+            else racha.fila.push(nome);
+            
+            salvar();
         };
 
-        window.addP = function(name, p) {
-            state.points[name] = (state.points[name] || 0) + p;
-            sync();
+        // Adicionar Ponto
+        window.addPonto = function(nome, pts) {
+            racha.pontos[nome] = (racha.pontos[nome] || 0) + pts;
+            salvar();
         };
 
-        window.addF = function(name) {
-            state.fouls[name] = (state.fouls[name] || 0) + 1;
-            if (state.fouls[name] >= 4) alert(name + " ESTOUROU!");
-            sync();
+        // Adicionar Falta
+        window.addFalta = function(nome) {
+            racha.faltas[nome] = (racha.faltas[nome] || 0) + 1;
+            if (racha.faltas[nome] >= 4) alert("🚨 " + nome + " ESTOUROU (4 FALTAS)!");
+            salvar();
         };
 
-        window.winGame = function(team) {
-            const losing = (team === 'B') ? state.blue : state.white;
-            state.queue.push(...losing);
-            losing.length = 0;
-            while (losing.length < 5 && state.queue.length > 0) {
-                losing.push(state.queue.shift());
+        // Lógica de Vitória e Rodízio
+        window.vitoria = function(vencedor) {
+            const perdedores = (vencedor === 'B') ? racha.azul : racha.branco;
+            racha.fila.push(...perdedores);
+            perdedores.length = 0;
+            while (perdedores.length < 5 && racha.fila.length > 0) {
+                perdedores.push(racha.fila.shift());
             }
-            Object.keys(state.fouls || {}).forEach(k => state.fouls[k] = 0);
-            sync();
+            // Zera as faltas para a próxima partida
+            Object.keys(racha.faltas).forEach(n => racha.faltas[n] = 0);
+            salvar();
         };
 
-        window.resetSystem = function() {
-            if(confirm("ZERAR TUDO?")) {
-                state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
-                sync();
+        // Zerar Tudo
+        window.resetarTudo = function() {
+            if (confirm("DESEJA ZERAR TODO O RACHA?")) {
+                racha = { branco: [], azul: [], fila: [], pontos: {}, faltas: {} };
+                salvar();
             }
         };
 
-        function render() {
-            const build = (list, id, isBlue) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.innerHTML = list.map(p => `
-                    <div class="row ${isBlue ? 'blue-row' : ''}">
+        // Desenhar a interface
+        function desenharTela() {
+            const renderLista = (lista, divId, ehAzul) => {
+                const container = document.getElementById(divId);
+                if (!container) return;
+                container.innerHTML = lista.map(nome => `
+                    <div class="player-row ${ehAzul ? 'blue-theme' : ''}">
                         <div class="p-info">
-                            <span class="p-name">${p} <b>(${state.points[p]||0})</b></span>
-                            <span class="p-stats">F: ${state.fouls[p]||0}</span>
+                            <span class="p-name">${nome} <span>(${racha.pontos[nome] || 0})</span></span>
+                            <span class="p-stats">F: ${racha.faltas[nome] || 0}</span>
                         </div>
-                        <div class="p-actions">
-                            <button class="btn-icon">🚪</button>
-                            <button class="btn-icon">🚑</button>
-                            <div class="foul-trigger" onclick="addF('${p}')"><b>F+</b><small>-F</small></div>
-                            <div class="pt-group">
-                                <button class="btn-pt" onclick="addP('${p}', 1)">1</button>
-                                <button class="btn-pt" onclick="addP('${p}', 2)">2<small>ERRO</small></button>
-                                <button class="btn-pt orange" onclick="addP('${p}', 3)">3</button>
+                        <div class="p-btns">
+                            <button class="btn-tool">🚪</button>
+                            <button class="btn-tool">🚑</button>
+                            <div class="foul-box" onclick="addFalta('${nome}')">
+                                <b>F+</b>
+                                <small>-F</small>
+                            </div>
+                            <div class="pts-group">
+                                <button class="btn-pts" onclick="addPonto('${nome}', 1)">1</button>
+                                <button class="btn-pts" onclick="addPonto('${nome}', 2)">2<small>ERRO</small></button>
+                                <button class="btn-pts orange" onclick="addPonto('${nome}', 3)">3</button>
                             </div>
                         </div>
                     </div>
                 `).join('');
             };
-            build(state.white || [], 'w-list', false);
-            build(state.blue || [], 'a-list', true);
-            document.getElementById('q-label').innerText = `ATLETAS (${(state.queue || []).length})`;
+
+            renderLista(racha.branco, 'lista-branco', false);
+            renderLista(racha.azul, 'lista-azul', true);
+            document.getElementById('count-fila').innerText = `ATLETAS (${racha.fila.length})`;
         }
 
-        supabaseClient.channel('any').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, payload => {
+        // Escutar mudanças em tempo real
+        sb.channel('db-changes').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, payload => {
             if (payload.new && payload.new.data) {
-                state = payload.new.data;
-                render();
+                racha = payload.new.data;
+                desenharTela();
             }
         }).subscribe();
 
-        load();
+        // Início
+        carregarDados();
     </script>
 </body>
 </html>
