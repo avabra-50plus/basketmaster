@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V7.8.0</title>
+    <title>BASKETMASTER 50+</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; }
@@ -40,110 +40,82 @@
     </style>
 </head>
 <body>
-
     <div class="header">
-        <div class="logo">BASKETMASTER 50+</div>
-        <button onclick="resetar()" style="background:#1a1a1a; color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:10px;">STATS</button>
+        <div class="logo">BASKETMASTER</div>
+        <button onclick="res()" style="background:#1a1a1a;color:#fff;border:none;padding:5px;font-size:10px;">STATS</button>
     </div>
-
     <div class="vitoria-btns">
-        <button class="btn-v btn-w" onclick="vitoria('B')">VITORIA BRANCO</button>
-        <button class="btn-v btn-b" onclick="vitoria('A')">VITORIA AZUL</button>
+        <button class="btn-v btn-w" onclick="win('B')">VITORIA BRANCO</button>
+        <button class="btn-v btn-b" onclick="win('A')">VITORIA AZUL</button>
     </div>
-
     <div class="menu-meio">
-        <button class="btn-m">T (BR+)</button>
-        <button class="btn-m">T (AZ+)</button>
+        <button class="btn-m">T (BR+)</button><button class="btn-m">T (AZ+)</button>
         <button class="btn-m" onclick="add()">+ ATLETA</button>
     </div>
-
-    <div class="faixa">Time Branco</div>
-    <div id="w-list"></div>
-    <div class="faixa">Time Azul</div>
-    <div id="a-list"></div>
-
+    <div class="faixa">Time Branco</div><div id="w"></div>
+    <div class="faixa">Time Azul</div><div id="a"></div>
     <div style="height:80px"></div>
-
-    <div class="rodape">
-        <div class="nav-b active">RACHA</div>
-        <div id="q-label" class="nav-b">ATLETAS (0)</div>
-    </div>
+    <div class="rodape"><div class="nav-b active">RACHA</div><div id="ql" class="nav-b">ATLETAS (0)</div></div>
 
     <script>
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
+        let d = { white: [], blue: [], queue: [], points: {}, fouls: {} };
 
-        let dados = { white: [], blue: [], queue: [], points: {}, fouls: {} };
-
-        async function carregar() {
+        async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
-            if (data && data.data) dados = data.data;
-            renderizar();
+            if (data && data.data) d = data.data;
+            render();
         }
 
-        async function salvar() {
-            renderizar();
-            await sb.from('racha_session').update({ data: dados }).eq('id', 1);
+        async function sync() {
+            render();
+            await sb.from('racha_session').update({ data: d }).eq('id', 1);
         }
 
         window.add = () => {
             const n = prompt("NOME:");
             if (!n) return;
-            const nome = n.toUpperCase();
-            if(!dados.points) dados.points = {};
-            if(!dados.fouls) dados.fouls = {};
-            dados.points[nome] = 0; dados.fouls[nome] = 0;
-            if (dados.white.length < 5) dados.white.push(nome);
-            else if (dados.blue.length < 5) dados.blue.push(nome);
-            else dados.queue.push(nome);
-            salvar();
+            const nm = n.toUpperCase();
+            if(!d.points) d.points = {}; if(!d.fouls) d.fouls = {};
+            d.points[nm] = 0; d.fouls[nm] = 0;
+            if (d.white.length < 5) d.white.push(nm);
+            else if (d.blue.length < 5) d.blue.push(nm);
+            else d.queue.push(nm);
+            sync();
         };
 
-        window.ponto = (n, p) => { dados.points[n] = (dados.points[n] || 0) + p; salvar(); };
-        window.falta = (n) => { 
-            dados.fouls[n] = (dados.fouls[n] || 0) + 1; 
-            if(dados.fouls[n] >= 4) alert(n + " ESTOUROU!"); 
-            salvar(); 
+        window.pt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; sync(); };
+        window.fl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; sync(); };
+
+        window.win = (t) => {
+            const l = (t === 'B') ? d.blue : d.white;
+            d.queue.push(...l); l.length = 0;
+            while (l.length < 5 && d.queue.length > 0) l.push(d.queue.shift());
+            Object.keys(d.fouls).forEach(k => d.fouls[k] = 0);
+            sync();
         };
 
-        window.vitoria = (t) => {
-            const perdedores = (t === 'B') ? dados.blue : dados.white;
-            dados.queue.push(...perdedores);
-            perdedores.length = 0;
-            while (perdedores.length < 5 && dados.queue.length > 0) perdedores.push(dados.queue.shift());
-            Object.keys(dados.fouls).forEach(k => dados.fouls[k] = 0);
-            salvar();
-        };
+        window.res = () => { if(confirm("ZERAR?")) { d={white:[],blue:[],queue:[],points:{},fouls:{}}; sync(); } };
 
-        window.resetar = () => { if(confirm("ZERAR?")) { dados = { white: [], blue: [], queue: [], points: {}, fouls: {} }; salvar(); } };
-
-        function renderizar() {
-            const desenhar = (lista, id, azul) => {
-                document.getElementById(id).innerHTML = lista.map(p => `
-                    <div class="linha ${azul ? 'azul' : ''}">
-                        <div class="info">
-                            <span class="nome">${p} <span>(${dados.points[p]||0})</span></span>
-                            <span class="stats">F: ${dados.fouls[p]||0}</span>
-                        </div>
-                        <div class="acoes">
-                            <button class="btn-i">🚪</button><button class="btn-i">🚑</button>
-                            <div class="f-box" onclick="falta('${p}')"><b>F+</b><s>-F</s></div>
-                            <div class="g-pts">
-                                <button class="btn-p" onclick="ponto('${p}',1)">1</button>
-                                <button class="btn-p" onclick="ponto('${p}',2)">2<i>ERRO</i></button>
-                                <button class="btn-p laranja" onclick="ponto('${p}',3)">3</button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+        function render() {
+            const draw = (list, id, az) => {
+                document.getElementById(id).innerHTML = list.map(p => `
+                    <div class="linha ${az ? 'azul' : ''}">
+                        <div class="info"><span class="nome">${p} <span>(${d.points[p]||0})</span></span><span class="stats">F: ${d.fouls[p]||0}</span></div>
+                        <div class="acoes"><button class="btn-i">🚪</button><button class="btn-i">🚑</button>
+                        <div class="f-box" onclick="fl('${p}')"><b>F+</b><s>-F</s></div>
+                        <div class="g-pts">
+                            <button class="btn-pt" onclick="pt('${p}',1)">1</button>
+                            <button class="btn-pt" onclick="pt('${p}',2)">2</button>
+                            <button class="btn-pt laranja" onclick="pt('${p}',3)">3</button>
+                        </div></div></div>`).join('');
             };
-            desenhar(dados.white, 'w-list', false);
-            desenhar(dados.blue, 'a-list', true);
-            document.getElementById('q-label').innerText = `ATLETAS (${dados.queue.length})`;
+            draw(d.white, 'w', false); draw(d.blue, 'a', true);
+            document.getElementById('ql').innerText = `ATLETAS (${d.queue.length})`;
         }
-
-        carregar();
+        load();
     </script>
 </body>
 </html>
