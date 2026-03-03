@@ -3,55 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V11.1</title>
+    <title>BASKETMASTER AVABRA V11.5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --green: #2e7d32; --yellow: #ffd600; --red: #d32f2f; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
-        
-        /* HEADER E TEMPOS */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 16px; text-transform: uppercase; }
-        
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
-        .btn-t { padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
-        .t-br { background: #ffffff; color: #000; } /* Branco conforme solicitado */
+        .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+        .t-br { background: #ffffff; color: #000; } 
         .t-az { background: var(--blue); color: #fff; }
         .t-em { background: #555; color: #fff; }
-
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
-
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #222; }
-
-        /* LINHA DE ATLETA */
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
         .stats { font-size: 12px; font-weight: bold; }
-
-        /* BOTÕES */
         .btn-sair { background: var(--red); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; margin-right: 5px; cursor: pointer; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
-        
         .g-pts { display: flex; gap: 2px; }
         .btn-p { width: 40px; height: 42px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
-
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
         .azul .btn-corrige { border-color: rgba(255,255,255,0.4); color: #fff; }
-
-        /* LISTA DE ESPERA */
         #q-list { padding: 15px; background: #0a0a0a; font-size: 14px; font-weight: bold; }
         .espera-item { display: inline-block; margin-right: 12px; margin-bottom: 5px; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
-
-        /* RODAPÉ */
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -66,14 +51,13 @@
         </div>
 
         <div class="timer-area">
-            <button class="btn-t t-br" onclick="addTime('BRANCO')">BR + <span id="count-br">0</span></button>
-            <button class="btn-t t-az" onclick="addTime('AZUL')">AZ + <span id="count-az">0</span></button>
-            <button class="btn-t t-em" onclick="addTime('EMPATE')">EMPATE <span id="count-em">0</span></button>
+            <button class="btn-t t-br" onclick="terminoTempo('B')">BR +</button>
+            <button class="btn-t t-az" onclick="terminoTempo('A')">AZ +</button>
+            <button class="btn-t t-em" onclick="terminoTempo('E')">EMPATE</button>
         </div>
 
         <div class="vitoria-btns">
-            <button class="btn-v btn-white" onclick="vitoria('B')">VITÓRIA BRANCO</button>
-            <button class="btn-v btn-blue" onclick="vitoria('A')">VITÓRIA AZUL</button>
+            <button class="btn-v btn-white" onclick="vitoriaPlacar()">VITÓRIA (PLACAR)</button>
         </div>
 
         <div class="faixa">Time Branco</div><div id="w-list"></div>
@@ -82,18 +66,10 @@
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
 
-    <div id="view-stats" style="display:none; padding:15px;">
-        <h2 style="color:var(--orange); font-size:18px;">RELATÓRIO DO TREINO</h2>
-        <div id="lista-estatisticas-geral"></div>
-    </div>
-
-    <div id="view-atletas" style="display:none; padding:20px;">
-        <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
-        <div id="lista-cadastrados" style="margin-top:20px;"></div>
-    </div>
+    <div id="view-stats" style="display:none; padding:15px;"><h2 style="color:var(--orange); font-size:18px;">RELATÓRIO DO TREINO</h2><div id="lista-estatisticas-geral"></div></div>
+    <div id="view-atletas" style="display:none; padding:20px;"><button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button><div id="lista-cadastrados" style="margin-top:20px;"></div></div>
 
     <div style="height:100px"></div>
-
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">Racha</div>
         <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Estatísticas</div>
@@ -104,8 +80,7 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, timer_br: 0, timer_az: 0, timer_em: 0 };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {} };
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
@@ -128,7 +103,7 @@
         };
 
         window.cadastrarNovo = () => {
-            const n = prompt("NOME DO ATLETA:");
+            const n = prompt("NOME:");
             if (!n) return;
             const nome = n.toUpperCase().trim();
             if (!d.all.includes(nome)) { d.all.push(nome); sync(); }
@@ -142,107 +117,76 @@
             sync();
         };
 
-        window.sairDoJogo = (nome, lista) => {
-            if(confirm("Remover " + nome + "?")) { d[lista] = d[lista].filter(p => p !== nome); sync(); }
+        window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; sync(); };
+        window.subPt = (n) => { d.points[n] = Math.max(0, (d.points[n] || 0) - 1); d.hist_pts[n] = Math.max(0, (d.hist_pts[n] || 0) - 1); sync(); };
+        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
+        window.subFl = (n) => { d.fouls[n] = Math.max(0, (d.fouls[n] || 0) - 1); d.hist_fls[n] = Math.max(0, (d.hist_fls[n] || 0) - 1); sync(); };
+
+        window.terminoTempo = (btn) => {
+            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            
+            if (ptsW > ptsA) {
+                d.queue.push(...d.white, ...d.blue);
+            } else if (ptsA > ptsW) {
+                d.queue.push(...d.blue, ...d.white);
+            } else {
+                d.queue.push(...d.white, ...d.blue);
+            }
+            executarRodizio();
         };
 
-        window.addPt = (n, p) => { 
-            d.points[n] = (d.points[n] || 0) + p; 
-            d.hist_pts[n] = (d.hist_pts[n] || 0) + p; 
-            sync(); 
-        };
-        window.subPt = (n) => { 
-            d.points[n] = Math.max(0, (d.points[n] || 0) - 1); 
-            d.hist_pts[n] = Math.max(0, (d.hist_pts[n] || 0) - 1); 
-            sync(); 
-        };
-        window.addFl = (n) => { 
-            d.fouls[n] = (d.fouls[n] || 0) + 1; 
-            d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; 
-            sync(); 
-        };
-        window.subFl = (n) => {
-            d.fouls[n] = Math.max(0, (d.fouls[n] || 0) - 1);
-            d.hist_fls[n] = Math.max(0, (d.hist_fls[n] || 0) - 1);
-            sync();
+        window.vitoriaPlacar = () => {
+            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            if (ptsW > ptsA) { d.queue.push(...d.blue); d.blue = []; }
+            else { d.queue.push(...d.white); d.white = []; }
+            executarRodizio();
         };
 
-        window.addTime = (tipo) => {
-            if(tipo === 'BRANCO') d.timer_br++;
-            if(tipo === 'AZUL') d.timer_az++;
-            if(tipo === 'EMPATE') d.timer_em++;
+        function executarRodizio() {
+            if(d.white.length === 5 && d.blue.length === 0) {
+                 while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
+            } else if (d.blue.length === 5 && d.white.length === 0) {
+                 while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
+            } else {
+                d.white = []; d.blue = [];
+                while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
+                while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
+            }
+            [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
             sync();
-        };
+        }
 
-        window.vitoria = (vencedor) => {
-            const perdedores = (vencedor === 'B') ? d.blue : d.white;
-            d.queue.push(...perdedores);
-            perdedores.length = 0;
-            while (perdedores.length < 5 && d.queue.length > 0) perdedores.push(d.queue.shift());
-            [...d.white, ...d.blue].forEach(p => d.fouls[p] = 0);
-            sync();
-        };
+        window.sairDoJogo = (n, l) => { if(confirm("Remover?")) { d[l] = d[l].filter(p => p !== n); sync(); } };
+        window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; sync(); } };
 
         function render() {
-            const drawRow = (list, id, azul, slug) => {
+            const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
-                    <div class="linha ${azul ? 'azul' : ''}">
+                    <div class="linha ${az ? 'azul' : ''}">
                         <button class="btn-sair" onclick="sairDoJogo('${p}', '${slug}')">X</button>
-                        <div class="info">
-                            <span class="nome">${p}</span>
-                            <div class="stats-row">
-                                <span class="stats">PTS: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span>
-                                <button class="btn-corrige" onclick="subPt('${p}')">Ponto-</button>
-                                <button class="btn-corrige" onclick="subFl('${p}')">Falta-</button>
-                            </div>
+                        <div class="info"><span class="nome">${p}</span>
+                            <div class="stats-row"><span class="stats">PTS: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span>
+                            <button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div>
                         </div>
-                        <div class="acoes">
-                            <div class="f-box" onclick="addFl('${p}')">F+</div>
-                            <div class="g-pts">
-                                <button class="btn-p" onclick="addPt('${p}',1)">1</button>
-                                <button class="btn-p" onclick="addPt('${p}',2)">2</button>
-                                <button class="btn-p laranja" onclick="addPt('${p}',3)">3</button>
-                            </div>
-                        </div>
+                        <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div>
+                        <div class="g-pts"><button class="btn-p" onclick="addPt('${p}',1)">1</button>
+                        <button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div>
                     </div>`).join('');
             };
-
-            drawRow(d.white, 'w-list', false, 'white');
-            drawRow(d.blue, 'a-list', true, 'blue');
-
-            document.getElementById('count-br').innerText = d.timer_br || 0;
-            document.getElementById('count-az').innerText = d.timer_az || 0;
-            document.getElementById('count-em').innerText = d.timer_em || 0;
-
-            const qListDiv = document.getElementById('q-list');
-            qListDiv.innerHTML = d.queue.length === 0 ? "Fila vazia" : d.queue.map((p, i) => {
-                const cor = (Math.floor(i / 5) % 2 === 0) ? 'cor-amarelo' : 'cor-verde';
-                return `<span class="espera-item ${cor}">${i+1}.${p} <small onclick="sairDoJogo('${p}','queue')" style="color:red">[X]</small></span>`;
-            }).join(' ');
-
-            const jogando = [...d.white, ...d.blue, ...d.queue];
-            document.getElementById('disp-list').innerHTML = d.all.filter(p => !jogando.includes(p)).sort().map(p => `
-                <div class="lista-disp" style="background:#1a1a1a; padding:10px; margin-bottom:2px; display:flex; justify-content:space-between;">
-                <span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>
-            `).join('');
-
+            draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
+            const q = document.getElementById('q-list');
+            q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}</span>`).join(' ');
+            const jog = [...d.white, ...d.blue, ...d.queue];
+            document.getElementById('disp-list').innerHTML = d.all.filter(p => !jog.includes(p)).sort().map(p => `<div class="lista-disp" style="background:#1a1a1a;padding:10px;margin-bottom:2px;display:flex;justify-content:space-between;"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-estatisticas-geral').innerHTML = d.all.sort().map(p => {
                 const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
                 if(pts === 0 && fls === 0) return '';
-                return `<div style="background:#1a1a1a; padding:10px; margin-bottom:5px; border-radius:4px; display:flex; justify-content:space-between;">
-                <span>${p}</span><span>PTS: <b style="color:var(--orange)">${pts}</b> | FALTAS: <b style="color:var(--orange)">${fls}</b></span></div>`;
+                return `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${p}</span><span>PTS: <b style="color:var(--orange)">${pts}</b> | F: <b style="color:var(--orange)">${fls}</b></span></div>`;
             }).join('');
-
-            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="padding:10px; border-bottom:1px solid #333; color:#aaa;">${p}</div>`).join('');
+            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="padding:10px;border-bottom:1px solid #333;color:#aaa;">${p}</div>`).join('');
         }
-
-        window.resetarRacha = () => { 
-            if(confirm("LIMPAR TUDO?")) { 
-                d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; 
-                d.timer_br=0; d.timer_az=0; d.timer_em=0; sync(); 
-            } 
-        };
-
         load();
     </script>
 </body>
