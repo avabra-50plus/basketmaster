@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V9.5</title>
+    <title>BASKETMASTER AVABRA V10.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; }
+        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --green: #2e7d32; --yellow: #ffd600; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
@@ -19,31 +19,37 @@
 
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #222; }
 
-        .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
+        /* Linhas dos Times */
+        .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; position: relative; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .info { flex: 1; text-align: left; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats { font-size: 12px; font-weight: bold; }
-        .stats b { color: #ff0000; }
-        .azul .stats b { color: #ffeb3b; }
-
+        
+        /* Botões de Ação */
         .acoes { display: flex; gap: 4px; align-items: center; }
+        .btn-sair { background: #ff4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; margin-right: 10px; cursor: pointer; }
         .f-box { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
         .f-box b { display: block; font-size: 12px; }
-        .f-box s { font-size: 8px; text-decoration: none; opacity: 0.7; }
-
+        
         .g-pts { display: flex; gap: 2px; }
         .btn-p { width: 36px; height: 38px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn-p i { font-size: 7px; color: #666; font-style: normal; font-weight: normal; }
         .btn-p.laranja { background: var(--orange); }
         .btn-sub { font-size: 10px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 2px 5px; border-radius: 3px; margin-top: 2px; font-weight: bold; }
-        .azul .btn-sub { border-color: rgba(255,255,255,0.3); color: #fff; }
 
+        /* Lista de Espera Estilizada */
+        #q-list { padding: 15px; background: #0a0a0a; line-height: 1.8; font-size: 15px; font-weight: bold; }
+        .espera-item { display: inline-flex; align-items: center; margin-right: 15px; }
+        .cor-amarelo { color: var(--yellow); }
+        .cor-verde { color: #00e676; }
+
+        /* Lista de Cadastro/Chegada */
         .lista-disp { background: #1a1a1a; padding: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .btn-entrar { background: #2e7d32; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; }
 
         #view-atletas { display: none; padding: 20px; }
-        #btn-add-global { background: var(--orange); color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; text-transform: uppercase; }
+        #btn-add-global { background: var(--orange); color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
         
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 15px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; cursor: pointer; }
@@ -63,23 +69,22 @@
             <button class="btn-v btn-blue" onclick="vitoria('A')">VITORIA AZUL</button>
         </div>
 
-        <div class="faixa">Time Branco (Em Quadra)</div>
+        <div class="faixa">Time Branco</div>
         <div id="w-list"></div>
 
-        <div class="faixa">Time Azul (Em Quadra)</div>
+        <div class="faixa">Time Azul</div>
         <div id="a-list"></div>
 
-        <div class="faixa">Lista de Espera (Fila)</div>
-        <div id="q-list" style="padding: 12px; color: var(--orange); font-weight: bold; font-size: 14px; background: #0a0a0a;">Vazio</div>
+        <div class="faixa">Lista de Espera (Amarelo: Prox. Time | Verde: Seguinte)</div>
+        <div id="q-list"></div>
 
-        <div class="faixa">Atletas no Ginásio (Clique para entrar no Racha)</div>
+        <div class="faixa">Atletas no Banco (Clique para entrar no Racha)</div>
         <div id="disp-list"></div>
     </div>
 
     <div id="view-atletas">
         <div class="logo" style="margin-bottom: 20px; text-align: center;">BANCO DE DADOS 50+</div>
         <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO NOME</button>
-        <div class="faixa" style="background:transparent; padding:0; margin-bottom:10px;">Nomes Cadastrados:</div>
         <div id="lista-cadastrados"></div>
     </div>
 
@@ -87,7 +92,7 @@
 
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">RACHA (JOGO)</div>
-        <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">ATLETAS (CADASTRO)</div>
+        <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">ATLETAS (BANCO)</div>
     </div>
 
     <script>
@@ -123,10 +128,7 @@
             const n = prompt("NOME DO ATLETA:");
             if (!n) return;
             const nome = n.toUpperCase().trim();
-            if (!d.all.includes(nome)) {
-                d.all.push(nome);
-                sync();
-            } else { alert("Nome já cadastrado!"); }
+            if (!d.all.includes(nome)) { d.all.push(nome); sync(); }
         };
 
         window.entrarNoJogo = (nome) => {
@@ -137,9 +139,15 @@
             sync();
         };
 
+        window.sairDoJogo = (nome, lista) => {
+            if(!confirm("Remover " + nome + " do racha?")) return;
+            d[lista] = d[lista].filter(p => p !== nome);
+            sync();
+        };
+
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; sync(); };
         window.subPt = (n) => { d.points[n] = Math.max(0, (d.points[n] || 0) - 1); sync(); };
-        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; if(d.fouls[n]>=4) alert(n+" ESTOUROU!"); sync(); };
+        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; sync(); };
 
         window.vitoria = (vencedor) => {
             const perdedores = (vencedor === 'B') ? d.blue : d.white;
@@ -151,16 +159,17 @@
         };
 
         function render() {
-            const drawRow = (list, id, azul) => {
+            const drawRow = (list, id, azul, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${azul ? 'azul' : ''}">
+                        <button class="btn-sair" onclick="sairDoJogo('${p}', '${slug}')">X</button>
                         <div class="info">
                             <span class="nome">${p} <b>(${d.points[p]||0})</b></span>
                             <span class="stats">F: ${d.fouls[p]||0}</span>
                             <button class="btn-sub" onclick="subPt('${p}')">PONTO -</button>
                         </div>
                         <div class="acoes">
-                            <div class="f-box" onclick="addFl('${p}')"><b>F+</b><s>-F</s></div>
+                            <div class="f-box" onclick="addFl('${p}')"><b>F+</b></div>
                             <div class="g-pts">
                                 <button class="btn-p" onclick="addPt('${p}',1)">1</button>
                                 <button class="btn-p" onclick="addPt('${p}',2)">2<i>ERRO</i></button>
@@ -170,11 +179,21 @@
                     </div>`).join('');
             };
 
-            drawRow(d.white, 'w-list', false);
-            drawRow(d.blue, 'a-list', true);
-            document.getElementById('q-list').innerText = d.queue.join(' - ') || 'Ninguém na fila';
+            drawRow(d.white, 'w-list', false, 'white');
+            drawRow(d.blue, 'a-list', true, 'blue');
 
-            // LISTA DE DISPONÍVEIS (Nomes cadastrados que ainda não clicaram em Entrar)
+            // RENDER LISTA DE ESPERA COLORIDA (Amarelo/Verde de 5 em 5)
+            const qListDiv = document.getElementById('q-list');
+            if (d.queue.length === 0) {
+                qListDiv.innerText = "Ninguém na fila";
+            } else {
+                qListDiv.innerHTML = d.queue.map((p, index) => {
+                    const bloco = Math.floor(index / 5);
+                    const corClasse = (bloco % 2 === 0) ? 'cor-amarelo' : 'cor-verde';
+                    return `<span class="espera-item ${corClasse}">${index + 1}. ${p} <span onclick="sairDoJogo('${p}', 'queue')" style="color:red; font-size:10px; margin-left:3px; cursor:pointer;">[X]</span></span>`;
+                }).join(' ');
+            }
+
             const jogando = [...d.white, ...d.blue, ...d.queue];
             const disponiveis = d.all.filter(p => !jogando.includes(p)).sort();
             document.getElementById('disp-list').innerHTML = disponiveis.map(p => `
@@ -184,16 +203,13 @@
                 </div>
             `).join('');
 
-            // LISTA GERAL NA ABA ATLETAS
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `
                 <div style="padding:10px; border-bottom:1px solid #333; color:#aaa;">${p}</div>
             `).join('');
         }
 
         window.resetarRacha = () => { 
-            if(confirm("LIMPAR JOGO? (Os nomes cadastrados continuam no banco)")) { 
-                d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; sync(); 
-            } 
+            if(confirm("LIMPAR JOGO ATUAL?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; sync(); } 
         };
 
         load();
