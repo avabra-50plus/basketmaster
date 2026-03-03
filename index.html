@@ -7,65 +7,49 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; }
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; user-select: none; }
-        
-        /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; }
-        .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
+        .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; }
         .stats-btn { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 5px 12px; border-radius: 4px; font-size: 11px; }
-
-        /* Vitoria Buttons */
         .top-btns { display: flex; gap: 5px; padding: 10px; }
-        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
-
-        /* Sub Menu */
         .sub-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
         .btn-s { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-
-        /* Section Title */
-        .section-title { background: #0a0a0a; color: #444; padding: 5px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; }
-
-        /* Player Row */
+        .section-title { background: #0a0a0a; color: #444; padding: 5px 15px; font-size: 10px; text-transform: uppercase; text-align: left; }
         .row { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .row.blue-row { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
-        
         .p-info { flex: 1; text-align: left; }
         .p-name { font-weight: bold; font-size: 13px; display: block; }
         .p-stats { font-size: 12px; font-weight: bold; }
-        .p-stats span { color: #ff0000; }
-        .blue-row .p-stats span { color: #ffeb3b; }
-
+        .p-stats b { color: #ff0000; }
+        .blue-row .p-stats b { color: #ffeb3b; }
         .p-actions { display: flex; gap: 4px; align-items: center; }
         .btn-icon { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
         .blue-row .btn-icon { background: rgba(255,255,255,0.2); border: none; color: #fff; }
-
-        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
+        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; }
         .foul-trigger b { display: block; font-size: 12px; }
         .foul-trigger small { font-size: 8px; opacity: 0.7; }
-
         .pt-group { display: flex; gap: 2px; }
         .btn-pt { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; }
         .btn-pt small { display: block; font-size: 7px; color: #666; font-weight: normal; margin-top: -2px; }
         .btn-pt.orange { background: var(--orange); }
-
-        /* Nav */
         .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; }
-        .nav-btn { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; }
+        .nav-btn { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; }
         .nav-btn.active { color: var(--orange); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">BASKETMASTER <span style="font-size:10px; background:#222; color:#fff; padding:1px 4px; border-radius:3px; vertical-align:middle;">50+</span></div>
+        <div class="logo">BASKETMASTER <span style="font-size:10px; background:#222; color:#fff; padding:1px 4px; border-radius:3px;">50+</span></div>
         <button class="stats-btn" onclick="resetSystem()">STATS</button>
     </div>
 
     <div class="top-btns">
-        <button class="btn-v btn-white" onclick="win('B')">VITORIA BRANCO</button>
-        <button class="btn-v btn-blue" onclick="win('A')">VITORIA AZUL</button>
+        <button class="btn-v btn-white" onclick="winGame('B')">VITORIA BRANCO</button>
+        <button class="btn-v btn-blue" onclick="winGame('A')">VITORIA AZUL</button>
     </div>
 
     <div class="sub-menu">
@@ -75,10 +59,10 @@
     </div>
 
     <div class="section-title">Time Branco</div>
-    <div id="w-team"></div>
+    <div id="w-list"></div>
 
     <div class="section-title">Time Azul</div>
-    <div id="a-team"></div>
+    <div id="a-list"></div>
 
     <div style="height:80px"></div>
 
@@ -95,66 +79,69 @@
         let state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
 
         async function load() {
-            const { data } = await supabaseClient.from('racha_session').select('data').eq('id', 1).maybeSingle();
-            if (data && data.data) { 
-                state = data.data; 
-                render(); 
-            }
+            try {
+                const { data } = await supabaseClient.from('racha_session').select('data').eq('id', 1).maybeSingle();
+                if (data && data.data) { state = data.data; }
+                render();
+            } catch (e) { render(); }
         }
 
         async function sync() {
-            await supabaseClient.from('racha_session').update({ data: state }).eq('id', 1);
             render();
+            await supabaseClient.from('racha_session').update({ data: state }).eq('id', 1);
         }
 
-        function addPlayer() {
+        window.addPlayer = function() {
             const n = prompt("NOME DO ATLETA:");
             if (!n) return;
             const name = n.toUpperCase();
+            if (!state.points) state.points = {};
+            if (!state.fouls) state.fouls = {};
             state.points[name] = 0;
             state.fouls[name] = 0;
             if (state.white.length < 5) state.white.push(name);
             else if (state.blue.length < 5) state.blue.push(name);
             else state.queue.push(name);
             sync();
-        }
+        };
 
-        function addP(name, p) {
+        window.addP = function(name, p) {
             state.points[name] = (state.points[name] || 0) + p;
             sync();
-        }
+        };
 
-        function addF(name) {
+        window.addF = function(name) {
             state.fouls[name] = (state.fouls[name] || 0) + 1;
             if (state.fouls[name] >= 4) alert(name + " ESTOUROU!");
             sync();
-        }
+        };
 
-        function win(team) {
+        window.winGame = function(team) {
             const losing = (team === 'B') ? state.blue : state.white;
             state.queue.push(...losing);
             losing.length = 0;
             while (losing.length < 5 && state.queue.length > 0) {
                 losing.push(state.queue.shift());
             }
-            Object.keys(state.fouls).forEach(k => state.fouls[k] = 0);
+            Object.keys(state.fouls || {}).forEach(k => state.fouls[k] = 0);
             sync();
-        }
+        };
 
-        function resetSystem() {
+        window.resetSystem = function() {
             if(confirm("ZERAR TUDO?")) {
                 state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
                 sync();
             }
-        }
+        };
 
         function render() {
-            const createRows = (list, id, isBlue) => {
+            const build = (list, id, isBlue) => {
                 const el = document.getElementById(id);
+                if (!el) return;
                 el.innerHTML = list.map(p => `
                     <div class="row ${isBlue ? 'blue-row' : ''}">
                         <div class="p-info">
-                            <span class="p-name">${p} <span>(${state.points[p]||0})</span></span>
+                            <span class="p-name">${p} <b>(${state.points[p]||0})</b></span>
                             <span class="p-stats">F: ${state.fouls[p]||0}</span>
                         </div>
                         <div class="p-actions">
@@ -170,9 +157,9 @@
                     </div>
                 `).join('');
             };
-            createRows(state.white, 'w-team', false);
-            createRows(state.blue, 'a-team', true);
-            document.getElementById('q-label').innerText = `ATLETAS (${state.queue.length})`;
+            build(state.white || [], 'w-list', false);
+            build(state.blue || [], 'a-list', true);
+            document.getElementById('q-label').innerText = `ATLETAS (${(state.queue || []).length})`;
         }
 
         supabaseClient.channel('any').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, payload => {
