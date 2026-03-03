@@ -3,70 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V7.6.2</title>
+    <title>BASKETMASTER AVABRA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #ff6b00; --dark: #121212; --white: #ffffff; --blue: #0047ab; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--dark); color: var(--white); margin: 0; padding: 8px; text-align: center; overflow-x: hidden; }
+        body { font-family: sans-serif; background-color: #121212; color: white; margin: 0; padding: 10px; text-align: center; }
+        h1 { color: #ff6b00; margin-bottom: 10px; font-size: 22px; }
         
-        .header { background: linear-gradient(145deg, #222, #000); padding: 12px; border-radius: 12px; border: 1px solid var(--primary); margin-bottom: 10px; }
-        h1 { color: var(--primary); margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        .cloud-status { font-size: 9px; color: #4caf50; margin-top: 4px; font-weight: bold; }
+        .teams { display: flex; justify-content: space-around; margin-bottom: 15px; }
+        .team { width: 45%; padding: 10px; border-radius: 10px; min-height: 200px; }
+        .white-team { background-color: #ffffff; color: black; }
+        .blue-team { background-color: #0047ab; color: white; }
         
-        .teams-container { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
-        .team-card { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #444; min-height: 200px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .team-white { background: #e0e0e0; color: #000; }
-        .team-blue { background: var(--blue); color: #fff; border-color: #003380; }
+        .player { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-weight: bold; font-size: 14px; }
+        .foul-btn { background-color: #ff4444; color: white; border: none; padding: 6px 10px; border-radius: 5px; font-weight: bold; }
         
-        h3 { margin: 0 0 8px 0; font-size: 16px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 4px; }
-        .team-blue h3 { border-bottom: 1px solid rgba(255,255,255,0.2); }
-
-        .player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.08); margin: 4px 0; padding: 6px; border-radius: 6px; font-weight: bold; font-size: 13px; }
-        .team-blue .player-item { background: rgba(255,255,255,0.1); }
+        .controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        button { width: 80%; padding: 12px; font-size: 14px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; text-transform: uppercase; }
+        .add-btn { background-color: #4caf50; color: white; }
+        .win-btn { background-color: #ff6b00; color: white; }
+        .reset-btn { background-color: #555; color: white; width: 50%; font-size: 10px; }
         
-        .foul-controls { display: flex; align-items: center; gap: 4px; }
-        .foul-btn { background: #ff4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 14px; touch-action: manipulation; }
-        .points-badge { background: #333; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; min-width: 20px; }
-        .team-white .points-badge { background: #555; }
-
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 14px 5px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; touch-action: manipulation; }
-        .btn-add { background: #2e7d32; color: white; }
-        .btn-win { background: var(--primary); color: white; }
-        .btn-reset { background: #444; color: #bbb; grid-column: span 2; margin-top: 5px; padding: 10px; }
-        
-        #queue-list { background: #1e1e1e; padding: 12px; border-radius: 10px; margin-top: 10px; text-align: left; border: 1px solid #333; }
-        .queue-title { color: var(--primary); font-size: 14px; display: block; margin-bottom: 5px; border-bottom: 1px solid #333; }
-        #list-queue { color: #aaa; font-size: 13px; line-height: 1.4; }
+        .queue { margin-top: 20px; text-align: left; background: #222; padding: 10px; border-radius: 10px; }
+        .queue-title { color: #ff6b00; font-weight: bold; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>AVABRA MASTER 50</h1>
-        <div id="status" class="cloud-status">● SISTEMA ONLINE</div>
-    </div>
+    <h1>AVABRA MASTER 50</h1>
 
-    <div class="teams-container">
-        <div class="team-card team-white">
+    <div class="teams">
+        <div class="team white-team">
             <h3>BRANCO</h3>
-            <div id="list-white"></div>
+            <div id="white-list"></div>
         </div>
-        <div class="team-card team-blue">
+        <div class="team blue-team">
             <h3>AZUL</h3>
-            <div id="list-blue"></div>
+            <div id="blue-list"></div>
         </div>
     </div>
 
     <div class="controls">
-        <button class="btn-add" onclick="addPlayer()">+ ATLETA</button>
-        <button class="btn-win" onclick="winGame()">VITÓRIA</button>
-        <button class="btn-reset" onclick="resetSystem()">ZERAR TUDO</button>
+        <button class="add-btn" onclick="addPlayer()">+ ADICIONAR ATLETA</button>
+        <button class="win-btn" onclick="winGame()">VITÓRIA / PRÓXIMO</button>
+        <button class="reset-btn" onclick="resetSystem()">ZERAR SISTEMA</button>
     </div>
 
-    <div id="queue-list">
-        <strong class="queue-title">PRÓXIMOS:</strong>
-        <div id="list-queue">Vazio</div>
+    <div class="queue">
+        <span class="queue-title">PRÓXIMOS DA FILA:</span>
+        <div id="queue-list"></div>
     </div>
 
     <script>
@@ -74,7 +58,7 @@
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        let state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
+        let state = { white: [], blue: [], queue: [], fouls: {} };
 
         async function loadData() {
             const { data } = await supabaseClient.from('racha_session').select('data').eq('id', 1).single();
@@ -85,10 +69,10 @@
         async function migrarDadosAntigos() {
             const salvoAntigo = localStorage.getItem('racha_avabra_data');
             if (salvoAntigo) {
-                const dadosRecuperados = JSON.parse(salvoAntigo);
-                if (state.white.length === 0 && (dadosRecuperados.white.length > 0)) {
-                    if (confirm("Recuperar nomes antigos para a nuvem?")) {
-                        state = dadosRecuperados;
+                const dados = JSON.parse(salvoAntigo);
+                if (state.white.length === 0 && dados.white.length > 0) {
+                    if (confirm("Recuperar nomes da versão offline?")) {
+                        state = dados;
                         sync();
                         localStorage.removeItem('racha_avabra_data');
                     }
@@ -102,9 +86,9 @@
         }
 
         function addPlayer() {
-            const name = prompt("Nome:").toUpperCase();
+            const name = prompt("NOME DO ATLETA:").toUpperCase();
             if (!name) return;
-            if (!state.fouls[name]) state.fouls[name] = 0;
+            state.fouls[name] = 0;
             if (state.white.length < 5) state.white.push(name);
             else if (state.blue.length < 5) state.blue.push(name);
             else state.queue.push(name);
@@ -113,12 +97,12 @@
 
         function addFoul(name) {
             state.fouls[name] = (state.fouls[name] || 0) + 1;
-            if (state.fouls[name] >= 4) alert("🚨 " + name + " FORA (4 FALTAS)!");
+            if (state.fouls[name] >= 4) alert("🚨 " + name + " ESTOUROU (4 FALTAS)!");
             sync();
         }
 
         function winGame() {
-            const winner = prompt("Quem venceu? (B ou A)").toUpperCase();
+            const winner = prompt("QUEM VENCEU? (B ou A)").toUpperCase();
             if (winner === 'B') rotate(state.blue);
             else if (winner === 'A') rotate(state.white);
         }
@@ -134,28 +118,28 @@
         }
 
         function resetSystem() {
-            if (confirm("Zerar tudo?")) {
-                state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
+            if (confirm("DESEJA ZERAR TUDO?")) {
+                state = { white: [], blue: [], queue: [], fouls: {} };
                 sync();
             }
         }
 
         function render() {
-            const draw = (list, elementId) => {
+            const createList = (list, elementId) => {
                 const el = document.getElementById(elementId);
                 el.innerHTML = list.map(p => `
-                    <div class="player-item">
-                        <span>${p.substring(0, 10)}</span>
-                        <div class="foul-controls">
-                            <span class="points-badge">${state.fouls[p] || 0}F</span>
+                    <div class="player">
+                        <span>${p}</span>
+                        <div>
+                            <span>${state.fouls[p] || 0}F</span>
                             <button class="foul-btn" onclick="addFoul('${p}')">F</button>
                         </div>
                     </div>
                 `).join('');
             };
-            draw(state.white, 'list-white');
-            draw(state.blue, 'list-blue');
-            document.getElementById('list-queue').innerText = state.queue.join(' - ') || 'Vazio';
+            createList(state.white, 'white-list');
+            createList(state.blue, 'blue-list');
+            document.getElementById('queue-list').innerText = state.queue.join(', ');
         }
 
         supabaseClient.channel('any').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, payload => {
