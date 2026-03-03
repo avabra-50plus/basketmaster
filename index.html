@@ -3,157 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V7.6.0</title>
+    <title>BASKETMASTER AVABRA V7.8.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #ff6b00; --dark: #1a1a1a; --white: #ffffff; --blue: #0047ab; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: var(--white); margin: 0; padding: 10px; text-align: center; }
-        .header { background: linear-gradient(145deg, #222, #000); padding: 15px; border-radius: 15px; border: 2px solid var(--primary); margin-bottom: 15px; }
-        h1 { color: var(--primary); margin: 0; font-size: 24px; text-transform: uppercase; }
-        .cloud-status { font-size: 10px; color: #4caf50; margin-top: 5px; }
-        
-        .teams-container { display: flex; gap: 10px; margin-bottom: 15px; }
-        .team-card { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #444; }
-        .team-white { background: #f0f0f0; color: #000; }
-        .team-blue { background: var(--blue); color: #fff; border-color: #002d6b; }
-        
-        .player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1); margin: 5px 0; padding: 8px; border-radius: 8px; font-weight: bold; }
-        .foul-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
-        .points-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
-
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-add { background: #4caf50; color: white; }
-        .btn-win { background: var(--primary); color: white; }
-        .btn-reset { background: #666; color: white; grid-column: span 2; margin-top: 10px; }
-        
-        #queue-list { background: #333; padding: 10px; border-radius: 10px; margin-top: 15px; text-align: left; }
+        :root { --orange: #ff6b00; --blue: #2962ff; }
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
+        .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
+        .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
+        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
+        .btn-w { background: #fff; color: #000; }
+        .btn-b { background: var(--blue); color: #fff; }
+        .menu-meio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
+        .btn-m { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .faixa { background: #0a0a0a; color: #444; padding: 5px 15px; font-size: 10px; text-transform: uppercase; text-align: left; }
+        .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
+        .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
+        .info { flex: 1; text-align: left; }
+        .nome { font-weight: bold; font-size: 13px; display: block; }
+        .stats { font-size: 12px; font-weight: bold; }
+        .stats span { color: #ff0000; }
+        .azul .stats span { color: #ffeb3b; }
+        .acoes { display: flex; gap: 4px; align-items: center; }
+        .btn-i { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
+        .azul .btn-i { background: rgba(255,255,255,0.2); border: none; color: #fff; }
+        .f-box { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
+        .f-box b { display: block; font-size: 12px; }
+        .f-box s { font-size: 8px; text-decoration: none; opacity: 0.7; }
+        .g-pts { display: flex; gap: 2px; }
+        .btn-p { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; }
+        .btn-p i { display: block; font-size: 7px; color: #666; font-style: normal; margin-top: -2px; }
+        .btn-p.laranja { background: var(--orange); }
+        .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; }
+        .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; }
+        .nav-b.active { color: var(--orange); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>AVABRA MASTER 50</h1>
-        <div id="status" class="cloud-status">● CONECTADO À NUVEM</div>
+        <div class="logo">BASKETMASTER 50+</div>
+        <button onclick="resetar()" style="background:#1a1a1a; color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:10px;">STATS</button>
     </div>
 
-    <div class="teams-container">
-        <div class="team-card team-white">
-            <h3>BRANCO</h3>
-            <div id="list-white"></div>
-        </div>
-        <div class="team-card team-blue">
-            <h3>AZUL</h3>
-            <div id="list-blue"></div>
-        </div>
+    <div class="vitoria-btns">
+        <button class="btn-v btn-w" onclick="vitoria('B')">VITORIA BRANCO</button>
+        <button class="btn-v btn-b" onclick="vitoria('A')">VITORIA AZUL</button>
     </div>
 
-    <div class="controls">
-        <button class="btn-add" onclick="addPlayer()">+ NOVO ATLETA</button>
-        <button class="btn-win" onclick="winGame()">VITORIA/PROXIMO</button>
-        <button class="btn-reset" onclick="resetSystem()">ZERAR TUDO</button>
+    <div class="menu-meio">
+        <button class="btn-m">T (BR+)</button>
+        <button class="btn-m">T (AZ+)</button>
+        <button class="btn-m" onclick="add()">+ ATLETA</button>
     </div>
 
-    <div id="queue-list">
-        <strong>PRÓXIMOS DA FILA:</strong>
-        <div id="list-queue"></div>
+    <div class="faixa">Time Branco</div>
+    <div id="w-list"></div>
+    <div class="faixa">Time Azul</div>
+    <div id="a-list"></div>
+
+    <div style="height:80px"></div>
+
+    <div class="rodape">
+        <div class="nav-b active">RACHA</div>
+        <div id="q-label" class="nav-b">ATLETAS (0)</div>
     </div>
 
     <script>
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
+        let dados = { white: [], blue: [], queue: [], points: {}, fouls: {} };
 
-        // Carregar dados iniciais
-        async function loadData() {
-            const { data, error } = await supabase.from('racha_session').select('data').eq('id', 1).single();
-            if (data) {
-                state = data.data;
-                render();
-            }
+        async function carregar() {
+            const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
+            if (data && data.data) dados = data.data;
+            renderizar();
         }
 
-        // Salvar na nuvem
-        async function sync() {
-            await supabase.from('racha_session').update({ data: state }).eq('id', 1);
-            render();
+        async function salvar() {
+            renderizar();
+            await sb.from('racha_session').update({ data: dados }).eq('id', 1);
         }
 
-        function addPlayer() {
-            const name = prompt("Nome do Atleta:").toUpperCase();
-            if (!name) return;
-            state.points[name] = 0;
-            state.fouls[name] = 0;
-            if (state.white.length < 5) state.white.push(name);
-            else if (state.blue.length < 5) state.blue.push(name);
-            else state.queue.push(name);
-            sync();
-        }
+        window.add = () => {
+            const n = prompt("NOME:");
+            if (!n) return;
+            const nome = n.toUpperCase();
+            if(!dados.points) dados.points = {};
+            if(!dados.fouls) dados.fouls = {};
+            dados.points[nome] = 0; dados.fouls[nome] = 0;
+            if (dados.white.length < 5) dados.white.push(nome);
+            else if (dados.blue.length < 5) dados.blue.push(nome);
+            else dados.queue.push(nome);
+            salvar();
+        };
 
-        function addFoul(name) {
-            state.fouls[name]++;
-            if (state.fouls[name] >= 4) alert("🚨 " + name + " ESTOUROU EM FALTAS!");
-            sync();
-        }
+        window.ponto = (n, p) => { dados.points[n] = (dados.points[n] || 0) + p; salvar(); };
+        window.falta = (n) => { 
+            dados.fouls[n] = (dados.fouls[n] || 0) + 1; 
+            if(dados.fouls[n] >= 4) alert(n + " ESTOUROU!"); 
+            salvar(); 
+        };
 
-        function winGame() {
-            const winner = prompt("Quem venceu? (B para Branco / A para Azul)").toUpperCase();
-            if (winner === 'B') {
-                rotate(state.blue);
-            } else if (winner === 'A') {
-                rotate(state.white);
-            }
-        }
+        window.vitoria = (t) => {
+            const perdedores = (t === 'B') ? dados.blue : dados.white;
+            dados.queue.push(...perdedores);
+            perdedores.length = 0;
+            while (perdedores.length < 5 && dados.queue.length > 0) perdedores.push(dados.queue.shift());
+            Object.keys(dados.fouls).forEach(k => dados.fouls[k] = 0);
+            salvar();
+        };
 
-        function rotate(losingTeam) {
-            // Perdedores vão para o fim da fila
-            state.queue.push(...losingTeam);
-            losingTeam.length = 0;
-            // Novos jogadores entram
-            while (losingTeam.length < 5 && state.queue.length > 0) {
-                losingTeam.push(state.queue.shift());
-            }
-            // Zerar faltas para a nova partida
-            Object.keys(state.fouls).forEach(p => state.fouls[p] = 0);
-            sync();
-        }
+        window.resetar = () => { if(confirm("ZERAR?")) { dados = { white: [], blue: [], queue: [], points: {}, fouls: {} }; salvar(); } };
 
-        function resetSystem() {
-            if (confirm("Deseja zerar todo o racha?")) {
-                state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
-                sync();
-            }
-        }
-
-        function render() {
-            const draw = (list, elementId, isBlue) => {
-                const el = document.getElementById(elementId);
-                el.innerHTML = list.map(p => `
-                    <div class="player-item">
-                        ${p} 
-                        <div>
-                            <span class="points-badge">F: ${state.fouls[p]}</span>
-                            <button class="foul-btn" onclick="addFoul('${p}')">F</button>
+        function renderizar() {
+            const desenhar = (lista, id, azul) => {
+                document.getElementById(id).innerHTML = lista.map(p => `
+                    <div class="linha ${azul ? 'azul' : ''}">
+                        <div class="info">
+                            <span class="nome">${p} <span>(${dados.points[p]||0})</span></span>
+                            <span class="stats">F: ${dados.fouls[p]||0}</span>
+                        </div>
+                        <div class="acoes">
+                            <button class="btn-i">🚪</button><button class="btn-i">🚑</button>
+                            <div class="f-box" onclick="falta('${p}')"><b>F+</b><s>-F</s></div>
+                            <div class="g-pts">
+                                <button class="btn-p" onclick="ponto('${p}',1)">1</button>
+                                <button class="btn-p" onclick="ponto('${p}',2)">2<i>ERRO</i></button>
+                                <button class="btn-p laranja" onclick="ponto('${p}',3)">3</button>
+                            </div>
                         </div>
                     </div>
                 `).join('');
             };
-
-            draw(state.white, 'list-white', false);
-            draw(state.blue, 'list-blue', true);
-            document.getElementById('list-queue').innerHTML = state.queue.join(', ');
+            desenhar(dados.white, 'w-list', false);
+            desenhar(dados.blue, 'a-list', true);
+            document.getElementById('q-label').innerText = `ATLETAS (${dados.queue.length})`;
         }
 
-        // Ouvir mudanças em tempo real (Realtime)
-        supabase.channel('custom-all-channel')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, (payload) => {
-            state = payload.new.data;
-            render();
-        }).subscribe();
-
-        loadData();
+        carregar();
     </script>
 </body>
 </html>
