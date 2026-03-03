@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V11.7</title>
+    <title>BASKETMASTER AVABRA V11.8</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; }
@@ -25,6 +25,7 @@
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+        .stats { font-size: 12px; font-weight: bold; }
         .btn-sair { background: var(--red); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; margin-right: 5px; cursor: pointer; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .g-pts { display: flex; gap: 2px; }
@@ -120,13 +121,10 @@
         window.subFl = (n) => { d.fouls[n] = Math.max(0, (d.fouls[n] || 0) - 1); d.hist_fls[n] = Math.max(0, (d.hist_fls[n] || 0) - 1); sync(); };
 
         window.terminoTempo = (btn) => {
-            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            
-            if (ptsW > ptsA) { 
+            if (btn === 'B') { 
                 d.streakW++; d.streakA = 0;
                 d.queue.push(...d.white, ...d.blue); 
-            } else if (ptsA > ptsW) { 
+            } else if (btn === 'A') { 
                 d.streakA++; d.streakW = 0;
                 d.queue.push(...d.blue, ...d.white); 
             } else { 
@@ -140,22 +138,12 @@
         window.vitoriaPlacar = (vencedor) => {
             if (vencedor === 'B') {
                 d.streakW++; d.streakA = 0;
-                if (d.streakW >= 2) {
-                    d.queue.push(...d.white, ...d.blue);
-                    d.white = []; d.blue = [];
-                    d.streakW = 0;
-                } else {
-                    d.queue.push(...d.blue); d.blue = [];
-                }
+                if (d.streakW >= 2) { d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; }
+                else { d.queue.push(...d.blue); d.blue = []; }
             } else {
                 d.streakA++; d.streakW = 0;
-                if (d.streakA >= 2) {
-                    d.queue.push(...d.blue, ...d.white);
-                    d.white = []; d.blue = [];
-                    d.streakA = 0;
-                } else {
-                    d.queue.push(...d.white); d.white = [];
-                }
+                if (d.streakA >= 2) { d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; }
+                else { d.queue.push(...d.white); d.white = []; }
             }
             executarRodizio();
         };
