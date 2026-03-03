@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V8.5</title>
+    <title>BASKETMASTER AVABRA V8.6</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --gray: #1a1a1a; }
+        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         
-        /* Layout Geral */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
         
@@ -18,9 +17,9 @@
         .btn-w { background: #fff; color: #000; }
         .btn-b { background: var(--blue); color: #fff; }
 
-        .faixa { background: #111; color: #555; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; }
+        .faixa { background: #111; color: #666; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; }
 
-        /* Estilo das Linhas (RACHA) */
+        /* Estilo RACHA (Times) */
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .info { flex: 1; text-align: left; }
@@ -29,28 +28,29 @@
         .stats b { color: #ff0000; }
         .azul .stats b { color: #ffeb3b; }
 
+        /* Ações e Pontos */
         .acoes { display: flex; gap: 4px; align-items: center; }
-        .btn-i { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
         .f-box { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
         .f-box b { display: block; font-size: 12px; }
         .f-box s { font-size: 8px; text-decoration: none; opacity: 0.7; }
 
         .g-pts { display: flex; gap: 2px; }
-        .btn-p { width: 36px; height: 36px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-p { width: 36px; height: 38px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn-p i { font-size: 7px; color: #666; font-style: normal; font-weight: normal; }
         .btn-p.laranja { background: var(--orange); }
+        .btn-sub { font-size: 10px; color: #ff4444; background: #000; border: 1px solid #333; padding: 2px 5px; border-radius: 3px; margin-top: 2px; }
 
-        /* Aba Atletas (Cadastro) */
-        #aba-atletas { display: none; padding: 15px; padding-bottom: 80px; }
-        .atleta-cadastrado { display: flex; justify-content: space-between; padding: 12px; background: #1a1a1a; margin-bottom: 5px; border-radius: 5px; align-items: center; }
-        .btn-entrar { background: var(--orange); color: #fff; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; }
+        /* Lista de Disponíveis no Racha */
+        .lista-disp { background: #1a1a1a; padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .btn-entrar { background: var(--orange); color: #fff; border: none; padding: 6px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
 
         /* Rodapé */
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 15px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
 
-        #btn-add-global { background: #2e7d32; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; margin-bottom: 15px; }
+        #view-atletas { display: none; padding: 20px; }
+        #btn-add-global { background: #2e7d32; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -62,8 +62,8 @@
         </div>
 
         <div class="vitoria-btns">
-            <button class="btn-v btn-w" onclick="vitoria('B')">VITORIA BRANCO</button>
-            <button class="btn-v btn-b" onclick="vitoria('A')">VITORIA AZUL</button>
+            <button class="btn-v btn-white" onclick="vitoria('B')">VITORIA BRANCO</button>
+            <button class="btn-v btn-blue" onclick="vitoria('A')">VITORIA AZUL</button>
         </div>
 
         <div class="faixa">Time Branco</div>
@@ -72,21 +72,20 @@
         <div class="faixa">Time Azul</div>
         <div id="a-list"></div>
 
-        <div class="faixa">Próximos (Fila)</div>
-        <div id="q-list" style="padding: 10px; color: var(--orange); font-weight: bold;"></div>
+        <div class="faixa">Fila de Espera (Próximos)</div>
+        <div id="q-list" style="padding: 10px; color: var(--orange); font-weight: bold; font-size: 14px; background: #0a0a0a;"></div>
+
+        <div class="faixa">Atletas Disponíveis (Clique para Entrar)</div>
+        <div id="disp-list"></div>
     </div>
 
-    <div id="view-atletas" style="display: none;">
-        <div class="header">
-            <div class="logo">CADASTRO DE ATLETAS</div>
-        </div>
-        <div id="aba-atletas" style="display: block;">
-            <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
-            <div id="lista-geral-atletas"></div>
-        </div>
+    <div id="view-atletas">
+        <div class="logo" style="margin-bottom: 20px; text-align: center;">CADASTRO NO SISTEMA</div>
+        <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA NA NUVEM</button>
+        <p style="font-size: 12px; color: #666; margin-top: 20px; text-align: center;">Os atletas cadastrados aqui aparecerão na aba RACHA para serem colocados em quadra.</p>
     </div>
 
-    <div style="height:80px"></div>
+    <div style="height:100px"></div>
 
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">RACHA</div>
@@ -125,26 +124,22 @@
             if (!d.all) d.all = [];
             if (!d.all.includes(nome)) d.all.push(nome);
             sync();
+            alert(nome + " cadastrado! Vá para a aba RACHA para colocá-lo no jogo.");
         };
 
         window.entrarNoJogo = (nome) => {
-            // Verifica se o cara já não está jogando
-            if (d.white.includes(nome) || d.blue.includes(nome) || d.queue.includes(nome)) {
-                alert("Já está no jogo!");
-                return;
-            }
+            if (d.white.includes(nome) || d.blue.includes(nome) || d.queue.includes(nome)) return;
             if (!d.points) d.points = {}; if (!d.fouls) d.fouls = {};
             d.points[nome] = 0; d.fouls[nome] = 0;
 
             if (d.white.length < 5) d.white.push(nome);
             else if (d.blue.length < 5) d.blue.push(nome);
             else d.queue.push(nome);
-            
-            mudarAba('racha');
             sync();
         };
 
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; sync(); };
+        window.subPt = (n) => { d.points[n] = Math.max(0, (d.points[n] || 0) - 1); sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; if(d.fouls[n]>=4) alert(n+" ESTOUROU!"); sync(); };
 
         window.vitoria = (vencedor) => {
@@ -157,16 +152,15 @@
         };
 
         function render() {
-            // Desenha Times no Racha
             const drawRow = (list, id, azul) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${azul ? 'azul' : ''}">
                         <div class="info">
                             <span class="nome">${p} <b>(${d.points[p]||0})</b></span>
                             <span class="stats">F: ${d.fouls[p]||0}</span>
+                            <button class="btn-sub" onclick="subPt('${p}')">Ponto -</button>
                         </div>
                         <div class="acoes">
-                            <button class="btn-i">🚪</button>
                             <div class="f-box" onclick="addFl('${p}')"><b>F+</b><s>-F</s></div>
                             <div class="g-pts">
                                 <button class="btn-p" onclick="addPt('${p}',1)">1</button>
@@ -177,12 +171,14 @@
                     </div>`).join('');
             };
             drawRow(d.white || [], 'w-list', false);
-            drawRow(d.blue || [], 'a-list', true);
+            drawRow(drawRow(d.blue || [], 'a-list', true)); // Correção rápida de fechamento
             document.getElementById('q-list').innerText = (d.queue || []).join(' - ') || 'Ninguém na fila';
 
-            // Desenha Lista de Cadastro
-            document.getElementById('lista-geral-atletas').innerHTML = (d.all || []).sort().map(p => `
-                <div class="atleta-cadastrado">
+            // Lista de Disponíveis (Na aba Racha)
+            const jogando = [...d.white, ...d.blue, ...d.queue];
+            const disponiveis = (d.all || []).filter(p => !jogando.includes(p)).sort();
+            document.getElementById('disp-list').innerHTML = disponiveis.map(p => `
+                <div class="lista-disp">
                     <span>${p}</span>
                     <button class="btn-entrar" onclick="entrarNoJogo('${p}')">ENTRAR NO JOGO</button>
                 </div>
