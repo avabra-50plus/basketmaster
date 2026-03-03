@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V11.6</title>
+    <title>BASKETMASTER AVABRA V11.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 16px; text-transform: uppercase; }
-        
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
         .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .t-br { background: #ffffff; color: #000; } 
         .t-az { background: var(--blue); color: #fff; }
         .t-em { background: #555; color: #fff; }
-
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
-
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #222; }
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
@@ -35,12 +32,10 @@
         .btn-p.laranja { background: var(--orange); }
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
         .azul .btn-corrige { border-color: rgba(255,255,255,0.4); color: #fff; }
-        
         #q-list { padding: 15px; background: #0a0a0a; font-size: 14px; font-weight: bold; }
         .espera-item { display: inline-block; margin-right: 12px; margin-bottom: 5px; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
-
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -65,8 +60,8 @@
             <button class="btn-v btn-blue" onclick="vitoriaPlacar('A')">VITÓRIA AZUL</button>
         </div>
 
-        <div class="faixa">Time Branco</div><div id="w-list"></div>
-        <div class="faixa">Time Azul</div><div id="a-list"></div>
+        <div class="faixa">Time Branco (Vitórias: <span id="vit-w">0</span>)</div><div id="w-list"></div>
+        <div class="faixa">Time Azul (Vitórias: <span id="vit-a">0</span>)</div><div id="a-list"></div>
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
@@ -85,7 +80,7 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {} };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0 };
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
@@ -127,16 +122,41 @@
         window.terminoTempo = (btn) => {
             const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
             const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            if (ptsW > ptsA) { d.queue.push(...d.white, ...d.blue); }
-            else if (ptsA > ptsW) { d.queue.push(...d.blue, ...d.white); }
-            else { d.queue.push(...d.white, ...d.blue); }
+            
+            if (ptsW > ptsA) { 
+                d.streakW++; d.streakA = 0;
+                d.queue.push(...d.white, ...d.blue); 
+            } else if (ptsA > ptsW) { 
+                d.streakA++; d.streakW = 0;
+                d.queue.push(...d.blue, ...d.white); 
+            } else { 
+                d.queue.push(...d.white, ...d.blue); 
+                d.streakW = 0; d.streakA = 0;
+            }
             d.white = []; d.blue = [];
             executarRodizio();
         };
 
         window.vitoriaPlacar = (vencedor) => {
-            if (vencedor === 'B') { d.queue.push(...d.blue); d.blue = []; }
-            else { d.queue.push(...d.white); d.white = []; }
+            if (vencedor === 'B') {
+                d.streakW++; d.streakA = 0;
+                if (d.streakW >= 2) {
+                    d.queue.push(...d.white, ...d.blue);
+                    d.white = []; d.blue = [];
+                    d.streakW = 0;
+                } else {
+                    d.queue.push(...d.blue); d.blue = [];
+                }
+            } else {
+                d.streakA++; d.streakW = 0;
+                if (d.streakA >= 2) {
+                    d.queue.push(...d.blue, ...d.white);
+                    d.white = []; d.blue = [];
+                    d.streakA = 0;
+                } else {
+                    d.queue.push(...d.white); d.white = [];
+                }
+            }
             executarRodizio();
         };
 
@@ -148,7 +168,7 @@
         }
 
         window.sairDoJogo = (n, l) => { if(confirm("Remover?")) { d[l] = d[l].filter(p => p !== n); sync(); } };
-        window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; sync(); } };
+        window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; sync(); } };
 
         function render() {
             const draw = (list, id, az, slug) => {
@@ -165,6 +185,8 @@
                     </div>`).join('');
             };
             draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
+            document.getElementById('vit-w').innerText = d.streakW;
+            document.getElementById('vit-a').innerText = d.streakA;
             const q = document.getElementById('q-list');
             q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}</span>`).join(' ');
             const jog = [...d.white, ...d.blue, ...d.queue];
