@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BASKETMASTER V7.5.4 - CONTRAST MASTER</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
+        
+        header { padding: 12px 20px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; background: #000; position: sticky; top: 0; z-index: 100; }
+        .logo { color: #f97316; font-weight: 900; font-style: italic; font-size: 16px; }
+        .cat-tag { background: #1a1a1a; color: #f97316; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid #333; }
+
+        .top-controls { background: #0a0a0a; padding: 10px; border-bottom: 1px solid #1a1a1a; }
+        .actions-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .btn-main { height: 45px; border-radius: 8px; border: none; font-weight: 900; text-transform: uppercase; font-size: 10px; }
+        .btn-white { background: #fff; color: #000; }
+        .btn-blue { background: #2563eb; color: #fff; }
+        .btn-small-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .btn-small { height: 35px; background: #1a1a1a; border: 1px solid #333; color: #888; font-size: 8px; font-weight: 900; border-radius: 6px; text-transform: uppercase; }
+
+        .section-title { background: #111; color: #444; font-size: 8px; font-weight: 900; padding: 6px 12px; text-transform: uppercase; border-bottom: 1px solid #1a1a1a; letter-spacing: 1px; }
+        
+        .player-row { display: flex; align-items: center; border-bottom: 1px solid #0f0f0f; padding: 6px 10px; gap: 8px; min-height: 50px; }
+        
+        .queue-pos { font-family: 'Roboto Mono', monospace; font-size: 12px; color: #ffffff !important; font-weight: 900; min-width: 28px; text-align: center; border-right: 1px solid #222; margin-right: 5px; }
+        
+        .player-name-box { flex: 1; min-width: 0; }
+        .player-name { font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* CORES DE LINHA E FONTES DE ALTO CONTRASTE */
+        .row-white { background: #ffffff !important; color: #000000 !important; opacity: 1 !important; }
+        .row-white .player-name { color: #000000 !important; }
+        .row-white .pts-badge { color: #c92a2a !important; font-weight: 900; } 
+        .row-white .foul-badge { color: #222222 !important; font-weight: 900; background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 3px; }
+
+        .row-blue { background: #2563eb !important; color: #ffffff !important; opacity: 1 !important; }
+        .row-blue .player-name { color: #ffffff !important; }
+        .row-blue .pts-badge { color: #ffca28 !important; font-weight: 900; }
+        .row-blue .foul-badge { color: #ffffff !important; font-weight: 900; border: 1px solid rgba(255,255,255,0.4); padding: 2px 4px; border-radius: 3px; }
+        
+        .row-waiting { background: #080808 !important; color: #f97316 !important; opacity: 1 !important; }
+        .row-waiting .player-name { color: #ffffff !important; }
+        .row-waiting .foul-badge { color: #666; }
+
+        .row-off { background: transparent !important; color: #ffffff !important; opacity: 0.4 !important; }
+
+        .manage-box { display: flex; gap: 3px; align-items: center; }
+        .btn-manage { background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .row-blue .btn-manage { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); }
+        
+        .foul-ctrl { display: flex; flex-direction: column; gap: 2px; }
+        .btn-foul-plus { background: #900; color: #fff; border: none; font-size: 9px; font-weight: 900; width: 28px; height: 20px; border-radius: 3px 3px 0 0; }
+        .btn-foul-minus { background: #222; color: #666; border: none; font-size: 7px; font-weight: 900; width: 28px; height: 14px; border-radius: 0 0 3px 3px; }
+        
+        .btn-text-action { font-size: 8px; font-weight: 900; padding: 0 6px; height: 28px; border-radius: 4px; border: 1px solid #333; background: #111; text-transform: uppercase; color: #fff; }
+
+        .score-box { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-left: 5px; }
+        .row-pts { display: flex; gap: 2px; }
+        .btn-pts { width: 28px; height: 28px; border-radius: 4px; border: none; font-weight: 900; color: #fff; font-size: 10px; }
+        .p1 { background: #222; } .p2 { background: #444; } .p3 { background: #f97316; }
+        .btn-minus-score { background: none; border: none; color: #555; font-size: 7px; font-weight: 900; text-transform: uppercase; margin-top: -2px; }
+        .row-white .btn-minus-score { color: #888; }
+
+        .pts-badge { font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 900; }
+        .foul-badge { font-size: 10px; font-weight: 900; margin-left: 4px; }
+        .foul-limit { background: #ff0000 !important; color: #ffffff !important; animation: blink 1s infinite; border: none !important; }
+
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 1px solid #1a1a1a; height: 60px; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .nav-item { color: #444; font-weight: 900; font-size: 9px; text-transform: uppercase; border: none; background: none; flex: 1; }
+        .nav-active { color: #f97316; }
+
+        #report-modal { position: fixed; inset: 0; background: #000; z-index: 200; display: none; padding: 20px; overflow-y: auto; }
+        .btn-whatsapp { background: #25d366; color: #fff; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 900; text-transform: uppercase; margin-top: 15px; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display: flex; align-items: center; gap: 5px;">
+        <div class="logo">BASKETMASTER</div>
+        <span class="cat-tag">50+</span>
+    </div>
+    <button onclick="toggleReport(true)" style="background: #222; color: #fff; border: 1px solid #333; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 8px;">STATS</button>
+</header>
+
+<div id="view-racha">
+    <div class="top-controls">
+        <div class="actions-panel">
+            <button class="btn-main btn-white" onclick="rotate('white_win')">Vitoria Branco</button>
+            <button class="btn-main btn-blue" onclick="rotate('blue_win')">Vitoria Azul</button>
+        </div>
+        <div class="btn-small-group">
+            <button class="btn-small" onclick="rotate('time_br')">T (BR+)</button>
+            <button class="btn-small" onclick="rotate('time_az')">T (AZ+)</button>
+            <button class="btn-small" onclick="rotate('draw')">Empate</button>
+        </div>
+    </div>
+
+    <div id="tables-container"></div>
+    <button onclick="resetSession()" style="width: 100%; background: none; border: none; color: #222; font-size: 7px; margin: 20px 0; font-weight: 900; text-transform: uppercase;">Zerar Racha</button>
+</div>
+
+<div id="view-plantel" style="display: none; padding: 10px;">
+    <input type="text" id="new-athlete" placeholder="NOME DO JOGADOR" style="width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: #fff; border-radius: 6px; margin-bottom: 10px; font-size: 14px;">
+    <button onclick="addAthlete()" style="width: 100%; background: #f97316; color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 900; font-size: 12px; margin-bottom: 20px;">CADASTRAR JOGADOR</button>
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button onclick="exportData()" style="flex:1; background:#111; color:#555; border:1px solid #333; padding:10px; font-size:9px; font-weight:900; border-radius:6px;">EXPORTAR BACKUP</button>
+        <button onclick="importData()" style="flex:1; background:#111; color:#555; border:1px solid #333; padding:10px; font-size:9px; font-weight:900; border-radius:6px;">IMPORTAR BACKUP</button>
+    </div>
+    <div id="athletes-list"></div>
+</div>
+
+<div id="report-modal">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <h2 style="color: #f97316; margin: 0; font-style: italic; font-size: 18px;">RANKING</h2>
+        <button onclick="toggleReport(false)" style="color: #fff; background: #222; border: none; padding: 6px 15px; border-radius: 4px; font-weight: 900; font-size: 10px;">FECHAR</button>
+    </div>
+    <div id="report-date" style="font-size: 9px; color: #555; font-weight: 900; margin-bottom: 10px;"></div>
+    <div id="report-content" style="border-top: 1px solid #1a1a1a;"></div>
+    <button id="whatsapp-link" class="btn-whatsapp">WHATSAPP</button>
+</div>
+
+<nav class="nav-bottom">
+    <button class="nav-item nav-active" id="nav-racha" onclick="showView('racha')">RACHA</button>
+    <button class="nav-item" id="nav-plantel" onclick="showView('plantel')">ATLETAS</button>
+</nav>
+
+<script>
+    let athletes = JSON.parse(localStorage.getItem('bm_athletes')) || [];
+    let session = JSON.parse(localStorage.getItem('bm_session')) || { white: [], blue: [], queue: [], points: {}, fouls: {}, wins: 0, lastWinner: null };
+
+    function save() {
+        localStorage.setItem('bm_athletes', JSON.stringify(athletes));
+        localStorage.setItem('bm_session', JSON.stringify(session));
+        render();
+    }
+
+    function addAthlete() {
+        const input = document.getElementById('new-athlete');
+        if(!input.value.trim()) return;
+        athletes.push({ id: 'at-' + Date.now(), name: input.value.toUpperCase() });
+        athletes.sort((a,b) => a.name.localeCompare(b.name));
+        input.value = '';
+        save();
+    }
+
+    function removeAthlete(id) {
+        if(confirm('Excluir?')) { athletes = athletes.filter(a => a.id !== id); save(); }
+    }
+
+    function addPoint(id, pts) {
+        if(!session.points) session.points = {};
+        session.points[id] = Math.max(0, (session.points[id] || 0) + pts);
+        save();
+    }
+
+    function updateFoul(id, val) {
+        if(!session.fouls) session.fouls = {};
+        let current = session.fouls[id] || 0;
+        session.fouls[id] = Math.max(0, Math.min(3, current + val));
+        save();
+    }
+
+    function handleExit(id, isInjury) {
+        const inWhite = session.white.indexOf(id);
+        const inBlue = session.blue.indexOf(id);
+        if (inWhite === -1 && inBlue === -1) return;
+        if (inWhite > -1) session.white.splice(inWhite, 1);
+        else session.blue.splice(inBlue, 1);
+        if (session.queue.length > 0) {
+            const next = isInjury ? session.queue.pop() : session.queue.shift();
+            if (inWhite > -1) session.white.push(next);
+            else session.blue.push(next);
+        }
+        save();
+    }
+
+    function toggleQueue(id) {
+        const idxQ = session.queue.indexOf(id);
+        if (idxQ > -1) session.queue.splice(idxQ, 1);
+        else session.queue.push(id);
+        while(session.white.length < 5 && session.queue.length > 0) session.white.push(session.queue.shift());
+        while(session.blue.length < 5 && session.queue.length > 0) session.blue.push(session.queue.shift());
+        save();
+    }
+
+    function rotate(type) {
+        let nQ = [...session.queue], nW = [...session.white], nB = [...session.blue];
+        if (type === 'white_win') {
+            if (session.lastWinner === 'white' && session.wins === 1) { nQ.push(...nW, ...nB); nW = []; nB = []; session.wins = 0; session.lastWinner = null; }
+            else { nQ.push(...nB); nB = []; session.wins = 1; session.lastWinner = 'white'; }
+        } else if (type === 'blue_win') {
+            if (session.lastWinner === 'blue' && session.wins === 1) { nQ.push(...nB, ...nW); nW = []; nB = []; session.wins = 0; session.lastWinner = null; }
+            else { nQ.push(...nW); nW = []; session.wins = 1; session.lastWinner = 'blue'; }
+        } else { nQ.push(...nW, ...nB); nW = []; nB = []; session.wins = 0; session.lastWinner = null; }
+        session.white = nW; session.blue = nB; session.queue = nQ;
+        while(session.white.length < 5 && session.queue.length > 0) session.white.push(session.queue.shift());
+        while(session.blue.length < 5 && session.queue.length > 0) session.blue.push(session.queue.shift());
+        save();
+    }
+
+    function render() {
+        const container = document.getElementById('tables-container');
+        let html = '';
+        const renderTable = (title, list, css, isPlay) => {
+            if (title === 'Fila de Espera' && list.length === 0) return '';
+            let s = '<div class="section-title">' + title + '</div>';
+            list.forEach((id, index) => {
+                const a = athletes.find(x => x.id === id);
+                if (!a) return;
+                const p = (session.points && session.points[id]) ? session.points[id] : 0;
+                const f = (session.fouls && session.fouls[id]) ? session.fouls[id] : 0;
+                const fClass = f >= 3 ? 'foul-limit' : '';
+                
+                s += '<div class="player-row ' + css + '">' +
+                        (title === 'Fila de Espera' ? '<div class="queue-pos">'+(index+1)+'º</div>' : '') +
+                        '<div class="player-name-box">' +
+                            '<div class="player-name">' + a.name + ' <span class="pts-badge">(' + p + ')</span> <span class="foul-badge ' + fClass + '">F:' + f + '</span></div>' +
+                        '</div>' +
+                        '<div class="manage-box">';
+                
+                if(isPlay) {
+                    s += '<button class="btn-manage" onclick="handleExit(\''+id+'\', false)">🚪</button>' +
+                         '<button class="btn-manage" onclick="handleExit(\''+id+'\', true)">🚑</button>' +
+                         '<div class="foul-ctrl">' +
+                            '<button class="btn-foul-plus" onclick="updateFoul(\''+id+'\', 1)">F+</button>' +
+                            '<button class="btn-foul-minus" onclick="updateFoul(\''+id+'\', -1)">-F</button>' +
+                         '</div>';
+                } else if(title === 'Fila de Espera') {
+                    s += '<button class="btn-text-action" style="background:#500" onclick="toggleQueue(\''+id+'\')">REM</button>';
+                } else {
+                    s += '<button class="btn-text-action" style="background:#004" onclick="toggleQueue(\''+id+'\')">ADD</button>';
+                }
+
+                s += '</div>' +
+                     '<div class="score-box">' +
+                        '<div class="row-pts">' +
+                            '<button class="btn-pts p1" onclick="addPoint(\'' + id + '\', 1)">1</button>' +
+                            '<button class="btn-pts p2" onclick="addPoint(\'' + id + '\', 2)">2</button>' +
+                            '<button class="btn-pts p3" onclick="addPoint(\'' + id + '\', 3)">3</button>' +
+                        '</div>' +
+                        '<button class="btn-minus-score" onclick="addPoint(\'' + id + '\', -1)">ERRO</button>' +
+                     '</div>' +
+                    '</div>';
+            });
+            return s;
+        };
+
+        html += renderTable('Time Branco', session.white, 'row-white', true);
+        html += renderTable('Time Azul', session.blue, 'row-blue', true);
+        html += renderTable('Fila de Espera', session.queue, 'row-waiting', false);
+        const offIds = athletes.filter(a => !session.white.includes(a.id) && !session.blue.includes(a.id) && !session.queue.includes(a.id)).map(a => a.id);
+        html += renderTable('Plantel Disponível', offIds, 'row-off', false);
+        container.innerHTML = html;
+        document.getElementById('athletes-list').innerHTML = athletes.map(a => '<div style="padding: 10px; border-bottom: 1px solid #111; display: flex; justify-content: space-between; align-items: center; color: #555; font-weight: 700; font-size: 11px;"><span>' + a.name + '</span><button onclick="removeAthlete(\'' + a.id + '\')" style="color: #600; border: none; background: none; font-weight: 900; font-size: 10px;">EXCLUIR</button></div>').join('');
+    }
+
+    function showView(v) {
+        document.getElementById('view-racha').style.display = v === 'racha' ? 'block' : 'none';
+        document.getElementById('view-plantel').style.display = v === 'plantel' ? 'block' : 'none';
+        document.getElementById('nav-racha').className = 'nav-item' + (v === 'racha' ? ' nav-active' : '');
+        document.getElementById('nav-plantel').className = 'nav-item' + (v === 'plantel' ? ' nav-active' : '');
+    }
+
+    function toggleReport(show) {
+        document.getElementById('report-modal').style.display = show ? 'block' : 'none';
+        if(show && session.points) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            document.getElementById('report-date').innerText = 'CATEGORIA 50+ | ' + dateStr;
+            const sorted = Object.keys(session.points).map(id => {
+                const a = athletes.find(x => x.id === id);
+                return { name: a ? a.name : 'Atleta', pts: session.points[id], fouls: (session.fouls ? (session.fouls[id] || 0) : 0) };
+            }).filter(x => x.pts > 0 || x.fouls > 0).sort((a,b) => b.pts - a.pts);
+            document.getElementById('report-content').innerHTML = sorted.map((s, i) => 
+                '<div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #111;">' +
+                '<span style="font-weight: 700; font-size: 12px;">' + (i+1) + 'º ' + s.name + ' <small style="color:#666">(F:'+s.fouls+')</small></span>' +
+                '<span style="color: #f97316; font-weight: 900; font-size: 14px;">' + s.pts + ' PTS</span></div>'
+            ).join('');
+            const btnWp = document.getElementById('whatsapp-link');
+            if (sorted.length > 0) {
+                let text = "*🏀 RANKING RACHA - AVABRA*%0A*CATEGORIA:* 50+%0A*DATA:* " + dateStr + "%0A%0A";
+                sorted.forEach((s, i) => { text += (i+1) + "º " + s.name + " (" + s.pts + " pts / " + s.fouls + " f)%0A"; });
+                btnWp.onclick = () => { window.open("https://api.whatsapp.com/send?text=" + text); };
+                btnWp.style.display = "block";
+            } else { btnWp.style.display = "none"; }
+        }
+    }
+
+    function exportData() {
+        const data = { athletes, session };
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'backup_basketmaster_' + new Date().toISOString().slice(0,10) + '.json';
+        a.click();
+    }
+
+    function importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = readerEvent => {
+                const content = JSON.parse(readerEvent.target.result);
+                if(content.athletes) {
+                    athletes = content.athletes;
+                    session = content.session;
+                    save();
+                    alert("Backup importado!");
+                }
+            }
+            reader.readAsText(file);
+        }
+        input.click();
+    }
+
+    function resetSession() {
+        if(confirm('Zerar racha?')) {
+            session = { white: [], blue: [], queue: [], points: {}, fouls: {}, wins: 0, lastWinner: null };
+            save();
+        }
+    }
+    render();
+</script>
+</body>
+</html>
