@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V11.8</title>
+    <title>BASKETMASTER AVABRA V12.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; }
@@ -25,7 +25,6 @@
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-        .stats { font-size: 12px; font-weight: bold; }
         .btn-sair { background: var(--red); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; margin-right: 5px; cursor: pointer; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .g-pts { display: flex; gap: 2px; }
@@ -61,8 +60,8 @@
             <button class="btn-v btn-blue" onclick="vitoriaPlacar('A')">VITÓRIA AZUL</button>
         </div>
 
-        <div class="faixa">Time Branco (Vitórias: <span id="vit-w">0</span>)</div><div id="w-list"></div>
-        <div class="faixa">Time Azul (Vitórias: <span id="vit-a">0</span>)</div><div id="a-list"></div>
+        <div class="faixa">Time Branco</div><div id="w-list"></div>
+        <div class="faixa">Time Azul</div><div id="a-list"></div>
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
@@ -121,16 +120,11 @@
         window.subFl = (n) => { d.fouls[n] = Math.max(0, (d.fouls[n] || 0) - 1); d.hist_fls[n] = Math.max(0, (d.hist_fls[n] || 0) - 1); sync(); };
 
         window.terminoTempo = (btn) => {
-            if (btn === 'B') { 
-                d.streakW++; d.streakA = 0;
-                d.queue.push(...d.white, ...d.blue); 
-            } else if (btn === 'A') { 
-                d.streakA++; d.streakW = 0;
-                d.queue.push(...d.blue, ...d.white); 
-            } else { 
-                d.queue.push(...d.white, ...d.blue); 
-                d.streakW = 0; d.streakA = 0;
-            }
+            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            if (btn === 'B') { d.streakW++; d.streakA = 0; d.queue.push(...d.white, ...d.blue); }
+            else if (btn === 'A') { d.streakA++; d.streakW = 0; d.queue.push(...d.blue, ...d.white); }
+            else { d.queue.push(...d.white, ...d.blue); d.streakW = 0; d.streakA = 0; }
             d.white = []; d.blue = [];
             executarRodizio();
         };
@@ -173,8 +167,6 @@
                     </div>`).join('');
             };
             draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-            document.getElementById('vit-w').innerText = d.streakW;
-            document.getElementById('vit-a').innerText = d.streakA;
             const q = document.getElementById('q-list');
             q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}</span>`).join(' ');
             const jog = [...d.white, ...d.blue, ...d.queue];
