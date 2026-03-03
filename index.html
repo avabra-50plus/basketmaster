@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V13.6</title>
+    <title>BASKETMASTER AVABRA V13.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -31,7 +31,6 @@
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-        .stats { font-size: 12px; font-weight: bold; }
         .btn-sair { background: var(--red); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; margin-right: 5px; cursor: pointer; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .g-pts { display: flex; gap: 2px; }
@@ -91,15 +90,19 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0 };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0 };
         let abaAtiva = 'racha';
+
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) d = data.data;
+            if (d.scoreW === undefined) d.scoreW = 0;
+            if (d.scoreA === undefined) d.scoreA = 0;
             render();
         }
         setInterval(() => { if (abaAtiva !== 'atletas') { load(); } }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
+
         window.mudarAba = (aba) => {
             abaAtiva = aba;
             document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
@@ -109,12 +112,14 @@
             document.getElementById('nav-stats').classList.toggle('active', aba === 'stats');
             document.getElementById('nav-atletas').classList.toggle('active', aba === 'atletas');
         };
+
         window.cadastrarNovo = () => {
             const n = prompt("NOME:");
             if (!n) return;
             const nome = n.toUpperCase().trim();
             if (!d.all.includes(nome)) { d.all.push(nome); sync(); }
         };
+
         window.entrarNoJogo = (nome) => {
             d.points[nome] = 0; d.fouls[nome] = 0;
             if (d.white.length < 5) d.white.push(nome);
@@ -122,19 +127,31 @@
             else d.queue.push(nome);
             sync();
         };
-        window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; sync(); };
-        window.subPt = (n) => { d.points[n] = Math.max(0, (d.points[n] || 0) - 1); d.hist_pts[n] = Math.max(0, (d.hist_pts[n] || 0) - 1); sync(); };
+
+        window.addPt = (n, p) => { 
+            d.points[n] = (d.points[n] || 0) + p; 
+            d.hist_pts[n] = (d.hist_pts[n] || 0) + p; 
+            if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p;
+            sync(); 
+        };
+        window.subPt = (n) => { 
+            if ((d.points[n] || 0) > 0) {
+                d.points[n]--; d.hist_pts[n]--;
+                if (d.white.includes(n)) d.scoreW = Math.max(0, d.scoreW - 1); else d.scoreA = Math.max(0, d.scoreA - 1);
+            }
+            sync(); 
+        };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
         window.subFl = (n) => { d.fouls[n] = Math.max(0, (d.fouls[n] || 0) - 1); d.hist_fls[n] = Math.max(0, (d.hist_fls[n] || 0) - 1); sync(); };
+
         window.terminoTempo = (btn) => {
-            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
             if (btn === 'B') { d.streakW++; d.streakA = 0; d.queue.push(...d.white, ...d.blue); }
             else if (btn === 'A') { d.streakA++; d.streakW = 0; d.queue.push(...d.blue, ...d.white); }
             else { d.queue.push(...d.white, ...d.blue); d.streakW = 0; d.streakA = 0; }
-            d.white = []; d.blue = [];
+            d.white = []; d.blue = []; d.scoreW = 0; d.scoreA = 0;
             executarRodizio();
         };
+
         window.vitoriaPlacar = (vencedor) => {
             if (vencedor === 'B') {
                 d.streakW++; d.streakA = 0;
@@ -145,16 +162,19 @@
                 if (d.streakA >= 2) { d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; }
                 else { d.queue.push(...d.white); d.white = []; }
             }
+            d.scoreW = 0; d.scoreA = 0;
             executarRodizio();
         };
+
         function executarRodizio() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
             sync();
         }
+
         window.sairDoJogo = (n, l) => { if(confirm("Remover " + n + "?")) { d[l] = d[l].filter(p => p !== n); sync(); } };
-        window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; sync(); } };
+        window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; d.scoreW=0; d.scoreA=0; sync(); } };
         window.enviarWhatsApp = () => {
             let msg = "*ESTATÍSTICAS AVABRA 50+*\n\n";
             d.all.sort().forEach(p => {
@@ -163,11 +183,10 @@
             });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`);
         };
+
         function render() {
-            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            document.getElementById('score-br').innerText = ptsW;
-            document.getElementById('score-az').innerText = ptsA;
+            document.getElementById('score-br').innerText = d.scoreW || 0;
+            document.getElementById('score-az').innerText = d.scoreA || 0;
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${az ? 'azul' : ''}">
