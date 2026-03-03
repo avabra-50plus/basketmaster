@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V13.0</title>
+    <title>BASKETMASTER AVABRA V13.5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 16px; text-transform: uppercase; }
+        
+        /* PLACAR DE TRANSMISSÃO */
+        .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
+        .placar-box { text-align: center; min-width: 80px; }
+        .placar-numero { font-size: 32px; font-weight: bold; font-family: 'Courier New', monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; }
+        .placar-numero.br { background: #fff; color: #000; }
+        .placar-numero.az { background: var(--blue); color: #fff; }
+        .placar-label { font-size: 10px; font-weight: bold; margin-top: 5px; color: #666; text-transform: uppercase; }
+
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
         .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .t-br { background: #ffffff; color: #000; } 
@@ -36,7 +45,6 @@
         .espera-item { display: inline-block; margin-right: 15px; margin-bottom: 8px; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
-        .btn-del-fila { color: var(--red); font-size: 10px; margin-left: 4px; font-weight: normal; cursor: pointer; border: 1px solid var(--red); padding: 0 4px; border-radius: 3px; }
         .btn-wpp { background: var(--green); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; font-size: 14px; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
@@ -50,6 +58,19 @@
             <div class="logo">AVABRA 50+</div>
             <button style="background:var(--red);color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:10px;" onclick="resetarRacha()">Zerar Jogo</button>
         </div>
+
+        <div class="placar-live">
+            <div class="placar-box">
+                <div id="score-br" class="placar-numero br">0</div>
+                <div class="placar-label">Branco</div>
+            </div>
+            <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
+            <div class="placar-box">
+                <div id="score-az" class="placar-numero az">0</div>
+                <div class="placar-label">Azul</div>
+            </div>
+        </div>
+
         <div class="timer-area">
             <button class="btn-t t-br" onclick="terminoTempo('B')">BR +</button>
             <button class="btn-t t-az" onclick="terminoTempo('A')">AZ +</button>
@@ -96,11 +117,7 @@
             render();
         }
         
-        // MOTOR DE ATUALIZAÇÃO AUTOMÁTICA (10 SEGUNDOS)
-        setInterval(() => {
-            // Só atualiza sozinho se estiver na aba Racha ou Stats, para não atrapalhar o cadastro
-            if (abaAtiva !== 'atletas') { load(); }
-        }, 10000);
+        setInterval(() => { if (abaAtiva !== 'atletas') { load(); } }, 10000);
 
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
@@ -168,7 +185,7 @@
         window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; sync(); } };
 
         window.enviarWhatsApp = () => {
-            let msg = "*ESTATÍSTICAS AVABRA 50+*\n\n";
+            let msg = "*PLACAR AVABRA 50+*\n\n";
             d.all.sort().forEach(p => {
                 const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
                 if(pts > 0 || fls > 0) msg += `🏀 *${p}*: ${pts} PTS | ${fls} FALTAS\n`;
@@ -177,6 +194,12 @@
         };
 
         function render() {
+            // Lógica do Placar de Transmissão
+            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
+            document.getElementById('score-br').innerText = ptsW;
+            document.getElementById('score-az').innerText = ptsA;
+
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${az ? 'azul' : ''}">
@@ -192,10 +215,7 @@
             };
             draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
             const q = document.getElementById('q-list');
-            q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => {
-                const cor = (Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde';
-                return `<span class="espera-item ${cor}">${i+1}.${p} <b class="btn-del-fila" onclick="sairDoJogo('${p}', 'queue')">X</b></span>`;
-            }).join(' ');
+            q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p} <b onclick="sairDoJogo('${p}', 'queue')" style="color:red; font-weight:normal;">[X]</b></span>`).join(' ');
             const jog = [...d.white, ...d.blue, ...d.queue];
             document.getElementById('disp-list').innerHTML = d.all.filter(p => !jog.includes(p)).sort().map(p => `<div class="lista-disp" style="background:#1a1a1a;padding:10px;margin-bottom:2px;display:flex;justify-content:space-between;"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-estatisticas-geral').innerHTML = d.all.sort().map(p => {
