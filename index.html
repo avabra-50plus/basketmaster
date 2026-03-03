@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V7.7.1</title>
+    <title>BASKETMASTER AVABRA V7.7.5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; }
@@ -11,11 +11,11 @@
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
         .top-btns { display: flex; gap: 5px; padding: 10px; }
-        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; }
+        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
         .sub-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
-        .btn-s { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .btn-s { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
         .section-title { background: #0a0a0a; color: #444; padding: 5px 15px; font-size: 10px; text-transform: uppercase; text-align: left; }
         .row { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .row.blue-row { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
@@ -27,40 +27,34 @@
         .p-actions { display: flex; gap: 4px; align-items: center; }
         .btn-icon { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
         .blue-row .btn-icon { background: rgba(255,255,255,0.2); border: none; color: #fff; }
-        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; }
+        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
         .foul-trigger b { display: block; font-size: 12px; }
         .foul-trigger small { font-size: 8px; opacity: 0.7; }
         .pt-group { display: flex; gap: 2px; }
-        .btn-pt { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; }
+        .btn-pt { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; }
         .btn-pt small { display: block; font-size: 7px; color: #666; font-weight: normal; margin-top: -2px; }
         .btn-pt.orange { background: var(--orange); }
         .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; }
         .nav-btn { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; }
         .nav-btn.active { color: var(--orange); }
-        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:black; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10000; }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div style="color: #ff6b00; font-size: 20px; font-weight: bold; margin-bottom: 10px;">BASKETMASTER</div>
-        <div>Carregando Nuvem...</div>
-    </div>
-
     <div class="header">
         <div class="logo">BASKETMASTER <span style="font-size:10px; background:#222; color:#fff; padding:1px 4px; border-radius:3px;">50+</span></div>
-        <button style="background:#1a1a1a; color:#fff; border:1px solid #333; padding:5px 10px; border-radius:4px; font-size:10px;" onclick="resetar()">STATS</button>
+        <button style="background:#1a1a1a; color:#fff; border:1px solid #333; padding:5px 10px; border-radius:4px; font-size:10px;" onclick="reset()">STATS</button>
     </div>
 
     <div class="top-btns">
-        <button class="btn-v btn-white" onclick="vitoria('B')">VITORIA BRANCO</button>
-        <button class="btn-v btn-blue" onclick="vitoria('A')">VITORIA AZUL</button>
+        <button class="btn-v btn-white" onclick="win('B')">VITORIA BRANCO</button>
+        <button class="btn-v btn-blue" onclick="win('A')">VITORIA AZUL</button>
     </div>
 
     <div class="sub-menu">
         <button class="btn-s">T (BR+)</button>
         <button class="btn-s">T (AZ+)</button>
-        <button class="btn-s" onclick="addAtleta()">+ ATLETA</button>
+        <button class="btn-s" onclick="add()">+ ATLETA</button>
     </div>
 
     <div class="section-title">Time Branco</div>
@@ -72,95 +66,82 @@
 
     <div class="nav">
         <div class="nav-btn active">RACHA</div>
-        <div class="nav-btn" id="q-count">ATLETAS (0)</div>
+        <div id="q-count" class="nav-btn">ATLETAS (0)</div>
     </div>
 
     <script>
-        const URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
-        const KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
-        let sb;
-        let estado = { white: [], blue: [], queue: [], points: {}, fouls: {} };
+        const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
+        const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
+        const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        // Forçar entrada se a nuvem demorar 3 segundos
-        setTimeout(() => { if(document.getElementById('loader')) fecharLoader(); }, 3500);
+        let state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
 
-        window.onload = async () => {
-            try {
-                sb = supabase.createClient(URL, KEY);
-                const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
-                if (data && data.data) estado = data.data;
-                render();
-                fecharLoader();
-            } catch (e) {
-                console.log(e);
-                fecharLoader();
-            }
-        };
-
-        function fecharLoader() {
-            const l = document.getElementById('loader');
-            if(l) l.style.display = 'none';
+        async function load() {
+            const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
+            if (data && data.data) state = data.data;
+            render();
         }
 
         async function sync() {
             render();
-            if(sb) await sb.from('racha_session').update({ data: estado }).eq('id', 1);
+            await sb.from('racha_session').update({ data: state }).eq('id', 1);
         }
 
-        window.addAtleta = () => {
+        window.add = () => {
             const n = prompt("NOME:");
             if (!n) return;
             const nome = n.toUpperCase();
-            estado.points[nome] = 0;
-            estado.fouls[nome] = 0;
-            if (estado.white.length < 5) estado.white.push(nome);
-            else if (estado.blue.length < 5) estado.blue.push(nome);
-            else estado.queue.push(nome);
+            state.points[nome] = 0; state.fouls[nome] = 0;
+            if (state.white.length < 5) state.white.push(nome);
+            else if (state.blue.length < 5) state.blue.push(nome);
+            else state.queue.push(nome);
             sync();
         };
 
-        window.addP = (n, p) => { estado.points[n] = (estado.points[n] || 0) + p; sync(); };
-        window.addF = (n) => { 
-            estado.fouls[n] = (estado.fouls[n] || 0) + 1; 
-            if(estado.fouls[n] >= 4) alert(n + " ESTOUROU!"); 
+        window.pt = (n, p) => { state.points[n] = (state.points[n] || 0) + p; sync(); };
+        window.fl = (n) => { 
+            state.fouls[n] = (state.fouls[n] || 0) + 1; 
+            if(state.fouls[n] >= 4) alert(n + " ESTOUROU!"); 
             sync(); 
         };
 
-        window.vitoria = (t) => {
-            const perdedores = (t === 'B') ? estado.blue : estado.white;
-            estado.queue.push(...perdedores);
-            perdedores.length = 0;
-            while (perdedores.length < 5 && estado.queue.length > 0) perdedores.push(estado.queue.shift());
-            Object.keys(estado.fouls).forEach(k => estado.fouls[k] = 0);
+        window.win = (t) => {
+            const losers = (t === 'B') ? state.blue : state.white;
+            state.queue.push(...losers);
+            losers.length = 0;
+            while (losers.length < 5 && state.queue.length > 0) losers.push(state.queue.shift());
+            Object.keys(state.fouls).forEach(k => state.fouls[k] = 0);
             sync();
         };
 
-        window.resetar = () => { if(confirm("ZERAR?")) { estado = { white: [], blue: [], queue: [], points: {}, fouls: {} }; sync(); } };
+        window.reset = () => { if(confirm("ZERAR?")) { state = { white: [], blue: [], queue: [], points: {}, fouls: {} }; sync(); } };
 
         function render() {
-            const build = (list, id, blue) => {
+            const draw = (list, id, blue) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="row ${blue ? 'blue-row' : ''}">
                         <div class="p-info">
-                            <span class="p-name">${p} <b>(${estado.points[p]||0})</b></span>
-                            <span class="p-stats">F: ${estado.fouls[p]||0}</span>
+                            <span class="p-name">${p} <b>(${state.points[p]||0})</b></span>
+                            <span class="p-stats">F: ${state.fouls[p]||0}</span>
                         </div>
                         <div class="p-actions">
                             <button class="btn-icon">🚪</button><button class="btn-icon">🚑</button>
-                            <div class="foul-trigger" onclick="addF('${p}')"><b>F+</b><small>-F</small></div>
+                            <div class="foul-trigger" onclick="fl('${p}')"><b>F+</b><small>-F</small></div>
                             <div class="pt-group">
-                                <button class="btn-pt" onclick="addP('${p}',1)">1</button>
-                                <button class="btn-pt" onclick="addP('${p}',2)">2<small>ERRO</small></button>
-                                <button class="btn-pt orange" onclick="addP('${p}',3)">3</button>
+                                <button class="btn-pt" onclick="pt('${p}',1)">1</button>
+                                <button class="btn-pt" onclick="pt('${p}',2)">2<small>ERRO</small></button>
+                                <button class="btn-pt orange" onclick="pt('${p}',3)">3</button>
                             </div>
                         </div>
                     </div>
                 `).join('');
             };
-            build(estado.white, 'w-list', false);
-            build(estado.blue, 'a-list', true);
-            document.getElementById('q-count').innerText = `ATLETAS (${estado.queue.length})`;
+            draw(state.white, 'w-list', false);
+            draw(state.blue, 'a-list', true);
+            document.getElementById('q-count').innerText = `ATLETAS (${state.queue.length})`;
         }
+
+        load();
     </script>
 </body>
 </html>
