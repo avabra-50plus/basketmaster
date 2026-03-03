@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V12.0</title>
+    <title>BASKETMASTER AVABRA V12.5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; }
+        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 16px; text-transform: uppercase; }
@@ -33,9 +33,11 @@
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
         .azul .btn-corrige { border-color: rgba(255,255,255,0.4); color: #fff; }
         #q-list { padding: 15px; background: #0a0a0a; font-size: 14px; font-weight: bold; }
-        .espera-item { display: inline-block; margin-right: 12px; margin-bottom: 5px; }
+        .espera-item { display: inline-block; margin-right: 15px; margin-bottom: 8px; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
+        .btn-del-fila { color: var(--red); font-size: 10px; margin-left: 4px; font-weight: normal; cursor: pointer; border: 1px solid var(--red); padding: 0 4px; border-radius: 3px; }
+        .btn-wpp { background: var(--green); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; font-size: 14px; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -48,26 +50,31 @@
             <div class="logo">AVABRA 50+</div>
             <button style="background:var(--red);color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:10px;" onclick="resetarRacha()">Zerar Jogo</button>
         </div>
-
         <div class="timer-area">
             <button class="btn-t t-br" onclick="terminoTempo('B')">BR +</button>
             <button class="btn-t t-az" onclick="terminoTempo('A')">AZ +</button>
             <button class="btn-t t-em" onclick="terminoTempo('E')">EMPATE</button>
         </div>
-
         <div class="vitoria-btns">
             <button class="btn-v btn-white" onclick="vitoriaPlacar('B')">VITÓRIA BRANCO</button>
             <button class="btn-v btn-blue" onclick="vitoriaPlacar('A')">VITÓRIA AZUL</button>
         </div>
-
         <div class="faixa">Time Branco</div><div id="w-list"></div>
         <div class="faixa">Time Azul</div><div id="a-list"></div>
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
 
-    <div id="view-stats" style="display:none; padding:15px;"><h2 style="color:var(--orange); font-size:18px;">RELATÓRIO DO TREINO</h2><div id="lista-estatisticas-geral"></div></div>
-    <div id="view-atletas" style="display:none; padding:20px;"><button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button><div id="lista-cadastrados" style="margin-top:20px;"></div></div>
+    <div id="view-stats" style="display:none; padding:15px;">
+        <h2 style="color:var(--orange); font-size:18px; margin-bottom:15px;">RELATÓRIO DO TREINO</h2>
+        <button class="btn-wpp" onclick="enviarWhatsApp()">ENVIAR PARA WHATSAPP</button>
+        <div id="lista-estatisticas-geral"></div>
+    </div>
+
+    <div id="view-atletas" style="display:none; padding:20px;">
+        <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
+        <div id="lista-cadastrados" style="margin-top:20px;"></div>
+    </div>
 
     <div style="height:100px"></div>
     <div class="rodape">
@@ -87,7 +94,6 @@
             if (data && data.data) d = data.data;
             render();
         }
-
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         window.mudarAba = (aba) => {
@@ -149,8 +155,17 @@
             sync();
         }
 
-        window.sairDoJogo = (n, l) => { if(confirm("Remover?")) { d[l] = d[l].filter(p => p !== n); sync(); } };
+        window.sairDoJogo = (n, l) => { if(confirm("Remover " + n + "?")) { d[l] = d[l].filter(p => p !== n); sync(); } };
         window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; sync(); } };
+
+        window.enviarWhatsApp = () => {
+            let msg = "*ESTATÍSTICAS AVABRA 50+*\n\n";
+            d.all.sort().forEach(p => {
+                const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
+                if(pts > 0 || fls > 0) msg += `🏀 *${p}*: ${pts} PTS | ${fls} FALTAS\n`;
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`);
+        };
 
         function render() {
             const draw = (list, id, az, slug) => {
@@ -168,13 +183,16 @@
             };
             draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
             const q = document.getElementById('q-list');
-            q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}</span>`).join(' ');
+            q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => {
+                const cor = (Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde';
+                return `<span class="espera-item ${cor}">${i+1}.${p} <b class="btn-del-fila" onclick="sairDoJogo('${p}', 'queue')">X</b></span>`;
+            }).join(' ');
             const jog = [...d.white, ...d.blue, ...d.queue];
             document.getElementById('disp-list').innerHTML = d.all.filter(p => !jog.includes(p)).sort().map(p => `<div class="lista-disp" style="background:#1a1a1a;padding:10px;margin-bottom:2px;display:flex;justify-content:space-between;"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-estatisticas-geral').innerHTML = d.all.sort().map(p => {
                 const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
                 if(pts === 0 && fls === 0) return '';
-                return `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;"><span>${p}</span><span>PTS: <b style="color:var(--orange)">${pts}</b> | F: <b style="color:var(--orange)">${fls}</b></span></div>`;
+                return `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;border-radius:4px;"><span>${p}</span><span>PTS: <b style="color:var(--orange)">${pts}</b> | F: <b style="color:var(--orange)">${fls}</b></span></div>`;
             }).join('');
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="padding:10px;border-bottom:1px solid #333;color:#aaa;">${p}</div>`).join('');
         }
