@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V7.7.0</title>
+    <title>BASKETMASTER AVABRA V7.7.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; }
-        body { font-family: Arial, Helvetica, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
-        .stats-btn { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 5px 12px; border-radius: 4px; font-size: 11px; }
         .top-btns { display: flex; gap: 5px; padding: 10px; }
-        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
+        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
         .sub-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
@@ -21,183 +20,147 @@
         .row { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .row.blue-row { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .p-info { flex: 1; text-align: left; }
-        .p-name { font-weight: bold; font-size: 13px; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100px; }
+        .p-name { font-weight: bold; font-size: 13px; display: block; }
         .p-stats { font-size: 12px; font-weight: bold; }
         .p-stats b { color: #ff0000; }
         .blue-row .p-stats b { color: #ffeb3b; }
         .p-actions { display: flex; gap: 4px; align-items: center; }
         .btn-icon { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
         .blue-row .btn-icon { background: rgba(255,255,255,0.2); border: none; color: #fff; }
-        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; min-width: 32px; }
+        .foul-trigger { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; }
         .foul-trigger b { display: block; font-size: 12px; }
         .foul-trigger small { font-size: 8px; opacity: 0.7; }
         .pt-group { display: flex; gap: 2px; }
         .btn-pt { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; }
         .btn-pt small { display: block; font-size: 7px; color: #666; font-weight: normal; margin-top: -2px; }
         .btn-pt.orange { background: var(--orange); }
-        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 999; }
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; }
         .nav-btn { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; }
         .nav-btn.active { color: var(--orange); }
-        #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:black; color:white; display:flex; align-items:center; justify-content:center; z-index:9999; font-size:12px; text-transform:uppercase; letter-spacing:2px; }
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:black; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10000; }
     </style>
 </head>
 <body>
 
-    <div id="loading-screen">Carregando Nuvem...</div>
+    <div id="loader">
+        <div style="color: #ff6b00; font-size: 20px; font-weight: bold; margin-bottom: 10px;">BASKETMASTER</div>
+        <div>Carregando Nuvem...</div>
+    </div>
 
     <div class="header">
         <div class="logo">BASKETMASTER <span style="font-size:10px; background:#222; color:#fff; padding:1px 4px; border-radius:3px;">50+</span></div>
-        <button class="stats-btn" onclick="confirmReset()">STATS</button>
+        <button style="background:#1a1a1a; color:#fff; border:1px solid #333; padding:5px 10px; border-radius:4px; font-size:10px;" onclick="resetar()">STATS</button>
     </div>
 
     <div class="top-btns">
-        <button class="btn-v btn-white" onclick="handleWin('B')">VITORIA BRANCO</button>
-        <button class="btn-v btn-blue" onclick="handleWin('A')">VITORIA AZUL</button>
+        <button class="btn-v btn-white" onclick="vitoria('B')">VITORIA BRANCO</button>
+        <button class="btn-v btn-blue" onclick="vitoria('A')">VITORIA AZUL</button>
     </div>
 
     <div class="sub-menu">
         <button class="btn-s">T (BR+)</button>
         <button class="btn-s">T (AZ+)</button>
-        <button class="btn-s" onclick="handleAddNew()">+ ATLETA</button>
+        <button class="btn-s" onclick="addAtleta()">+ ATLETA</button>
     </div>
 
     <div class="section-title">Time Branco</div>
-    <div id="white-container"></div>
-
+    <div id="w-list"></div>
     <div class="section-title">Time Azul</div>
-    <div id="blue-container"></div>
+    <div id="a-list"></div>
 
     <div style="height:80px"></div>
 
     <div class="nav">
         <div class="nav-btn active">RACHA</div>
-        <div class="nav-btn" id="queue-label">ATLETAS (0)</div>
+        <div class="nav-btn" id="q-count">ATLETAS (0)</div>
     </div>
 
     <script>
-        // CONFIGURAÇÕES
-        const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
-        const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
-        
-        let supabase;
-        let appState = { white: [], blue: [], queue: [], points: {}, fouls: {} };
+        const URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
+        const KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
+        let sb;
+        let estado = { white: [], blue: [], queue: [], points: {}, fouls: {} };
 
-        // INICIALIZAÇÃO SEGURA
+        // Forçar entrada se a nuvem demorar 3 segundos
+        setTimeout(() => { if(document.getElementById('loader')) fecharLoader(); }, 3500);
+
         window.onload = async () => {
             try {
-                supabase = window.supabase.createClient(SB_URL, SB_KEY);
-                await fetchData();
-                document.getElementById('loading-screen').style.display = 'none';
-            } catch (err) {
-                document.getElementById('loading-screen').innerText = "Erro de Conexão";
+                sb = supabase.createClient(URL, KEY);
+                const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
+                if (data && data.data) estado = data.data;
+                render();
+                fecharLoader();
+            } catch (e) {
+                console.log(e);
+                fecharLoader();
             }
         };
 
-        async function fetchData() {
-            const { data, error } = await supabase.from('racha_session').select('data').eq('id', 1).single();
-            if (data && data.data) {
-                appState = data.data;
-            }
+        function fecharLoader() {
+            const l = document.getElementById('loader');
+            if(l) l.style.display = 'none';
+        }
+
+        async function sync() {
             render();
+            if(sb) await sb.from('racha_session').update({ data: estado }).eq('id', 1);
         }
 
-        async function updateCloud() {
-            render(); // Atualiza visual na hora
-            await supabase.from('racha_session').update({ data: appState }).eq('id', 1);
-        }
-
-        // FUNÇÕES DE BOTÃO
-        window.handleAddNew = function() {
-            const name = prompt("Nome do Jogador:");
-            if (!name) return;
-            const upperName = name.toUpperCase().trim();
-            
-            if (!appState.points) appState.points = {};
-            if (!appState.fouls) appState.fouls = {};
-            
-            appState.points[upperName] = 0;
-            appState.fouls[upperName] = 0;
-
-            if (appState.white.length < 5) appState.white.push(upperName);
-            else if (appState.blue.length < 5) appState.blue.push(upperName);
-            else appState.queue.push(upperName);
-            
-            updateCloud();
+        window.addAtleta = () => {
+            const n = prompt("NOME:");
+            if (!n) return;
+            const nome = n.toUpperCase();
+            estado.points[nome] = 0;
+            estado.fouls[nome] = 0;
+            if (estado.white.length < 5) estado.white.push(nome);
+            else if (estado.blue.length < 5) estado.blue.push(nome);
+            else estado.queue.push(nome);
+            sync();
         };
 
-        window.addPt = function(pName, value) {
-            appState.points[pName] = (appState.points[pName] || 0) + value;
-            updateCloud();
+        window.addP = (n, p) => { estado.points[n] = (estado.points[n] || 0) + p; sync(); };
+        window.addF = (n) => { 
+            estado.fouls[n] = (estado.fouls[n] || 0) + 1; 
+            if(estado.fouls[n] >= 4) alert(n + " ESTOUROU!"); 
+            sync(); 
         };
 
-        window.addFl = function(pName) {
-            appState.fouls[pName] = (appState.fouls[pName] || 0) + 1;
-            if (appState.fouls[pName] >= 4) alert("🚨 " + pName + " ESTOUROU!");
-            updateCloud();
+        window.vitoria = (t) => {
+            const perdedores = (t === 'B') ? estado.blue : estado.white;
+            estado.queue.push(...perdedores);
+            perdedores.length = 0;
+            while (perdedores.length < 5 && estado.queue.length > 0) perdedores.push(estado.queue.shift());
+            Object.keys(estado.fouls).forEach(k => estado.fouls[k] = 0);
+            sync();
         };
 
-        window.handleWin = function(teamLetter) {
-            const losingTeam = (teamLetter === 'B') ? appState.blue : appState.white;
-            appState.queue.push(...losingTeam);
-            losingTeam.length = 0;
-            
-            while (losingTeam.length < 5 && appState.queue.length > 0) {
-                losingTeam.push(appState.queue.shift());
-            }
-            
-            // Zerar faltas
-            Object.keys(appState.fouls).forEach(k => appState.fouls[k] = 0);
-            updateCloud();
-        };
+        window.resetar = () => { if(confirm("ZERAR?")) { estado = { white: [], blue: [], queue: [], points: {}, fouls: {} }; sync(); } };
 
-        window.confirmReset = function() {
-            if (confirm("Deseja zerar o sistema completamente?")) {
-                appState = { white: [], blue: [], queue: [], points: {}, fouls: {} };
-                updateCloud();
-            }
-        };
-
-        // RENDERIZAÇÃO
         function render() {
-            const createList = (list, containerId, isBlue) => {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                container.innerHTML = list.map(player => `
-                    <div class="row ${isBlue ? 'blue-row' : ''}">
+            const build = (list, id, blue) => {
+                document.getElementById(id).innerHTML = list.map(p => `
+                    <div class="row ${blue ? 'blue-row' : ''}">
                         <div class="p-info">
-                            <span class="p-name">${player} <b>(${appState.points[player] || 0})</b></span>
-                            <span class="p-stats">F: ${appState.fouls[player] || 0}</span>
+                            <span class="p-name">${p} <b>(${estado.points[p]||0})</b></span>
+                            <span class="p-stats">F: ${estado.fouls[p]||0}</span>
                         </div>
                         <div class="p-actions">
-                            <button class="btn-icon">🚪</button>
-                            <button class="btn-icon">🚑</button>
-                            <div class="foul-trigger" onclick="addFl('${player}')"><b>F+</b><small>-F</small></div>
+                            <button class="btn-icon">🚪</button><button class="btn-icon">🚑</button>
+                            <div class="foul-trigger" onclick="addF('${p}')"><b>F+</b><small>-F</small></div>
                             <div class="pt-group">
-                                <button class="btn-pt" onclick="addPt('${player}', 1)">1</button>
-                                <button class="btn-pt" onclick="addPt('${player}', 2)">2<small>ERRO</small></button>
-                                <button class="btn-pt orange" onclick="addPt('${player}', 3)">3</button>
+                                <button class="btn-pt" onclick="addP('${p}',1)">1</button>
+                                <button class="btn-pt" onclick="addP('${p}',2)">2<small>ERRO</small></button>
+                                <button class="btn-pt orange" onclick="addP('${p}',3)">3</button>
                             </div>
                         </div>
                     </div>
                 `).join('');
             };
-
-            createList(appState.white, 'white-container', false);
-            createList(appState.blue, 'blue-container', true);
-            document.getElementById('queue-label').innerText = `ATLETAS (${appState.queue.length})`;
+            build(estado.white, 'w-list', false);
+            build(estado.blue, 'a-list', true);
+            document.getElementById('q-count').innerText = `ATLETAS (${estado.queue.length})`;
         }
-
-        // REALTIME
-        setTimeout(() => {
-            supabase.channel('changes').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, payload => {
-                if (payload.new && payload.new.data) {
-                    appState = payload.new.data;
-                    render();
-                }
-            }).subscribe();
-        }, 2000);
-
     </script>
 </body>
 </html>
