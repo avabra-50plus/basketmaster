@@ -3,60 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V7.6.1</title>
+    <title>BASKETMASTER AVABRA V7.6.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #ff6b00; --dark: #1a1a1a; --white: #ffffff; --blue: #0047ab; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: var(--white); margin: 0; padding: 10px; text-align: center; }
-        .header { background: linear-gradient(145deg, #222, #000); padding: 15px; border-radius: 15px; border: 2px solid var(--primary); margin-bottom: 15px; }
-        h1 { color: var(--primary); margin: 0; font-size: 24px; text-transform: uppercase; }
-        .cloud-status { font-size: 10px; color: #4caf50; margin-top: 5px; }
+        :root { --primary: #ff6b00; --dark: #121212; --white: #ffffff; --blue: #0047ab; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--dark); color: var(--white); margin: 0; padding: 8px; text-align: center; overflow-x: hidden; }
         
-        .teams-container { display: flex; gap: 10px; margin-bottom: 15px; }
-        .team-card { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #444; min-height: 150px; }
-        .team-white { background: #f0f0f0; color: #000; }
-        .team-blue { background: var(--blue); color: #fff; border-color: #002d6b; }
+        .header { background: linear-gradient(145deg, #222, #000); padding: 12px; border-radius: 12px; border: 1px solid var(--primary); margin-bottom: 10px; }
+        h1 { color: var(--primary); margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .cloud-status { font-size: 9px; color: #4caf50; margin-top: 4px; font-weight: bold; }
         
-        .player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1); margin: 5px 0; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 14px; }
-        .foul-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold; margin-left: 5px; }
-        .points-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .teams-container { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+        .team-card { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #444; min-height: 200px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .team-white { background: #e0e0e0; color: #000; }
+        .team-blue { background: var(--blue); color: #fff; border-color: #003380; }
+        
+        h3 { margin: 0 0 8px 0; font-size: 16px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 4px; }
+        .team-blue h3 { border-bottom: 1px solid rgba(255,255,255,0.2); }
 
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; }
-        .btn-add { background: #4caf50; color: white; }
-        .btn-win { background: var(--primary); color: white; }
-        .btn-reset { background: #666; color: white; grid-column: span 2; margin-top: 10px; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.08); margin: 4px 0; padding: 6px; border-radius: 6px; font-weight: bold; font-size: 13px; }
+        .team-blue .player-item { background: rgba(255,255,255,0.1); }
         
-        #queue-list { background: #333; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: left; border-left: 4px solid var(--primary); }
+        .foul-controls { display: flex; align-items: center; gap: 4px; }
+        .foul-btn { background: #ff4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 14px; touch-action: manipulation; }
+        .points-badge { background: #333; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; min-width: 20px; }
+        .team-white .points-badge { background: #555; }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button { padding: 14px 5px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; touch-action: manipulation; }
+        .btn-add { background: #2e7d32; color: white; }
+        .btn-win { background: var(--primary); color: white; }
+        .btn-reset { background: #444; color: #bbb; grid-column: span 2; margin-top: 5px; padding: 10px; }
+        
+        #queue-list { background: #1e1e1e; padding: 12px; border-radius: 10px; margin-top: 10px; text-align: left; border: 1px solid #333; }
+        .queue-title { color: var(--primary); font-size: 14px; display: block; margin-bottom: 5px; border-bottom: 1px solid #333; }
+        #list-queue { color: #aaa; font-size: 13px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>AVABRA MASTER 50</h1>
-        <div id="status" class="cloud-status">● CONECTADO À NUVEM (V7.6.1)</div>
+        <div id="status" class="cloud-status">● SISTEMA ONLINE</div>
     </div>
 
     <div class="teams-container">
         <div class="team-card team-white">
-            <h3 style="margin-top:0">BRANCO</h3>
+            <h3>BRANCO</h3>
             <div id="list-white"></div>
         </div>
         <div class="team-card team-blue">
-            <h3 style="margin-top:0">AZUL</h3>
+            <h3>AZUL</h3>
             <div id="list-blue"></div>
         </div>
     </div>
 
     <div class="controls">
-        <button class="btn-add" onclick="addPlayer()">+ NOVO ATLETA</button>
-        <button class="btn-win" onclick="winGame()">VITÓRIA / PRÓXIMO</button>
+        <button class="btn-add" onclick="addPlayer()">+ ATLETA</button>
+        <button class="btn-win" onclick="winGame()">VITÓRIA</button>
         <button class="btn-reset" onclick="resetSystem()">ZERAR TUDO</button>
     </div>
 
     <div id="queue-list">
-        <strong>PRÓXIMOS DA FILA:</strong>
-        <div id="list-queue" style="margin-top: 10px; color: #ffab00; font-weight: bold;"></div>
+        <strong class="queue-title">PRÓXIMOS:</strong>
+        <div id="list-queue">Vazio</div>
     </div>
 
     <script>
@@ -66,46 +76,35 @@
 
         let state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
 
-        // 1. Carregar dados da Nuvem
         async function loadData() {
-            const { data, error } = await supabaseClient.from('racha_session').select('data').eq('id', 1).single();
-            if (data) {
-                state = data.data;
-                render();
-            }
-            // Tenta recuperar nomes antigos do aparelho após carregar a nuvem
+            const { data } = await supabaseClient.from('racha_session').select('data').eq('id', 1).single();
+            if (data) { state = data.data; render(); }
             migrarDadosAntigos();
         }
 
-        // 2. Tentar resgatar nomes da versão offline
         async function migrarDadosAntigos() {
-            const salvoAntigo = localStorage.getItem('racha_avabra_data'); // Nome da chave que usávamos antes
+            const salvoAntigo = localStorage.getItem('racha_avabra_data');
             if (salvoAntigo) {
                 const dadosRecuperados = JSON.parse(salvoAntigo);
-                // Se a nuvem estiver vazia mas o celular tiver nomes, pergunta se quer subir
-                if (state.white.length === 0 && (dadosRecuperados.white.length > 0 || dadosRecuperados.queue.length > 0)) {
-                    if (confirm("Encontrei nomes salvos neste celular da versão anterior. Deseja recuperá-los para a nuvem?")) {
+                if (state.white.length === 0 && (dadosRecuperados.white.length > 0)) {
+                    if (confirm("Recuperar nomes antigos para a nuvem?")) {
                         state = dadosRecuperados;
                         sync();
-                        localStorage.removeItem('racha_avabra_data'); // Limpa para não perguntar mais
-                        alert("Nomes recuperados!");
+                        localStorage.removeItem('racha_avabra_data');
                     }
                 }
             }
         }
 
-        // 3. Sincronizar com a Nuvem
         async function sync() {
             await supabaseClient.from('racha_session').update({ data: state }).eq('id', 1);
             render();
         }
 
         function addPlayer() {
-            const name = prompt("Nome do Atleta:").toUpperCase();
+            const name = prompt("Nome:").toUpperCase();
             if (!name) return;
-            if (!state.points[name]) state.points[name] = 0;
             if (!state.fouls[name]) state.fouls[name] = 0;
-            
             if (state.white.length < 5) state.white.push(name);
             else if (state.blue.length < 5) state.blue.push(name);
             else state.queue.push(name);
@@ -114,12 +113,12 @@
 
         function addFoul(name) {
             state.fouls[name] = (state.fouls[name] || 0) + 1;
-            if (state.fouls[name] >= 4) alert("🚨 " + name + " ESTOUROU EM FALTAS!");
+            if (state.fouls[name] >= 4) alert("🚨 " + name + " FORA (4 FALTAS)!");
             sync();
         }
 
         function winGame() {
-            const winner = prompt("Quem venceu? (B para Branco / A para Azul)").toUpperCase();
+            const winner = prompt("Quem venceu? (B ou A)").toUpperCase();
             if (winner === 'B') rotate(state.blue);
             else if (winner === 'A') rotate(state.white);
         }
@@ -130,13 +129,12 @@
             while (losingTeam.length < 5 && state.queue.length > 0) {
                 losingTeam.push(state.queue.shift());
             }
-            // Zera faltas para a próxima partida
             Object.keys(state.fouls).forEach(p => state.fouls[p] = 0);
             sync();
         }
 
         function resetSystem() {
-            if (confirm("Deseja zerar todo o racha da nuvem?")) {
+            if (confirm("Zerar tudo?")) {
                 state = { white: [], blue: [], queue: [], points: {}, fouls: {} };
                 sync();
             }
@@ -147,8 +145,8 @@
                 const el = document.getElementById(elementId);
                 el.innerHTML = list.map(p => `
                     <div class="player-item">
-                        <span>${p}</span>
-                        <div>
+                        <span>${p.substring(0, 10)}</span>
+                        <div class="foul-controls">
                             <span class="points-badge">${state.fouls[p] || 0}F</span>
                             <button class="foul-btn" onclick="addFoul('${p}')">F</button>
                         </div>
@@ -157,10 +155,9 @@
             };
             draw(state.white, 'list-white');
             draw(state.blue, 'list-blue');
-            document.getElementById('list-queue').innerText = state.queue.join(' → ') || 'Vazio';
+            document.getElementById('list-queue').innerText = state.queue.join(' - ') || 'Vazio';
         }
 
-        // Escutar mudanças em tempo real de outros aparelhos
         supabaseClient.channel('any').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'racha_session' }, payload => {
             state = payload.new.data;
             render();
