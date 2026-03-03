@@ -3,59 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER 50+</title>
+    <title>BASKETMASTER AVABRA V8.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; }
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; user-select: none; }
+        
+        /* Header */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; }
+        .stats-btn { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 5px 12px; border-radius: 4px; font-size: 11px; }
+
+        /* Vitoria */
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
         .btn-w { background: #fff; color: #000; }
         .btn-b { background: var(--blue); color: #fff; }
+
+        /* Menu Meio */
         .menu-meio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
         .btn-m { background: #1a1a1a; color: #888; border: none; padding: 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
+
+        /* Listas */
         .faixa { background: #0a0a0a; color: #444; padding: 5px 15px; font-size: 10px; text-transform: uppercase; text-align: left; }
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
+        
         .info { flex: 1; text-align: left; }
         .nome { font-weight: bold; font-size: 13px; display: block; }
         .stats { font-size: 12px; font-weight: bold; }
-        .stats span { color: #ff0000; }
-        .azul .stats span { color: #ffeb3b; }
+        .stats b { color: #ff0000; }
+        .azul .stats b { color: #ffeb3b; }
+
         .acoes { display: flex; gap: 4px; align-items: center; }
         .btn-i { background: #efefef; border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 14px; }
         .azul .btn-i { background: rgba(255,255,255,0.2); border: none; color: #fff; }
+
+        /* Faltas e Pontos */
         .f-box { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
         .f-box b { display: block; font-size: 12px; }
         .f-box s { font-size: 8px; text-decoration: none; opacity: 0.7; }
+
         .g-pts { display: flex; gap: 2px; }
-        .btn-p { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; }
-        .btn-p i { display: block; font-size: 7px; color: #666; font-style: normal; margin-top: -2px; }
+        .btn-p { width: 34px; height: 34px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-p i { font-size: 7px; color: #666; font-style: normal; margin-top: -2px; font-weight: normal; }
         .btn-p.laranja { background: var(--orange); }
-        .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; }
-        .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; }
+
+        /* Rodapé */
+        .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
+        .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
+
+        /* Modal da Fila */
+        #modal-fila { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 20px; box-sizing: border-box; }
+        .fila-item { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
+
+    <div id="modal-fila">
+        <h2 style="color: var(--orange)">FILA DE ESPERA</h2>
+        <div id="lista-espera"></div>
+        <button onclick="toggleFila()" style="margin-top: 20px; padding: 10px; width: 100%; background: #333; color: #fff; border: none;">VOLTAR</button>
+    </div>
+
     <div class="header">
-        <div class="logo">BASKETMASTER</div>
-        <button onclick="res()" style="background:#1a1a1a;color:#fff;border:none;padding:5px;font-size:10px;">STATS</button>
+        <div class="logo">BASKETMASTER 50+</div>
+        <button class="stats-btn" onclick="resetar()">STATS</button>
     </div>
+
     <div class="vitoria-btns">
-        <button class="btn-v btn-w" onclick="win('B')">VITORIA BRANCO</button>
-        <button class="btn-v btn-b" onclick="win('A')">VITORIA AZUL</button>
+        <button class="btn-v btn-w" onclick="vitoria('B')">VITORIA BRANCO</button>
+        <button class="btn-v btn-b" onclick="vitoria('A')">VITORIA AZUL</button>
     </div>
+
     <div class="menu-meio">
-        <button class="btn-m">T (BR+)</button><button class="btn-m">T (AZ+)</button>
-        <button class="btn-m" onclick="add()">+ ATLETA</button>
+        <button class="btn-m">T (BR+)</button>
+        <button class="btn-m">T (AZ+)</button>
+        <button class="btn-m" onclick="addJogador()">+ ATLETA</button>
     </div>
-    <div class="faixa">Time Branco</div><div id="w"></div>
-    <div class="faixa">Time Azul</div><div id="a"></div>
+
+    <div class="faixa">Time Branco</div>
+    <div id="w-list"></div>
+
+    <div class="faixa">Time Azul</div>
+    <div id="a-list"></div>
+
     <div style="height:80px"></div>
-    <div class="rodape"><div class="nav-b active">RACHA</div><div id="ql" class="nav-b">ATLETAS (0)</div></div>
+
+    <div class="rodape">
+        <div class="nav-b active" onclick="toggleFila(false)">RACHA</div>
+        <div id="q-btn" class="nav-b" onclick="toggleFila(true)">ATLETAS (0)</div>
+    </div>
 
     <script>
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
@@ -74,46 +113,61 @@
             await sb.from('racha_session').update({ data: d }).eq('id', 1);
         }
 
-        window.add = () => {
-            const n = prompt("NOME:");
+        window.addJogador = () => {
+            const n = prompt("NOME DO ATLETA:");
             if (!n) return;
-            const nm = n.toUpperCase();
+            const nome = n.toUpperCase();
             if(!d.points) d.points = {}; if(!d.fouls) d.fouls = {};
-            d.points[nm] = 0; d.fouls[nm] = 0;
-            if (d.white.length < 5) d.white.push(nm);
-            else if (d.blue.length < 5) d.blue.push(nm);
-            else d.queue.push(nm);
+            d.points[nome] = 0; d.fouls[nome] = 0;
+            
+            // Lógica de Fila: só entra no time se houver vaga (<5)
+            if (d.white.length < 5) d.white.push(nome);
+            else if (d.blue.length < 5) d.blue.push(nome);
+            else d.queue.push(nome);
             sync();
         };
 
-        window.pt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; sync(); };
-        window.fl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; sync(); };
+        window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; sync(); };
+        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; if(d.fouls[n]>=4) alert(n+" ESTOUROU!"); sync(); };
 
-        window.win = (t) => {
-            const l = (t === 'B') ? d.blue : d.white;
-            d.queue.push(...l); l.length = 0;
-            while (l.length < 5 && d.queue.length > 0) l.push(d.queue.shift());
+        window.vitoria = (vencedor) => {
+            const perdedores = (vencedor === 'B') ? d.blue : d.white;
+            d.queue.push(...perdedores);
+            perdedores.length = 0;
+            while (perdedores.length < 5 && d.queue.length > 0) perdedores.push(d.queue.shift());
             Object.keys(d.fouls).forEach(k => d.fouls[k] = 0);
             sync();
         };
 
-        window.res = () => { if(confirm("ZERAR?")) { d={white:[],blue:[],queue:[],points:{},fouls:{}}; sync(); } };
+        window.toggleFila = (show) => {
+            document.getElementById('modal-fila').style.display = show ? 'block' : 'none';
+        };
+
+        window.resetar = () => { if(confirm("ZERAR?")) { d={white:[],blue:[],queue:[],points:{},fouls:{}}; sync(); } };
 
         function render() {
-            const draw = (list, id, az) => {
+            const draw = (list, id, azul) => {
                 document.getElementById(id).innerHTML = list.map(p => `
-                    <div class="linha ${az ? 'azul' : ''}">
-                        <div class="info"><span class="nome">${p} <span>(${d.points[p]||0})</span></span><span class="stats">F: ${d.fouls[p]||0}</span></div>
-                        <div class="acoes"><button class="btn-i">🚪</button><button class="btn-i">🚑</button>
-                        <div class="f-box" onclick="fl('${p}')"><b>F+</b><s>-F</s></div>
-                        <div class="g-pts">
-                            <button class="btn-pt" onclick="pt('${p}',1)">1</button>
-                            <button class="btn-pt" onclick="pt('${p}',2)">2</button>
-                            <button class="btn-pt laranja" onclick="pt('${p}',3)">3</button>
-                        </div></div></div>`).join('');
+                    <div class="linha ${azul ? 'azul' : ''}">
+                        <div class="info">
+                            <span class="nome">${p} <b>(${d.points[p]||0})</b></span>
+                            <span class="stats">F: ${d.fouls[p]||0}</span>
+                        </div>
+                        <div class="acoes">
+                            <button class="btn-i">🚪</button>
+                            <div class="f-box" onclick="addFl('${p}')"><b>F+</b><s>-F</s></div>
+                            <div class="g-pts">
+                                <button class="btn-p" onclick="addPt('${p}',1)">1</button>
+                                <button class="btn-p" onclick="addPt('${p}',2)">2<i>ERRO</i></button>
+                                <button class="btn-p laranja" onclick="addPt('${p}',3)">3</button>
+                            </div>
+                        </div>
+                    </div>`).join('');
             };
-            draw(d.white, 'w', false); draw(d.blue, 'a', true);
-            document.getElementById('ql').innerText = `ATLETAS (${d.queue.length})`;
+            draw(d.white, 'w-list', false);
+            draw(d.blue, 'a-list', true);
+            document.getElementById('q-btn').innerText = `ATLETAS (${d.queue.length})`;
+            document.getElementById('lista-espera').innerHTML = d.queue.map((p, i) => `<div class="fila-item"><span>${i+1}. ${p}</span></div>`).join('');
         }
         load();
     </script>
