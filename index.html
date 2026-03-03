@@ -3,29 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V11.5</title>
+    <title>BASKETMASTER AVABRA V11.6</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --green: #2e7d32; --yellow: #ffd600; --red: #d32f2f; }
+        :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 16px; text-transform: uppercase; }
+        
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
         .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .t-br { background: #ffffff; color: #000; } 
         .t-az { background: var(--blue); color: #fff; }
         .t-em { background: #555; color: #fff; }
+
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; }
         .btn-blue { background: var(--blue); color: #fff; }
+
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #222; }
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-        .stats { font-size: 12px; font-weight: bold; }
         .btn-sair { background: var(--red); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; margin-right: 5px; cursor: pointer; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .g-pts { display: flex; gap: 2px; }
@@ -33,10 +35,12 @@
         .btn-p.laranja { background: var(--orange); }
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
         .azul .btn-corrige { border-color: rgba(255,255,255,0.4); color: #fff; }
+        
         #q-list { padding: 15px; background: #0a0a0a; font-size: 14px; font-weight: bold; }
         .espera-item { display: inline-block; margin-right: 12px; margin-bottom: 5px; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
+
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -57,7 +61,8 @@
         </div>
 
         <div class="vitoria-btns">
-            <button class="btn-v btn-white" onclick="vitoriaPlacar()">VITÓRIA (PLACAR)</button>
+            <button class="btn-v btn-white" onclick="vitoriaPlacar('B')">VITÓRIA BRANCO</button>
+            <button class="btn-v btn-blue" onclick="vitoriaPlacar('A')">VITÓRIA AZUL</button>
         </div>
 
         <div class="faixa">Time Branco</div><div id="w-list"></div>
@@ -88,10 +93,7 @@
             render();
         }
 
-        async function sync() {
-            render();
-            await sb.from('racha_session').update({ data: d }).eq('id', 1);
-        }
+        async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         window.mudarAba = (aba) => {
             document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
@@ -125,35 +127,22 @@
         window.terminoTempo = (btn) => {
             const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
             const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            
-            if (ptsW > ptsA) {
-                d.queue.push(...d.white, ...d.blue);
-            } else if (ptsA > ptsW) {
-                d.queue.push(...d.blue, ...d.white);
-            } else {
-                d.queue.push(...d.white, ...d.blue);
-            }
+            if (ptsW > ptsA) { d.queue.push(...d.white, ...d.blue); }
+            else if (ptsA > ptsW) { d.queue.push(...d.blue, ...d.white); }
+            else { d.queue.push(...d.white, ...d.blue); }
+            d.white = []; d.blue = [];
             executarRodizio();
         };
 
-        window.vitoriaPlacar = () => {
-            const ptsW = d.white.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            const ptsA = d.blue.reduce((acc, p) => acc + (d.points[p] || 0), 0);
-            if (ptsW > ptsA) { d.queue.push(...d.blue); d.blue = []; }
+        window.vitoriaPlacar = (vencedor) => {
+            if (vencedor === 'B') { d.queue.push(...d.blue); d.blue = []; }
             else { d.queue.push(...d.white); d.white = []; }
             executarRodizio();
         };
 
         function executarRodizio() {
-            if(d.white.length === 5 && d.blue.length === 0) {
-                 while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
-            } else if (d.blue.length === 5 && d.white.length === 0) {
-                 while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
-            } else {
-                d.white = []; d.blue = [];
-                while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
-                while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
-            }
+            while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
+            while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
             sync();
         }
