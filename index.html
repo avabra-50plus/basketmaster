@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V8.6</title>
+    <title>BASKETMASTER AVABRA V8.8</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; }
@@ -14,10 +14,10 @@
         
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 13px; cursor: pointer; }
-        .btn-w { background: #fff; color: #000; }
-        .btn-b { background: var(--blue); color: #fff; }
+        .btn-white { background: #fff; color: #000; }
+        .btn-blue { background: var(--blue); color: #fff; }
 
-        .faixa { background: #111; color: #666; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; }
+        .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; text-align: left; border-bottom: 1px solid #222; }
 
         /* Estilo RACHA (Times) */
         .linha { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
@@ -28,7 +28,6 @@
         .stats b { color: #ff0000; }
         .azul .stats b { color: #ffeb3b; }
 
-        /* Ações e Pontos */
         .acoes { display: flex; gap: 4px; align-items: center; }
         .f-box { background: #8b0000; color: #fff; padding: 4px 8px; border-radius: 4px; text-align: center; cursor: pointer; }
         .f-box b { display: block; font-size: 12px; }
@@ -38,19 +37,22 @@
         .btn-p { width: 36px; height: 38px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn-p i { font-size: 7px; color: #666; font-style: normal; font-weight: normal; }
         .btn-p.laranja { background: var(--orange); }
-        .btn-sub { font-size: 10px; color: #ff4444; background: #000; border: 1px solid #333; padding: 2px 5px; border-radius: 3px; margin-top: 2px; }
+        .btn-sub { font-size: 10px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 2px 5px; border-radius: 3px; margin-top: 2px; font-weight: bold; }
+        .azul .btn-sub { border-color: rgba(255,255,255,0.3); color: #fff; }
 
-        /* Lista de Disponíveis no Racha */
-        .lista-disp { background: #1a1a1a; padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .btn-entrar { background: var(--orange); color: #fff; border: none; padding: 6px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        /* Lista Disponíveis no Racha */
+        .lista-disp { background: #1a1a1a; padding: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .btn-entrar { background: var(--orange); color: #fff; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; }
+
+        /* Aba Atletas */
+        #view-atletas { display: none; padding: 20px; }
+        #btn-add-global { background: #2e7d32; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
+        .card-cadastrado { background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--orange); }
 
         /* Rodapé */
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 15px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 11px; font-weight: bold; text-align: center; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
-
-        #view-atletas { display: none; padding: 20px; }
-        #btn-add-global { background: #2e7d32; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -72,17 +74,18 @@
         <div class="faixa">Time Azul</div>
         <div id="a-list"></div>
 
-        <div class="faixa">Fila de Espera (Próximos)</div>
-        <div id="q-list" style="padding: 10px; color: var(--orange); font-weight: bold; font-size: 14px; background: #0a0a0a;"></div>
+        <div class="faixa">Fila de Espera</div>
+        <div id="q-list" style="padding: 12px; color: var(--orange); font-weight: bold; font-size: 14px; background: #0a0a0a;"></div>
 
-        <div class="faixa">Atletas Disponíveis (Clique para Entrar)</div>
+        <div class="faixa">Atletas Disponíveis (Para entrar no jogo)</div>
         <div id="disp-list"></div>
     </div>
 
     <div id="view-atletas">
         <div class="logo" style="margin-bottom: 20px; text-align: center;">CADASTRO NO SISTEMA</div>
-        <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA NA NUVEM</button>
-        <p style="font-size: 12px; color: #666; margin-top: 20px; text-align: center;">Os atletas cadastrados aqui aparecerão na aba RACHA para serem colocados em quadra.</p>
+        <button id="btn-add-global" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
+        <div class="faixa" style="background:transparent; padding-left:0;">Atletas no Banco de Dados:</div>
+        <div id="lista-cadastrados"></div>
     </div>
 
     <div style="height:100px"></div>
@@ -100,8 +103,16 @@
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {} };
 
         async function load() {
-            const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
-            if (data && data.data) d = data.data;
+            const { data, error } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
+            if (data && data.data) {
+                d = data.data;
+                if (!d.all) d.all = [];
+                if (!d.white) d.white = [];
+                if (!d.blue) d.blue = [];
+                if (!d.queue) d.queue = [];
+                if (!d.points) d.points = {};
+                if (!d.fouls) d.fouls = {};
+            }
             render();
         }
 
@@ -118,20 +129,18 @@
         };
 
         window.cadastrarNovo = () => {
-            const n = prompt("NOME DO ATLETA:");
+            const n = prompt("NOME COMPLETO DO ATLETA:");
             if (!n) return;
-            const nome = n.toUpperCase();
-            if (!d.all) d.all = [];
-            if (!d.all.includes(nome)) d.all.push(nome);
-            sync();
-            alert(nome + " cadastrado! Vá para a aba RACHA para colocá-lo no jogo.");
+            const nome = n.toUpperCase().trim();
+            if (!d.all.includes(nome)) {
+                d.all.push(nome);
+                sync();
+            } else { alert("Já cadastrado!"); }
         };
 
         window.entrarNoJogo = (nome) => {
             if (d.white.includes(nome) || d.blue.includes(nome) || d.queue.includes(nome)) return;
-            if (!d.points) d.points = {}; if (!d.fouls) d.fouls = {};
             d.points[nome] = 0; d.fouls[nome] = 0;
-
             if (d.white.length < 5) d.white.push(nome);
             else if (d.blue.length < 5) d.blue.push(nome);
             else d.queue.push(nome);
@@ -153,7 +162,8 @@
 
         function render() {
             const drawRow = (list, id, azul) => {
-                document.getElementById(id).innerHTML = list.map(p => `
+                const el = document.getElementById(id);
+                el.innerHTML = list.map(p => `
                     <div class="linha ${azul ? 'azul' : ''}">
                         <div class="info">
                             <span class="nome">${p} <b>(${d.points[p]||0})</b></span>
@@ -170,22 +180,32 @@
                         </div>
                     </div>`).join('');
             };
-            drawRow(d.white || [], 'w-list', false);
-            drawRow(drawRow(d.blue || [], 'a-list', true)); // Correção rápida de fechamento
-            document.getElementById('q-list').innerText = (d.queue || []).join(' - ') || 'Ninguém na fila';
 
-            // Lista de Disponíveis (Na aba Racha)
+            drawRow(d.white, 'w-list', false);
+            drawRow(d.blue, 'a-list', true);
+            document.getElementById('q-list').innerText = d.queue.join(' - ') || 'Vazio';
+
             const jogando = [...d.white, ...d.blue, ...d.queue];
-            const disponiveis = (d.all || []).filter(p => !jogando.includes(p)).sort();
+            const disponiveis = d.all.filter(p => !jogando.includes(p)).sort();
+            
+            // Renderiza na aba Racha (Disponíveis para entrar)
             document.getElementById('disp-list').innerHTML = disponiveis.map(p => `
                 <div class="lista-disp">
                     <span>${p}</span>
                     <button class="btn-entrar" onclick="entrarNoJogo('${p}')">ENTRAR NO JOGO</button>
                 </div>
             `).join('');
+
+            // Renderiza na aba Atletas (Banco de Dados Total)
+            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `
+                <div class="card-cadastrado">
+                    <span>${p}</span>
+                    <span style="font-size:10px; color:#666;">CADASTRADO</span>
+                </div>
+            `).join('');
         }
 
-        window.resetar = () => { if(confirm("ZERAR TUDO?")) { d={white:[],blue:[],queue:[],all:d.all,points:{},fouls:{}}; sync(); } };
+        window.resetar = () => { if(confirm("ZERAR RACHA? (Os atletas cadastrados continuarão no sistema)")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; sync(); } };
 
         load();
     </script>
