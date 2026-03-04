@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V15.5</title>
+    <title>BASKETMASTER AVABRA V15.6</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -73,6 +73,7 @@
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
+
     <div id="view-stats" style="display:none; padding:15px;"><h2 style="color:var(--orange); font-size:18px;">RELATÓRIO</h2><button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">WHATSAPP</button><div id="lista-estatisticas-geral"></div></div>
     <div id="view-atletas" style="display:none; padding:20px;"><button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR</button><div id="lista-cadastrados"></div><div style="margin-top:50px; padding:20px; border: 1px dashed #333; border-radius: 8px; text-align: center;"><button style="background:var(--red); color:#fff; border:none; padding:10px 20px; border-radius:4px; font-size:12px; font-weight:bold;" onclick="resetarRacha()">ZERAR TODO O JOGO</button></div></div>
     
@@ -87,8 +88,6 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        // d.suspended armazena quem saiu por falta no jogo atual
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [] };
         let abaAtiva = 'racha';
 
@@ -96,15 +95,15 @@
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) {
                 d = data.data;
-                if (!d.suspended) d.suspended = []; 
+                if (!d.suspended) d.suspended = [];
             }
             render();
         }
-        setInterval(() => { if (abaAtiva !== 'atletas') { load(); } }, 10000);
+        setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         window.removerAtleta = (nome, local, motivo) => {
-            let msg = motivo === 'sub' ? `Substituir ${nome}?` : (motivo === 'falta' ? `Saída por 3 faltas de ${nome}?` : `Remover da fila?`);
+            let msg = motivo === 'sub' ? `Substituir ${nome}?` : (motivo === 'falta' ? `Sair por 3 faltas: ${nome}?` : `Remover da fila?`);
             if(!confirm(msg)) return;
 
             if (local === 'queue') {
@@ -113,43 +112,45 @@
             } else {
                 const vitSeguidas = local === 'white' ? d.streakW : d.streakA;
                 const placarTotal = d.scoreW + d.scoreA;
+                let substituto = null;
 
-                d[local] = d[local].filter(p => p !== nome);
-
-                if (motivo === 'falta') {
-                    d.queue.unshift(nome);
-                    d.suspended.push(nome); // MARCA COMO SUSPENSO
-                } else {
-                    d.queue.push(nome);
-                }
-
-                if (motivo === 'sub') {
-                    let substituto = null;
+                // Lógica de quem ENTRA (feita ANTES de colocar quem sai na fila)
+                if (motivo === 'sub' && d.queue.length > 0) {
                     if (vitSeguidas === 0 && placarTotal === 0) {
-                        // REGRA: Puxa o primeiro que NÃO esteja suspenso
+                        // Jogo 0x0 e 1ª partida: Puxa o 1º não suspenso
                         for (let i = 0; i < d.queue.length; i++) {
                             if (!d.suspended.includes(d.queue[i])) {
                                 substituto = d.queue.splice(i, 1)[0];
                                 break;
                             }
                         }
-                        if(substituto) alert(`Jogo 0x0. Entrou o 1º disponível: ${substituto}`);
                     } else {
-                        // REGRA: Puxa o último da fila (que não seja o que acabou de sair)
-                        let tempIdx = d.queue.length - 1;
-                        if (d.queue[tempIdx] === nome) tempIdx--; 
-                        if (tempIdx >= 0) substituto = d.queue.splice(tempIdx, 1)[0];
-                        if(substituto) alert(`Jogo em andamento/2ª partida. Entrou o último: ${substituto}`);
+                        // Jogo em andamento ou 2ª partida: Puxa o ÚLTIMO
+                        substituto = d.queue.pop();
                     }
-                    if (substituto) d[local].push(substituto);
+                }
+
+                // Tira quem saiu e manda para a fila
+                d[local] = d[local].filter(p => p !== nome);
+                if (motivo === 'falta') {
+                    d.queue.unshift(nome);
+                    d.suspended.push(nome);
+                } else {
+                    d.queue.push(nome);
+                }
+
+                // Efetiva a entrada do substituto se ele existir
+                if (substituto) {
+                    d[local].push(substituto);
+                    alert(`Substituição: Sai ${nome} -> Entra ${substituto}`);
                 }
             }
             sync();
         };
 
         window.vitoriaPlacar = (vencedor) => {
-            if(!confirm("Confirmar vitória e rodízio?")) return;
-            d.suspended = []; // LIMPA SUSPENSÕES AO FIM DO JOGO
+            if(!confirm("Confirmar vitória?")) return;
+            d.suspended = [];
             if (vencedor === 'B') {
                 d.streakW++; d.streakA = 0;
                 if (d.streakW >= 2) { d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; }
@@ -165,7 +166,7 @@
 
         window.terminoTempo = (btn) => {
             if(!confirm("Encerrar por tempo?")) return;
-            d.suspended = []; // LIMPA SUSPENSÕES
+            d.suspended = [];
             if (btn === 'B') { d.streakW++; d.streakA = 0; d.queue.push(...d.white, ...d.blue); }
             else if (btn === 'A') { d.streakA++; d.streakW = 0; d.queue.push(...d.blue, ...d.white); }
             else { d.queue.push(...d.white, ...d.blue); d.streakW = 0; d.streakA = 0; }
@@ -180,15 +181,15 @@
             sync();
         }
 
-        // --- Funções de Apoio (Mantidas das versões anteriores) ---
         window.mudarAba = (aba) => { abaAtiva = aba; document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none'; document.getElementById('view-stats').style.display = aba === 'stats' ? 'block' : 'none'; document.getElementById('view-atletas').style.display = aba === 'atletas' ? 'block' : 'none'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); event.currentTarget.classList.add('active'); };
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
+        window.deletarSocio = (nome) => { if (confirm(`EXCLUIR ${nome}?`)) { d.all = d.all.filter(p => p !== nome); sync(); } };
         window.entrarNoJogo = (nome) => { d.points[nome] = 0; d.fouls[nome] = 0; if (d.white.length < 5) d.white.push(nome); else if (d.blue.length < 5) d.blue.push(nome); else d.queue.push(nome); sync(); };
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
         window.subPt = (n) => { if (d.points[n] > 0) { d.points[n]--; d.hist_pts[n]--; if (d.white.includes(n)) d.scoreW--; else d.scoreA--; } sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
         window.subFl = (n) => { if (d.fouls[n] > 0) { d.fouls[n]--; d.hist_fls[n]--; } sync(); };
-        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; d.scoreW=0; d.scoreA=0; d.suspended=[]; sync(); } };
+        window.resetarRacha = () => { if(confirm("ZERAR?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; d.scoreW=0; d.scoreA=0; d.suspended=[]; sync(); } };
         window.enviarWhatsApp = () => { let msg = "*ESTATÍSTICAS AVABRA*\n\n"; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_fls[p]||0)>0) msg += `🏀 *${p}*: ${d.hist_pts[p]||0} PTS | ${d.hist_fls[p]||0} FALTAS\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); };
 
         function render() {
@@ -215,7 +216,7 @@
             const q = document.getElementById('q-list'); 
             q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => {
                 const cor = (Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde';
-                const sus = d.suspended && d.suspended.includes(p) ? ' (SUSPENSO)' : '';
+                const sus = d.suspended && d.suspended.includes(p) ? ' (SUSP)' : '';
                 return `<span class="espera-item ${cor}">${i+1}.${p}${sus}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')">X</button></span>`;
             }).join(' ');
             document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
