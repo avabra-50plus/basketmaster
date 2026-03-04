@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V14.9</title>
+    <title>BASKETMASTER AVABRA V15.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -32,7 +32,6 @@
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-        .stats { font-size: 12px; font-weight: bold; }
         .acoes { display: flex; gap: 4px; align-items: center; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .btn-p { width: 40px; height: 42px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
@@ -47,7 +46,7 @@
         .espera-item { display: inline-block; margin-right: 15px; border-bottom: 1px solid #222; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
-        .btn-del-fila { color: #fff; background: var(--red); font-size: 10px; margin-left: 8px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-del-fila { color: #fff; background: var(--red); font-size: 10px; margin-left: 8px; padding: 2px 6px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -102,6 +101,30 @@
         setInterval(() => { if (abaAtiva !== 'atletas') { load(); } }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
+        window.removerAtleta = (nome, local, motivo) => {
+            let msg = "";
+            if (motivo === 'sub') msg = `Deseja SUBSTITUIR ${nome} e puxar o próximo da fila?`;
+            else if (motivo === 'falta') msg = `Deseja retirar ${nome} (3 Faltas)? O time ficará com um a menos.`;
+            else if (local === 'queue') msg = `Remover ${nome} da lista de espera?`;
+
+            if(confirm(msg)) {
+                if (local === 'queue') {
+                    d.queue = d.queue.filter(p => p !== nome);
+                } else {
+                    d[local] = d[local].filter(p => p !== nome);
+                    d.queue.push(nome);
+                    if (motivo === 'sub') {
+                        while (d[local].length < 5 && d.queue.length > 0) {
+                            let proximo = d.queue.shift();
+                            if (proximo !== nome) { d[local].push(proximo); break; }
+                            else { d.queue.push(proximo); }
+                        }
+                    }
+                }
+                sync();
+            }
+        };
+
         window.mudarAba = (aba) => {
             abaAtiva = aba;
             document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
@@ -126,26 +149,6 @@
             else if (d.blue.length < 5) d.blue.push(nome);
             else d.queue.push(nome);
             sync();
-        };
-
-        window.removerAtleta = (nome, local, motivo) => {
-            if (local === 'queue') {
-                if(confirm(`Remover ${nome} da lista de espera?`)) {
-                    d.queue = d.queue.filter(p => p !== nome);
-                    sync();
-                }
-            } else {
-                d[local] = d[local].filter(p => p !== nome);
-                d.queue.push(nome);
-                if (motivo === 'sub') {
-                    while (d[local].length < 5 && d.queue.length > 0) {
-                        let proximo = d.queue.shift();
-                        if (proximo !== nome) { d[local].push(proximo); break; }
-                        else { d.queue.push(proximo); }
-                    }
-                }
-                sync();
-            }
         };
 
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
