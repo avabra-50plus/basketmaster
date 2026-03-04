@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V14.8</title>
+    <title>BASKETMASTER AVABRA V14.9</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -35,7 +35,6 @@
         .stats { font-size: 12px; font-weight: bold; }
         .acoes { display: flex; gap: 4px; align-items: center; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
-        .g-pts { display: flex; gap: 2px; }
         .btn-p { width: 40px; height: 42px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
@@ -48,7 +47,7 @@
         .espera-item { display: inline-block; margin-right: 15px; border-bottom: 1px solid #222; }
         .cor-amarelo { color: var(--yellow); }
         .cor-verde { color: #00e676; }
-        .btn-del-fila { color: #fff; background: var(--red); font-size: 9px; margin-left: 6px; padding: 2px 5px; border-radius: 4px; cursor: pointer; vertical-align: middle; }
+        .btn-del-fila { color: #fff; background: var(--red); font-size: 10px; margin-left: 8px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -80,20 +79,8 @@
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
-    <div id="view-stats" style="display:none; padding:15px;">
-        <h2 style="color:var(--orange); font-size:18px;">RELATÓRIO DO TREINO</h2>
-        <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">ENVIAR PARA WHATSAPP</button>
-        <div id="lista-estatisticas-geral"></div>
-    </div>
-    <div id="view-atletas" style="display:none; padding:20px;">
-        <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
-        <h3 style="color:#666; font-size:12px; margin-top:30px; text-transform:uppercase;">Sócios Cadastrados</h3>
-        <div id="lista-cadastrados"></div>
-        <div style="margin-top:50px; padding:20px; border: 1px dashed #333; border-radius: 8px; text-align: center;">
-            <p style="font-size: 10px; color: #666; margin-bottom: 10px;">ÁREA DO OPERADOR: Limpa todos os pontos e times do dia.</p>
-            <button style="background:var(--red); color:#fff; border:none; padding:10px 20px; border-radius:4px; font-size:12px; font-weight:bold;" onclick="resetarRacha()">ZERAR TODO O JOGO</button>
-        </div>
-    </div>
+    <div id="view-stats" style="display:none; padding:15px;"><h2 style="color:var(--orange); font-size:18px;">RELATÓRIO</h2><button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">WHATSAPP</button><div id="lista-estatisticas-geral"></div></div>
+    <div id="view-atletas" style="display:none; padding:20px;"><button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR</button><div id="lista-cadastrados"></div><div style="margin-top:50px; padding:20px; border: 1px dashed #333; border-radius: 8px; text-align: center;"><button style="background:var(--red); color:#fff; border:none; padding:10px 20px; border-radius:4px; font-size:12px; font-weight:bold;" onclick="resetarRacha()">ZERAR TODO O JOGO</button></div></div>
     <div style="height:120px"></div>
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">Racha</div>
@@ -142,16 +129,23 @@
         };
 
         window.removerAtleta = (nome, local, motivo) => {
-            d[local] = d[local].filter(p => p !== nome);
-            d.queue.push(nome);
-            if (motivo === 'sub') {
-                while (d[local].length < 5 && d.queue.length > 0) {
-                    let proximo = d.queue.shift();
-                    if (proximo !== nome) { d[local].push(proximo); break; }
-                    else { d.queue.push(proximo); }
+            if (local === 'queue') {
+                if(confirm(`Remover ${nome} da lista de espera?`)) {
+                    d.queue = d.queue.filter(p => p !== nome);
+                    sync();
                 }
+            } else {
+                d[local] = d[local].filter(p => p !== nome);
+                d.queue.push(nome);
+                if (motivo === 'sub') {
+                    while (d[local].length < 5 && d.queue.length > 0) {
+                        let proximo = d.queue.shift();
+                        if (proximo !== nome) { d[local].push(proximo); break; }
+                        else { d.queue.push(proximo); }
+                    }
+                }
+                sync();
             }
-            sync();
         };
 
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
@@ -216,8 +210,13 @@
                     </div>`).join('');
             };
             draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-            const q = document.getElementById('q-list'); q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}<b class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')">X</b></span>`).join(' ');
-            const jog = [...d.white, ...d.blue, ...d.queue]; document.getElementById('disp-list').innerHTML = d.all.filter(p => !jog.includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
+            const q = document.getElementById('q-list'); 
+            q.innerHTML = d.queue.length === 0 ? "Vazio" : d.queue.map((p, i) => {
+                const cor = (Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde';
+                return `<span class="espera-item ${cor}">${i+1}.${p}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')">X</button></span>`;
+            }).join(' ');
+            const jog = [...d.white, ...d.blue, ...d.queue]; 
+            document.getElementById('disp-list').innerHTML = d.all.filter(p => !jog.includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-estatisticas-geral').innerHTML = d.all.sort().map(p => { if(!(d.hist_pts[p]>0||d.hist_fls[p]>0)) return ''; return `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;border-radius:4px;"><span>${p}</span><span>PTS: <b style="color:var(--orange)">${d.hist_pts[p]||0}</b> | F: <b style="color:var(--orange)">${d.hist_fls[p]||0}</b></span></div>`; }).join('');
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
         }
