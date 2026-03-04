@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V13.7</title>
+    <title>BASKETMASTER AVABRA V13.8</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -86,6 +86,7 @@
         <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Estatísticas</div>
         <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">Cadastro</div>
     </div>
+
     <script>
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
@@ -96,13 +97,27 @@
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) d = data.data;
-            if (d.scoreW === undefined) d.scoreW = 0;
-            if (d.scoreA === undefined) d.scoreA = 0;
             render();
         }
         setInterval(() => { if (abaAtiva !== 'atletas') { load(); } }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
+        window.sairDoJogo = (nome, local) => {
+            if (local === 'white' || local === 'blue') {
+                if (confirm(`Mover ${nome} para o final da fila de espera?`)) {
+                    d[local] = d[local].filter(p => p !== nome);
+                    d.queue.push(nome); // Vai para o final da fila
+                    executarRodizio(); // Puxa o próximo da fila para o lugar dele
+                }
+            } else if (local === 'queue') {
+                if (confirm(`Remover ${nome} do ginásio?`)) {
+                    d.queue = d.queue.filter(p => p !== nome);
+                    sync();
+                }
+            }
+        };
+
+        // ... Funções de pontos e rodízio permanecem com a lógica da V13.7 ...
         window.mudarAba = (aba) => {
             abaAtiva = aba;
             document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
@@ -173,7 +188,6 @@
             sync();
         }
 
-        window.sairDoJogo = (n, l) => { if(confirm("Remover " + n + "?")) { d[l] = d[l].filter(p => p !== n); sync(); } };
         window.resetarRacha = () => { if(confirm("Zerar?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; d.scoreW=0; d.scoreA=0; sync(); } };
         window.enviarWhatsApp = () => {
             let msg = "*ESTATÍSTICAS AVABRA 50+*\n\n";
