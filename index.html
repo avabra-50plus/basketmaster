@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V15.2</title>
+    <title>BASKETMASTER AVABRA V15.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -32,11 +32,13 @@
         .info { flex: 1; }
         .nome { font-weight: bold; font-size: 14px; display: block; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+        .stats { font-size: 12px; font-weight: bold; }
         .acoes { display: flex; gap: 4px; align-items: center; }
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .btn-p { width: 40px; height: 42px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
+        .azul .btn-corrige { border-color: rgba(255,255,255,0.4); color: #fff; }
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 9px; padding: 6px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-lesao { background: #555; color: #fff; }
@@ -101,7 +103,7 @@
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         window.removerAtleta = (nome, local, motivo) => {
-            let msg = motivo === 'sub' ? `Confirmar SUBSTITUIÇÃO de ${nome}?` : 
+            let msg = motivo === 'sub' ? `SUBSTITUIR ${nome}?` : 
                       motivo === 'falta' ? `SAÍDA POR FALTAS: ${nome} sai agora e volta no próximo jogo do time (se ganharem). Confirma?` : 
                       `Remover ${nome} da lista de espera?`;
             
@@ -109,16 +111,32 @@
                 if (local === 'queue') {
                     d.queue = d.queue.filter(p => p !== nome);
                 } else {
+                    const corTime = local === 'white' ? 'Branco' : 'Azul';
+                    const vitSeguidas = local === 'white' ? d.streakW : d.streakA;
+                    const placarTotal = d.scoreW + d.scoreA;
+
                     d[local] = d[local].filter(p => p !== nome);
-                    // Regra: se for falta, ele vai para a PRIMEIRA POSIÇÃO da fila para ser puxado de volta se o time ganhar
-                    if (motivo === 'falta') d.queue.unshift(nome);
-                    else d.queue.push(nome);
+                    
+                    if (motivo === 'falta') {
+                        d.queue.unshift(nome); // Volta primeiro se ganhar
+                    } else {
+                        d.queue.push(nome); // Substituição comum vai pro fim da fila
+                    }
 
                     if (motivo === 'sub') {
-                        while (d[local].length < 5 && d.queue.length > 0) {
-                            let proximo = d.queue.shift();
-                            if (proximo !== nome) { d[local].push(proximo); break; }
-                            else { d.queue.push(proximo); }
+                        if (d.queue.length > 0) {
+                            let substituto;
+                            // REGRA AVABRA DE SUBSTITUIÇÃO:
+                            // 1. Primeira partida (streak 0) e placar 0x0 -> Puxa o PRIMEIRO da fila
+                            // 2. Primeira partida com pontos OU Segunda partida (streak > 0) -> Puxa o ÚLTIMO da fila
+                            if (vitSeguidas === 0 && placarTotal === 0) {
+                                substituto = d.queue.shift();
+                                alert(`${corTime}: Jogo 0x0. Entra o PRIMEIRO da fila: ${substituto}`);
+                            } else {
+                                substituto = d.queue.pop();
+                                alert(`${corTime}: Jogo em andamento ou 2ª partida. Entra o ÚLTIMO da fila: ${substituto}`);
+                            }
+                            d[local].push(substituto);
                         }
                     }
                 }
@@ -161,7 +179,6 @@
             sync();
         }
 
-        // Funções de UI permanecem as mesmas
         window.mudarAba = (aba) => { abaAtiva = aba; document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none'; document.getElementById('view-stats').style.display = aba === 'stats' ? 'block' : 'none'; document.getElementById('view-atletas').style.display = aba === 'atletas' ? 'block' : 'none'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); event.currentTarget.classList.add('active'); };
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
         window.deletarSocio = (nome) => { if (confirm(`EXCLUIR ${nome}?`)) { d.all = d.all.filter(p => p !== nome); sync(); } };
