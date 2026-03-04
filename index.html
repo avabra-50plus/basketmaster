@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V15.0</title>
+    <title>BASKETMASTER AVABRA V15.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -37,7 +37,6 @@
         .btn-p { width: 40px; height: 42px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
         .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
-        .azul .btn-corrige { border-color: rgba(255,255,255,0.4); color: #fff; }
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 9px; padding: 6px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-lesao { background: #555; color: #fff; }
@@ -102,15 +101,12 @@
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         window.removerAtleta = (nome, local, motivo) => {
-            let msg = "";
-            if (motivo === 'sub') msg = `Deseja SUBSTITUIR ${nome} e puxar o próximo da fila?`;
-            else if (motivo === 'falta') msg = `Deseja retirar ${nome} (3 Faltas)? O time ficará com um a menos.`;
-            else if (local === 'queue') msg = `Remover ${nome} da lista de espera?`;
-
+            let msg = motivo === 'sub' ? `Confirmar SUBSTITUIÇÃO de ${nome}?` : 
+                      motivo === 'falta' ? `Confirmar SAÍDA por 3 faltas de ${nome}?` : 
+                      `Remover ${nome} da lista de espera?`;
             if(confirm(msg)) {
-                if (local === 'queue') {
-                    d.queue = d.queue.filter(p => p !== nome);
-                } else {
+                if (local === 'queue') d.queue = d.queue.filter(p => p !== nome);
+                else {
                     d[local] = d[local].filter(p => p !== nome);
                     d.queue.push(nome);
                     if (motivo === 'sub') {
@@ -125,73 +121,46 @@
             }
         };
 
-        window.mudarAba = (aba) => {
-            abaAtiva = aba;
-            document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
-            document.getElementById('view-stats').style.display = aba === 'stats' ? 'block' : 'none';
-            document.getElementById('view-atletas').style.display = aba === 'atletas' ? 'block' : 'none';
-            document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+        window.terminoTempo = (btn) => {
+            let label = btn === 'B' ? 'BRANCO (Vencedor Tempo)' : btn === 'A' ? 'AZUL (Vencedor Tempo)' : 'EMPATE';
+            if(confirm(`Confirmar encerramento por tempo: ${label}?`)) {
+                if (btn === 'B') { d.streakW++; d.streakA = 0; d.queue.push(...d.white, ...d.blue); }
+                else if (btn === 'A') { d.streakA++; d.streakW = 0; d.queue.push(...d.blue, ...d.white); }
+                else { d.queue.push(...d.white, ...d.blue); d.streakW = 0; d.streakA = 0; }
+                d.white = []; d.blue = []; d.scoreW = 0; d.scoreA = 0;
+                executarRodizio();
+            }
         };
 
-        window.cadastrarNovo = () => {
-            const n = prompt("NOME DO ATLETA:");
-            if (n) { d.all.push(n.toUpperCase().trim()); sync(); }
+        window.vitoriaPlacar = (vencedor) => {
+            let label = vencedor === 'B' ? 'BRANCO' : 'AZUL';
+            if(confirm(`Confirmar VITÓRIA do time ${label} e rodízio de jogadores?`)) {
+                if (vencedor === 'B') {
+                    d.streakW++; d.streakA = 0;
+                    if (d.streakW >= 2) { d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; }
+                    else { d.queue.push(...d.blue); d.blue = []; }
+                } else {
+                    d.streakA++; d.streakW = 0;
+                    if (d.streakA >= 2) { d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; }
+                    else { d.queue.push(...d.white); d.white = []; }
+                }
+                d.scoreW = 0; d.scoreA = 0;
+                executarRodizio();
+            }
         };
 
-        window.deletarSocio = (nome) => {
-            if (confirm(`DESEJA EXCLUIR ${nome}?`)) { d.all = d.all.filter(p => p !== nome); sync(); }
-        };
-
-        window.entrarNoJogo = (nome) => {
-            d.points[nome] = 0; d.fouls[nome] = 0;
-            if (d.white.length < 5) d.white.push(nome);
-            else if (d.blue.length < 5) d.blue.push(nome);
-            else d.queue.push(nome);
-            sync();
-        };
-
+        // Funções de manutenção (sync, render, etc) permanecem idênticas à V15.0
+        window.mudarAba = (aba) => { abaAtiva = aba; document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none'; document.getElementById('view-stats').style.display = aba === 'stats' ? 'block' : 'none'; document.getElementById('view-atletas').style.display = aba === 'atletas' ? 'block' : 'none'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); event.currentTarget.classList.add('active'); };
+        window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
+        window.deletarSocio = (nome) => { if (confirm(`EXCLUIR ${nome}?`)) { d.all = d.all.filter(p => p !== nome); sync(); } };
+        window.entrarNoJogo = (nome) => { d.points[nome] = 0; d.fouls[nome] = 0; if (d.white.length < 5) d.white.push(nome); else if (d.blue.length < 5) d.blue.push(nome); else d.queue.push(nome); sync(); };
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
         window.subPt = (n) => { if (d.points[n] > 0) { d.points[n]--; d.hist_pts[n]--; if (d.white.includes(n)) d.scoreW--; else d.scoreA--; } sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
         window.subFl = (n) => { if (d.fouls[n] > 0) { d.fouls[n]--; d.hist_fls[n]--; } sync(); };
-
-        window.terminoTempo = (btn) => {
-            if (btn === 'B') { d.streakW++; d.streakA = 0; d.queue.push(...d.white, ...d.blue); }
-            else if (btn === 'A') { d.streakA++; d.streakW = 0; d.queue.push(...d.blue, ...d.white); }
-            else { d.queue.push(...d.white, ...d.blue); d.streakW = 0; d.streakA = 0; }
-            d.white = []; d.blue = []; d.scoreW = 0; d.scoreA = 0;
-            executarRodizio();
-        };
-
-        window.vitoriaPlacar = (vencedor) => {
-            if (vencedor === 'B') {
-                d.streakW++; d.streakA = 0;
-                if (d.streakW >= 2) { d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; }
-                else { d.queue.push(...d.blue); d.blue = []; }
-            } else {
-                d.streakA++; d.streakW = 0;
-                if (d.streakA >= 2) { d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; }
-                else { d.queue.push(...d.white); d.white = []; }
-            }
-            d.scoreW = 0; d.scoreA = 0;
-            executarRodizio();
-        };
-
-        function executarRodizio() {
-            while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
-            while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
-            [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            sync();
-        }
-
+        function executarRodizio() { while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; }); sync(); }
         window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d.white=[]; d.blue=[]; d.queue=[]; d.points={}; d.fouls={}; d.hist_pts={}; d.hist_fls={}; d.streakW=0; d.streakA=0; d.scoreW=0; d.scoreA=0; sync(); } };
-        window.enviarWhatsApp = () => { 
-            let msg = "*ESTATÍSTICAS AVABRA*\n\n"; 
-            d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_fls[p]||0)>0) msg += `🏀 *${p}*: ${d.hist_pts[p]||0} PTS | ${d.hist_fls[p]||0} FALTAS\n`; }); 
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); 
-        };
-
+        window.enviarWhatsApp = () => { let msg = "*ESTATÍSTICAS AVABRA*\n\n"; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_fls[p]||0)>0) msg += `🏀 *${p}*: ${d.hist_pts[p]||0} PTS | ${d.hist_fls[p]||0} FALTAS\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); };
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
