@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V17.2</title>
+    <title>BASKETMASTER AVABRA V17.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -292,11 +292,10 @@
                                 let label = p.n;
                                 let iconeSeta = "";
                                 let corSeta = "";
-                                if(p.s === "SUBS") { iconeSeta = "🔻"; corSeta = "var(--red)"; }
-                                else if(p.s === "ENTROU") { iconeSeta = "🔺"; corSeta = "var(--green)"; }
+                                if(p.s === "SUBS") { iconeSeta = "&#9660;"; corSeta = "var(--red)"; }
+                                else if(p.s === "ENTROU") { iconeSeta = "&#9650;"; corSeta = "var(--green)"; }
                                 else if(p.s === "SUSP") { return `<div class="player-line"><span>${label} <small>(SUSP)</small></span><span>${p.p}P / ${p.f}F</span></div>`; }
-                                
-                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
+                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}; font-size:14px;">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
                             }).join('')}
                         </div>
                         <div class="team-box az">
@@ -305,11 +304,10 @@
                                 let label = p.n;
                                 let iconeSeta = "";
                                 let corSeta = "";
-                                if(p.s === "SUBS") { iconeSeta = "🔻"; corSeta = "var(--red)"; }
-                                else if(p.s === "ENTROU") { iconeSeta = "🔺"; corSeta = "var(--green)"; }
+                                if(p.s === "SUBS") { iconeSeta = "&#9660;"; corSeta = "var(--red)"; }
+                                else if(p.s === "ENTROU") { iconeSeta = "&#9650;"; corSeta = "var(--green)"; }
                                 else if(p.s === "SUSP") { return `<div class="player-line"><span>${label} <small>(SUSP)</small></span><span>${p.p}P / ${p.f}F</span></div>`; }
-                                
-                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
+                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}; font-size:14px;">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
                             }).join('')}
                         </div>
                     </div>
