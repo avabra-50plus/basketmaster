@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V16.6</title>
+    <title>BASKETMASTER AVABRA V16.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -36,16 +36,16 @@
         .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .btn-p { width: 40px; height: 42px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
-        .btn-corrige { font-size: 9px; color: #ff4444; background: transparent; border: 1px solid #ccc; padding: 3px 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
+        
+        /* AJUSTE PRESIDENCIAL: Botões de correção um pouco maiores */
+        .btn-corrige { font-size: 11px; color: #ff4444; background: transparent; border: 1px solid #bbb; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 9px; padding: 6px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-lesao { background: #555; color: #fff; }
         .btn-falta3 { background: var(--red); color: #fff; }
         #q-list { padding: 15px; background: #0a0a0a; font-size: 14px; font-weight: bold; line-height: 2.2; }
         .espera-item { display: inline-block; margin-right: 15px; border-bottom: 1px solid #222; }
-        .cor-amarelo { color: var(--yellow); }
-        .cor-verde { color: #00e676; }
-        .btn-del-fila { color: #fff; background: var(--red); font-size: 10px; margin-left: 8px; padding: 2px 6px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #222; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #444; font-size: 10px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -133,8 +133,10 @@
             if(!d.players_log) d.players_log = [];
             let p = d.players_log.find(x => x.n === nome);
             if(!p) {
-                // Ao entrar no log, congela os pontos/faltas atuais para não perder se sair
-                d.players_log.push({ n: nome, t: time, s: status, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0 });
+                // Se o jogo já começou e ele entrou agora (sem ser no início), ganha seta verde
+                let finalStatus = status;
+                if(!status && (d.scoreW > 0 || d.scoreA > 0)) finalStatus = "ENTROU";
+                d.players_log.push({ n: nome, t: time, s: finalStatus, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0 });
             } else {
                 if(status) p.s = status;
             }
@@ -149,10 +151,13 @@
 
             const processar = (timeKey) => {
                 return d.players_log.filter(x => x.t === timeKey).map(x => {
-                    // O ponto na partida é o Ponto Atual menos o Ponto que ele tinha ao entrar nessa partida específica
                     let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
                     let flsNaPartida = (d.fouls[x.n]||0) - (x.f_ini||0);
-                    return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s };
+                    let icone = "";
+                    if(x.s === "SUBS") icone = " ⬇️";
+                    if(x.s === "ENTROU") icone = " ⬆️";
+                    if(x.s === "SUSP") icone = " (SUSP)";
+                    return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s, icon: icone };
                 });
             };
 
@@ -161,9 +166,9 @@
 
             let txt = `*AVABRA - SÚMULA DE PARTIDA*\n📅 *Data:* ${dataAtual}\n🏟 *JOGO:* ${numPartida}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
-            infoBranco.forEach(item => txt += `- ${item.n}${item.s ? ' ('+item.s+')' : ''}: (${item.p} P / ${item.f} F)\n`);
+            infoBranco.forEach(item => txt += `- ${item.n}${item.icon}: (${item.p} P / ${item.f} F)\n`);
             txt += `\n🔵 *AZUL (${d.scoreA})*\n`;
-            infoAzul.forEach(item => txt += `- ${item.n}${item.s ? ' ('+item.s+')' : ''}: (${item.p} P / ${item.f} F)\n`);
+            infoAzul.forEach(item => txt += `- ${item.n}${item.icon}: (${item.p} P / ${item.f} F)\n`);
             txt += `\n⏱ *Encerrado por:* ${motivo}`;
             
             d.history_matches.push({
@@ -228,7 +233,6 @@
             }
 
             d[local] = d[local].filter(p => p !== nome);
-            
             if (motivo === 'falta') {
                 logarParticipacao(nome, timeKey, "SUSP");
                 d.queue.unshift(nome);
@@ -237,9 +241,9 @@
             } 
             
             if (substituto) {
-                d[substituto] = 0; d.points[substituto] = 0; d.fouls[substituto] = 0; // Garante que o novo entra zerado
+                d.points[substituto] = 0; d.fouls[substituto] = 0;
                 d[local].push(substituto);
-                logarParticipacao(substituto, timeKey);
+                logarParticipacao(substituto, timeKey, "ENTROU");
             }
             sync();
         };
@@ -311,11 +315,23 @@
                     <div class="sumula-teams">
                         <div class="team-box br">
                             <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333">BRANCO</strong>
-                            ${jogo.branco.map(p => `<div class="player-line"><span>${p.n}${p.s?' <small>('+p.s+')</small>':''}</span><span>${p.p}P / ${p.f}F</span></div>`).join('')}
+                            ${jogo.branco.map(p => {
+                                let label = p.n;
+                                if(p.s === "SUBS") label += ' <span style="color:var(--red)">⬇️</span>';
+                                if(p.s === "ENTROU") label += ' <span style="color:var(--green)">⬆️</span>';
+                                if(p.s === "SUSP") label += ' <small>(SUSP)</small>';
+                                return `<div class="player-line"><span>${label}</span><span>${p.p}P / ${p.f}F</span></div>`;
+                            }).join('')}
                         </div>
                         <div class="team-box az">
                             <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333">AZUL</strong>
-                            ${jogo.azul.map(p => `<div class="player-line"><span>${p.n}${p.s?' <small>('+p.s+')</small>':''}</span><span>${p.p}P / ${p.f}F</span></div>`).join('')}
+                            ${jogo.azul.map(p => {
+                                let label = p.n;
+                                if(p.s === "SUBS") label += ' <span style="color:var(--red)">⬇️</span>';
+                                if(p.s === "ENTROU") label += ' <span style="color:var(--green)">⬆️</span>';
+                                if(p.s === "SUSP") label += ' <small>(SUSP)</small>';
+                                return `<div class="player-line"><span>${label}</span><span>${p.p}P / ${p.f}F</span></div>`;
+                            }).join('')}
                         </div>
                     </div>
                 </div>`;
