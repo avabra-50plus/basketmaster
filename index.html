@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V16.2</title>
+    <title>BASKETMASTER AVABRA V16.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -51,8 +51,17 @@
         .nav-b.active { color: var(--orange); }
         .lista-disp { background:#1a1a1a; padding:12px; margin-bottom:2px; display:flex; justify-content:space-between; align-items:center; border-radius:4px; }
         .btn-entrar { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; }
-        .sumula-card { background: #111; border: 1px solid #333; padding: 12px; margin-bottom: 10px; border-radius: 6px; }
-        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        
+        /* Novos estilos para o histórico visual */
+        .sumula-card { background: #1a1a1a; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
+        .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
+        .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; }
+        .team-box { background: #000; padding: 8px; border-radius: 4px; border-left: 3px solid #666; }
+        .team-box.br { border-left-color: #fff; }
+        .team-box.az { border-left-color: var(--blue); }
+        .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 2px 0; }
+        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -79,11 +88,13 @@
     </div>
 
     <div id="view-stats" style="display:none; padding:15px;">
-        <h2 style="color:var(--orange); font-size:18px;">ESTATÍSTICAS GERAIS</h2>
-        <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">WHATSAPP: CESTINHAS DO DIA</button>
+        <h2 style="color:var(--orange); font-size:18px;">PONTUAÇÃO GERAL (TREINO)</h2>
+        <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">ENVIAR CESTINHAS DO DIA</button>
         <div id="lista-estatisticas-geral"></div>
-        <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-        <h2 style="color:var(--yellow); font-size:18px;">SÚMULAS DAS PARTIDAS</h2>
+        
+        <hr style="border:0; border-top:2px dashed #333; margin:30px 0;">
+        
+        <h2 style="color:var(--yellow); font-size:18px;">HISTÓRICO DE PARTIDAS</h2>
         <div id="lista-historico-partidas"></div>
     </div>
 
@@ -126,25 +137,31 @@
             const dataAtual = new Date().toLocaleDateString('pt-BR');
             const numPartida = d.history_matches.length + 1;
             
+            // Dados brutos para o card da tela
+            const infoBranco = d.white.map(p => ({ n: p, p: d.points[p]||0, f: d.fouls[p]||0 }));
+            const infoAzul = d.blue.map(p => ({ n: p, p: d.points[p]||0, f: d.fouls[p]||0 }));
+
+            // Texto para o WhatsApp
             let txt = `*AVABRA - SÚMULA DE PARTIDA*\n📅 *Data:* ${dataAtual}\n🏟 *JOGO:* ${numPartida}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
-            d.white.forEach(p => txt += `- ${p}: (${d.points[p]||0} P / ${d.fouls[p]||0} F)\n`);
-            
+            infoBranco.forEach(item => txt += `- ${item.n}: (${item.p} P / ${item.f} F)\n`);
             txt += `\n🔵 *AZUL (${d.scoreA})*\n`;
-            d.blue.forEach(p => txt += `- ${p}: (${d.points[p]||0} P / ${d.fouls[p]||0} F)\n`);
-            
+            infoAzul.forEach(item => txt += `- ${item.n}: (${item.p} P / ${item.f} F)\n`);
             txt += `\n⏱ *Encerrado por:* ${motivo}`;
             
             d.history_matches.push({
                 id: numPartida,
                 data: dataAtual,
                 placar: `${d.scoreW} x ${d.scoreA}`,
+                branco: infoBranco,
+                azul: infoAzul,
+                motivo: motivo,
                 textoWhatsApp: txt
             });
         }
 
         window.vitoriaPlacar = (vencedor) => {
-            if(!confirm("Confirmar vitória?")) return;
+            if(!confirm("Encerrar por Placar?")) return;
             registrarPartida('Placar');
             d.suspended = [];
             if (vencedor === 'B') {
@@ -161,7 +178,7 @@
         };
 
         window.terminoTempo = (btn) => {
-            if(!confirm("Encerrar por tempo? Ambas saem.")) return;
+            if(!confirm("Encerrar por Tempo? Ambas saem.")) return;
             registrarPartida('Tempo');
             d.suspended = [];
             if (btn === 'B') d.queue.push(...d.white, ...d.blue);
@@ -258,15 +275,31 @@
             });
             document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Nenhum registro.";
 
-            // Histórico de Súmulas
+            // HISTÓRICO VISUAL COM NOMES
             let htmlHistory = "";
-            (d.history_matches || []).forEach((jogo, index) => {
-                htmlHistory += `<div class="sumula-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:12px; font-weight:bold; color:var(--orange)">JOGO ${jogo.id} - ${jogo.data}</span>
-                        <button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${index})">ENVIAR SÚMULA</button>
+            [...d.history_matches].reverse().forEach((jogo, index) => {
+                const realIndex = d.history_matches.length - 1 - index;
+                htmlHistory += `
+                <div class="sumula-card">
+                    <div class="sumula-header">
+                        <div>
+                            <span style="display:block; font-size:10px; color:#888;">${jogo.data}</span>
+                            <span style="font-weight:bold; color:var(--orange)">JOGO ${jogo.id}</span>
+                        </div>
+                        <div class="sumula-placar">${jogo.placar}</div>
+                        <button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${realIndex})">ENVIAR WHATSAPP</button>
                     </div>
-                    <div style="font-size:13px; margin-top:5px; color:#ccc">Placar: ${jogo.placar}</div>
+                    <div class="sumula-teams">
+                        <div class="team-box br">
+                            <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333">BRANCO</strong>
+                            ${jogo.branco.map(p => `<div class="player-line"><span>${p.n}</span><span>${p.p}P</span></div>`).join('')}
+                        </div>
+                        <div class="team-box az">
+                            <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333">AZUL</strong>
+                            ${jogo.azul.map(p => `<div class="player-line"><span>${p.n}</span><span>${p.p}P</span></div>`).join('')}
+                        </div>
+                    </div>
+                    <div style="font-size:9px; color:#555; margin-top:10px; text-align:right;">Finalizado por ${jogo.motivo}</div>
                 </div>`;
             });
             document.getElementById('lista-historico-partidas').innerHTML = htmlHistory || "Nenhuma partida finalizada.";
