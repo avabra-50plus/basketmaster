@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V16.5</title>
+    <title>BASKETMASTER AVABRA V16.6</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -113,7 +113,6 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        // players_log guarda quem participou desta partida específica: { nome: 'NOME', time: 'W|A', status: '' }
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [], history_matches: [], players_log: [] };
         let abaAtiva = 'racha';
 
@@ -130,12 +129,12 @@
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        // Adiciona jogador ao log da partida atual se não estiver lá
         function logarParticipacao(nome, time, status = "") {
             if(!d.players_log) d.players_log = [];
             let p = d.players_log.find(x => x.n === nome);
             if(!p) {
-                d.players_log.push({ n: nome, t: time, s: status });
+                // Ao entrar no log, congela os pontos/faltas atuais para não perder se sair
+                d.players_log.push({ n: nome, t: time, s: status, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0 });
             } else {
                 if(status) p.s = status;
             }
@@ -145,12 +144,20 @@
             const dataAtual = new Date().toLocaleDateString('pt-BR');
             const numPartida = d.history_matches.length + 1;
             
-            // Garante que quem está em quadra agora também está no log
             d.white.forEach(p => logarParticipacao(p, 'W'));
             d.blue.forEach(p => logarParticipacao(p, 'A'));
 
-            const infoBranco = d.players_log.filter(x => x.t === 'W').map(x => ({ n: x.n, p: d.points[x.n]||0, f: d.fouls[x.n]||0, s: x.s }));
-            const infoAzul = d.players_log.filter(x => x.t === 'A').map(x => ({ n: x.n, p: d.points[x.n]||0, f: d.fouls[x.n]||0, s: x.s }));
+            const processar = (timeKey) => {
+                return d.players_log.filter(x => x.t === timeKey).map(x => {
+                    // O ponto na partida é o Ponto Atual menos o Ponto que ele tinha ao entrar nessa partida específica
+                    let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
+                    let flsNaPartida = (d.fouls[x.n]||0) - (x.f_ini||0);
+                    return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s };
+                });
+            };
+
+            const infoBranco = processar('W');
+            const infoAzul = processar('A');
 
             let txt = `*AVABRA - SÚMULA DE PARTIDA*\n📅 *Data:* ${dataAtual}\n🏟 *JOGO:* ${numPartida}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
@@ -163,7 +170,7 @@
                 id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`,
                 branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt
             });
-            d.players_log = []; // Limpa para a próxima partida
+            d.players_log = []; 
         }
 
         window.vitoriaPlacar = (vencedor) => {
@@ -198,7 +205,6 @@
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            // Inicia log dos novos jogadores que entraram
             d.players_log = [];
             d.white.forEach(p => logarParticipacao(p, 'W'));
             d.blue.forEach(p => logarParticipacao(p, 'A'));
@@ -207,37 +213,33 @@
 
         window.removerAtleta = (nome, local, motivo) => {
             if(!confirm("Remover atleta?")) return;
-            if (local === 'queue') {
-                d.queue = d.queue.filter(p => p !== nome);
-                d.suspended = (d.suspended || []).filter(p => p !== nome);
-            } else {
-                let timeKey = local === 'white' ? 'W' : 'A';
-                let substituto = null;
-                
-                if (motivo === 'sub' && d.queue.length > 0) {
-                    logarParticipacao(nome, timeKey, "SUBS"); // Registra que saiu por SUBS
-                    if ((d.streakW||0) === 0 && (d.scoreW + d.scoreA) === 0) {
-                        for (let i = 0; i < d.queue.length; i++) {
-                            if (!(d.suspended || []).includes(d.queue[i])) {
-                                substituto = d.queue.splice(i, 1)[0]; break;
-                            }
+            let timeKey = local === 'white' ? 'W' : 'A';
+            let substituto = null;
+            
+            if (motivo === 'sub' && d.queue.length > 0) {
+                logarParticipacao(nome, timeKey, "SUBS");
+                if ((d.streakW||0) === 0 && (d.scoreW + d.scoreA) === 0) {
+                    for (let i = 0; i < d.queue.length; i++) {
+                        if (!(d.suspended || []).includes(d.queue[i])) {
+                            substituto = d.queue.splice(i, 1)[0]; break;
                         }
-                    } else { substituto = d.queue.pop(); }
-                }
+                    }
+                } else { substituto = d.queue.pop(); }
+            }
 
-                d[local] = d[local].filter(p => p !== nome);
-                
-                if (motivo === 'falta') {
-                    logarParticipacao(nome, timeKey, "SUSP"); // Registra que saiu por SUSP
-                    d.queue.unshift(nome);
-                    if(!d.suspended) d.suspended = [];
-                    d.suspended.push(nome);
-                } 
-                
-                if (substituto) {
-                    d[local].push(substituto);
-                    logarParticipacao(substituto, timeKey); // Registra entrada do substituto
-                }
+            d[local] = d[local].filter(p => p !== nome);
+            
+            if (motivo === 'falta') {
+                logarParticipacao(nome, timeKey, "SUSP");
+                d.queue.unshift(nome);
+                if(!d.suspended) d.suspended = [];
+                d.suspended.push(nome);
+            } 
+            
+            if (substituto) {
+                d[substituto] = 0; d.points[substituto] = 0; d.fouls[substituto] = 0; // Garante que o novo entra zerado
+                d[local].push(substituto);
+                logarParticipacao(substituto, timeKey);
             }
             sync();
         };
@@ -267,7 +269,7 @@
         window.enviarWhatsApp = () => { 
             let msg = "*AVABRA: PONTUAÇÃO DO DIA*\n\n"; 
             d.all.sort().forEach(p => {
-                const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
+                const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0;
                 if (pts > 0 || fls > 0) msg += `🏀 *${p}*: ${pts} PTS | ${fls} F\n`;
             });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); 
