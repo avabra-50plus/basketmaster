@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V16.8</title>
+    <title>BASKETMASTER AVABRA V16.9</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -36,10 +36,7 @@
         .f-box { background: #8b0000; color: #fff; padding: 10px 14px; border-radius: 4px; text-align: center; cursor: pointer; font-weight: bold; }
         .btn-p { width: 42px; height: 44px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
-        
-        /* BOTÕES DE CORREÇÃO TURBINADOS */
         .btn-corrige { font-size: 12px; color: #d32f2f; background: #fdfdfd; border: 2px solid #d32f2f; padding: 6px 12px; border-radius: 6px; font-weight: 900; cursor: pointer; }
-        
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 9px; padding: 7px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-lesao { background: #555; color: #fff; }
@@ -134,9 +131,12 @@
             let p = d.players_log.find(x => x.n === nome);
             if(!p) {
                 let finalStatus = status;
+                // Se o jogo já está rolando (placar > 0) e ele não tem status, é um entrante por substituição
                 if(!status && (d.scoreW > 0 || d.scoreA > 0)) finalStatus = "ENTROU";
                 d.players_log.push({ n: nome, t: time, s: finalStatus, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0 });
-            } else { if(status) p.s = status; }
+            } else if(status) {
+                p.s = status;
+            }
         }
 
         function registrarPartida(motivo) {
@@ -150,8 +150,8 @@
                     let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
                     let flsNaPartida = (d.fouls[x.n]||0) - (x.f_ini||0);
                     let icone = "";
-                    if(x.s === "SUBS") icone = " ⬇️";
-                    if(x.s === "ENTROU") icone = " ⬆️";
+                    if(x.s === "SUBS") icone = " 🔻";
+                    if(x.s === "ENTROU") icone = " 🔺";
                     if(x.s === "SUSP") icone = " (SUSP)";
                     return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s, icon: icone };
                 });
@@ -200,7 +200,10 @@
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            d.players_log = []; d.white.forEach(p => logarParticipacao(p, 'W')); d.blue.forEach(p => logarParticipacao(p, 'A')); sync();
+            d.players_log = []; 
+            d.white.forEach(p => logarParticipacao(p, 'W')); 
+            d.blue.forEach(p => logarParticipacao(p, 'A')); 
+            sync();
         }
 
         window.removerAtleta = (nome, local, motivo) => {
@@ -282,21 +285,13 @@
                         <div class="team-box br">
                             <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333">BRANCO</strong>
                             ${jogo.branco.map(p => {
-                                let label = p.n;
-                                if(p.s === "SUBS") label += ' <b style="color:#ff4444; font-size:14px;">⬇️</b>';
-                                if(p.s === "ENTROU") label += ' <b style="color:#25d366; font-size:14px;">⬆️</b>';
-                                if(p.s === "SUSP") label += ' <small>(SUSP)</small>';
-                                return `<div class="player-line"><span>${label}</span><span>${p.p}P / ${p.f}F</span></div>`;
+                                return `<div class="player-line"><span>${p.n}${p.icon}</span><span>${p.p}P / ${p.f}F</span></div>`;
                             }).join('')}
                         </div>
                         <div class="team-box az">
                             <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333">AZUL</strong>
                             ${jogo.azul.map(p => {
-                                let label = p.n;
-                                if(p.s === "SUBS") label += ' <b style="color:#ff4444; font-size:14px;">⬇️</b>';
-                                if(p.s === "ENTROU") label += ' <b style="color:#25d366; font-size:14px;">⬆️</b>';
-                                if(p.s === "SUSP") label += ' <small>(SUSP)</small>';
-                                return `<div class="player-line"><span>${label}</span><span>${p.p}P / ${p.f}F</span></div>`;
+                                return `<div class="player-line"><span>${p.n}${p.icon}</span><span>${p.p}P / ${p.f}F</span></div>`;
                             }).join('')}
                         </div>
                     </div>
