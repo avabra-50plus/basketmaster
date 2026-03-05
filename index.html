@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V17.1</title>
+    <title>BASKETMASTER AVABRA V17.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -290,20 +290,26 @@
                             <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333">BRANCO</strong>
                             ${jogo.branco.map(p => {
                                 let label = p.n;
-                                let iconeCor = p.s === "SUBS" ? "var(--red)" : "var(--green)";
-                                let iconeSeta = p.s === "SUBS" ? "🔻" : (p.s === "ENTROU" ? "🔺" : "");
-                                if(p.s === "SUSP") return `<div class="player-line"><span>${label} <small>(SUSP)</small></span><span>${p.p}P / ${p.f}F</span></div>`;
-                                return `<div class="player-line"><span>${label} <b style="color:${iconeCor}">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
+                                let iconeSeta = "";
+                                let corSeta = "";
+                                if(p.s === "SUBS") { iconeSeta = "🔻"; corSeta = "var(--red)"; }
+                                else if(p.s === "ENTROU") { iconeSeta = "🔺"; corSeta = "var(--green)"; }
+                                else if(p.s === "SUSP") { return `<div class="player-line"><span>${label} <small>(SUSP)</small></span><span>${p.p}P / ${p.f}F</span></div>`; }
+                                
+                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
                             }).join('')}
                         </div>
                         <div class="team-box az">
                             <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333">AZUL</strong>
                             ${jogo.azul.map(p => {
                                 let label = p.n;
-                                let iconeCor = p.s === "SUBS" ? "var(--red)" : "var(--green)";
-                                let iconeSeta = p.s === "SUBS" ? "🔻" : (p.s === "ENTROU" ? "🔺" : "");
-                                if(p.s === "SUSP") return `<div class="player-line"><span>${label} <small>(SUSP)</small></span><span>${p.p}P / ${p.f}F</span></div>`;
-                                return `<div class="player-line"><span>${label} <b style="color:${iconeCor}">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
+                                let iconeSeta = "";
+                                let corSeta = "";
+                                if(p.s === "SUBS") { iconeSeta = "🔻"; corSeta = "var(--red)"; }
+                                else if(p.s === "ENTROU") { iconeSeta = "🔺"; corSeta = "var(--green)"; }
+                                else if(p.s === "SUSP") { return `<div class="player-line"><span>${label} <small>(SUSP)</small></span><span>${p.p}P / ${p.f}F</span></div>`; }
+                                
+                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F</span></div>`;
                             }).join('')}
                         </div>
                     </div>
