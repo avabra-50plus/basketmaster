@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V16.1</title>
+    <title>BASKETMASTER AVABRA V16.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #d32f2f; --green: #25d366; }
@@ -51,8 +51,8 @@
         .nav-b.active { color: var(--orange); }
         .lista-disp { background:#1a1a1a; padding:12px; margin-bottom:2px; display:flex; justify-content:space-between; align-items:center; border-radius:4px; }
         .btn-entrar { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; }
-        .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #222; background: #0a0a0a; }
-        .btn-del-socio { background: transparent; color: var(--red); border: 1px solid var(--red); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+        .sumula-card { background: #111; border: 1px solid #333; padding: 12px; margin-bottom: 10px; border-radius: 6px; }
+        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -79,13 +79,16 @@
     </div>
 
     <div id="view-stats" style="display:none; padding:15px;">
-        <h2 style="color:var(--orange); font-size:18px;">RELATÓRIO DO TREINO</h2>
-        <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">ENVIAR PARA WHATSAPP</button>
+        <h2 style="color:var(--orange); font-size:18px;">ESTATÍSTICAS GERAIS</h2>
+        <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">WHATSAPP: CESTINHAS DO DIA</button>
         <div id="lista-estatisticas-geral"></div>
+        <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+        <h2 style="color:var(--yellow); font-size:18px;">SÚMULAS DAS PARTIDAS</h2>
+        <div id="lista-historico-partidas"></div>
     </div>
 
     <div id="view-atletas" style="display:none; padding:20px;">
-        <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO ATLETA</button>
+        <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
         <div style="margin-top:50px; padding:20px; border: 1px dashed #333; border-radius: 8px; text-align: center;">
             <button style="background:var(--red); color:#fff; border:none; padding:10px 20px; border-radius:4px; font-size:12px; font-weight:bold;" onclick="resetarRacha()">ZERAR TODO O JOGO</button>
@@ -103,7 +106,7 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [] };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [], history_matches: [] };
         let abaAtiva = 'racha';
 
         async function load() {
@@ -111,7 +114,7 @@
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
                     d = data.data;
-                    if (!d.suspended) d.suspended = [];
+                    if (!d.history_matches) d.history_matches = [];
                 }
                 render();
             } catch (e) { console.error(e); }
@@ -119,61 +122,30 @@
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        window.removerAtleta = (nome, local, motivo) => {
-            if(!confirm("Confirmar ação?")) return;
-            if (local === 'queue') {
-                d.queue = d.queue.filter(p => p !== nome);
-                d.suspended = (d.suspended || []).filter(p => p !== nome);
-            } else {
-                const vitSeguidas = local === 'white' ? (d.streakW || 0) : (d.streakA || 0);
-                const placarTotal = (d.scoreW || 0) + (d.scoreA || 0);
-                let substituto = null;
-
-                if (motivo === 'sub' && d.queue.length > 0) {
-                    if (vitSeguidas === 0 && placarTotal === 0) {
-                        for (let i = 0; i < d.queue.length; i++) {
-                            if (!(d.suspended || []).includes(d.queue[i])) {
-                                substituto = d.queue.splice(i, 1)[0];
-                                break;
-                            }
-                        }
-                    } else { substituto = d.queue.pop(); }
-                }
-
-                d[local] = d[local].filter(p => p !== nome);
-                if (motivo === 'falta') {
-                    d.queue.unshift(nome);
-                    if(!d.suspended) d.suspended = [];
-                    d.suspended.push(nome);
-                } 
-                if (substituto) d[local].push(substituto);
-            }
-            sync();
-        };
-
-        window.terminoTempo = (btn) => {
-            let label = btn === 'B' ? 'BRANCO' : btn === 'A' ? 'AZUL' : 'EMPATE';
-            if(!confirm(`Tempo esgotado! Ambas equipes sairão. Confirma?`)) return;
+        function registrarPartida(motivo) {
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            const numPartida = d.history_matches.length + 1;
             
-            d.suspended = [];
-            if (btn === 'B') {
-                d.queue.push(...d.white, ...d.blue);
-            } else if (btn === 'A') {
-                d.queue.push(...d.blue, ...d.white);
-            } else {
-                // EMPATE: Ordem de chegada é o que vale. 
-                // Colocamos o Branco e Azul no final da fila na ordem padrão, 
-                // mas quem já estava na fila entrará antes deles obrigatoriamente.
-                d.queue.push(...d.white, ...d.blue);
-            }
-
-            d.white = []; d.blue = []; d.scoreW = 0; d.scoreA = 0;
-            d.streakW = 0; d.streakA = 0;
-            executarRodizio();
-        };
+            let txt = `*AVABRA - SÚMULA DE PARTIDA*\n📅 *Data:* ${dataAtual}\n🏟 *JOGO:* ${numPartida}\n\n`;
+            txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
+            d.white.forEach(p => txt += `- ${p}: (${d.points[p]||0} P / ${d.fouls[p]||0} F)\n`);
+            
+            txt += `\n🔵 *AZUL (${d.scoreA})*\n`;
+            d.blue.forEach(p => txt += `- ${p}: (${d.points[p]||0} P / ${d.fouls[p]||0} F)\n`);
+            
+            txt += `\n⏱ *Encerrado por:* ${motivo}`;
+            
+            d.history_matches.push({
+                id: numPartida,
+                data: dataAtual,
+                placar: `${d.scoreW} x ${d.scoreA}`,
+                textoWhatsApp: txt
+            });
+        }
 
         window.vitoriaPlacar = (vencedor) => {
-            if(!confirm("Vitória confirmada?")) return;
+            if(!confirm("Confirmar vitória?")) return;
+            registrarPartida('Placar');
             d.suspended = [];
             if (vencedor === 'B') {
                 d.streakW = (d.streakW || 0) + 1; d.streakA = 0;
@@ -188,6 +160,17 @@
             executarRodizio();
         };
 
+        window.terminoTempo = (btn) => {
+            if(!confirm("Encerrar por tempo? Ambas saem.")) return;
+            registrarPartida('Tempo');
+            d.suspended = [];
+            if (btn === 'B') d.queue.push(...d.white, ...d.blue);
+            else if (btn === 'A') d.queue.push(...d.blue, ...d.white);
+            else d.queue.push(...d.white, ...d.blue);
+            d.white = []; d.blue = []; d.scoreW = 0; d.scoreA = 0; d.streakW = 0; d.streakA = 0;
+            executarRodizio();
+        };
+
         function executarRodizio() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
@@ -195,13 +178,44 @@
             sync();
         }
 
+        window.enviarSumulaJogo = (index) => {
+            const jogo = d.history_matches[index];
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(jogo.textoWhatsApp)}`);
+        };
+
+        window.removerAtleta = (nome, local, motivo) => {
+            if(!confirm("Remover atleta?")) return;
+            if (local === 'queue') {
+                d.queue = d.queue.filter(p => p !== nome);
+                d.suspended = (d.suspended || []).filter(p => p !== nome);
+            } else {
+                let substituto = null;
+                if (motivo === 'sub' && d.queue.length > 0) {
+                    if ((d.streakW||0) === 0 && (d.scoreW + d.scoreA) === 0) {
+                        for (let i = 0; i < d.queue.length; i++) {
+                            if (!(d.suspended || []).includes(d.queue[i])) {
+                                substituto = d.queue.splice(i, 1)[0]; break;
+                            }
+                        }
+                    } else { substituto = d.queue.pop(); }
+                }
+                d[local] = d[local].filter(p => p !== nome);
+                if (motivo === 'falta') {
+                    d.queue.unshift(nome);
+                    if(!d.suspended) d.suspended = [];
+                    d.suspended.push(nome);
+                } 
+                if (substituto) d[local].push(substituto);
+            }
+            sync();
+        };
+
         window.mudarAba = (aba) => { 
             abaAtiva = aba;
-            document.getElementById('view-racha').style.display = aba === 'racha' ? 'block' : 'none';
-            document.getElementById('view-stats').style.display = aba === 'stats' ? 'block' : 'none';
-            document.getElementById('view-atletas').style.display = aba === 'atletas' ? 'block' : 'none';
+            document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
+            document.getElementById(`view-${aba}`).style.display = 'block';
             document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            document.getElementById(`nav-${aba}`).classList.add('active');
         };
 
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
@@ -211,17 +225,12 @@
         window.subPt = (n) => { if ((d.points[n] || 0) > 0) { d.points[n]--; d.hist_pts[n]--; if (d.white.includes(n)) d.scoreW--; else d.scoreA--; } sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
         window.subFl = (n) => { if ((d.fouls[n] || 0) > 0) { d.fouls[n]--; d.hist_fls[n]--; } sync(); };
-        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [] }; sync(); } };
+        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [], history_matches: [] }; sync(); } };
         window.enviarWhatsApp = () => { 
-            let msg = "*AVABRA: RELATÓRIO*\n\n"; 
-            let count = 0;
-            Object.keys(d.hist_pts || {}).sort().forEach(p => {
-                const pts = d.hist_pts[p] || 0;
-                const fls = d.hist_fls[p] || 0;
-                if (pts > 0 || fls > 0) {
-                    msg += `🏀 *${p}*: ${pts} PTS | ${fls} F\n`;
-                    count++;
-                }
+            let msg = "*AVABRA: PONTUAÇÃO DO DIA*\n\n"; 
+            d.all.sort().forEach(p => {
+                const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
+                if (pts > 0 || fls > 0) msg += `🏀 *${p}*: ${pts} PTS | ${fls} F\n`;
             });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); 
         };
@@ -232,22 +241,35 @@
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${az ? 'azul' : ''}">
-                        <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span class="stats">PTS: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
+                        <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span class="stats">P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
                         <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div class="g-pts"><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div>
                         <div class="bottom-row"><button class="btn-excluir btn-lesao" onclick="removerAtleta('${p}', '${slug}', 'sub')">Sair do Jogo</button><button class="btn-excluir btn-falta3" onclick="removerAtleta('${p}', '${slug}', 'falta')">Sair (3 Faltas)</button></div></div>`).join('');
             };
             draw(d.white || [], 'w-list', false, 'white'); draw(d.blue || [], 'a-list', true, 'blue');
-            const q = document.getElementById('q-list'); 
-            q.innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (SUSP)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')">X</button></span>`).join(' ');
+            document.getElementById('q-list').innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i/5)%2===0)?'cor-amarelo':'cor-verde'}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (S)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')">X</button></span>`).join(' ');
             document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => ![...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
+            
+            // Relatório Geral
             let htmlStats = "";
-            let uniquePlayers = [...new Set(Object.keys(d.hist_pts || {}).concat(Object.keys(d.hist_fls || {})))].sort();
-            uniquePlayers.forEach(p => {
+            d.all.sort().forEach(p => {
                 const pts = d.hist_pts[p] || 0; const fls = d.hist_fls[p] || 0;
-                if (pts > 0 || fls > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>PTS: <b style="color:var(--orange)">${pts}</b> | F: <b style="color:var(--orange)">${fls}</b></span></div>`;
+                if (pts > 0 || fls > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${fls} F</span></div>`;
             });
-            document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "<p style='color:#666;text-align:center;'>Nenhum registro.</p>";
+            document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Nenhum registro.";
+
+            // Histórico de Súmulas
+            let htmlHistory = "";
+            (d.history_matches || []).forEach((jogo, index) => {
+                htmlHistory += `<div class="sumula-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:12px; font-weight:bold; color:var(--orange)">JOGO ${jogo.id} - ${jogo.data}</span>
+                        <button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${index})">ENVIAR SÚMULA</button>
+                    </div>
+                    <div style="font-size:13px; margin-top:5px; color:#ccc">Placar: ${jogo.placar}</div>
+                </div>`;
+            });
+            document.getElementById('lista-historico-partidas').innerHTML = htmlHistory || "Nenhuma partida finalizada.";
         }
         load();
     </script>
