@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V17.3</title>
+    <title>BASKETMASTER AVABRA V17.4</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -59,6 +59,10 @@
         .team-box.az { border-left-color: var(--blue); }
         .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 6px 0; font-family: sans-serif; }
         .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        
+        /* CORREÇÃO DO CADASTRO: Espaçamento entre nome e botão */
+        .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #222; background: #0a0a0a; }
+        .btn-del-socio { background: transparent; color: var(--red); border: 1px solid var(--red); padding: 6px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -149,8 +153,8 @@
                     let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
                     let flsNaPartida = (d.fouls[x.n]||0) - (x.f_ini||0);
                     let icone = "";
-                    if(x.s === "SUBS") icone = " 🔻";
-                    if(x.s === "ENTROU") icone = " 🔺";
+                    if(x.s === "SUBS") icone = " &#9660;";
+                    if(x.s === "ENTROU") icone = " &#9650;";
                     if(x.s === "SUSP") icone = " (SUSP)";
                     return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s, icon: icone };
                 });
@@ -160,9 +164,15 @@
             const infoAzul = processar('A');
             let txt = `*AVABRA - SÚMULA DE PARTIDA*\n📅 *Data:* ${dataAtual}\n🏟 *JOGO:* ${numPartida}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
-            infoBranco.forEach(item => txt += `- ${item.n}${item.icon}: (${item.p} P / ${item.f} F)\n`);
+            infoBranco.forEach(item => {
+                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "(SUSP)" : ""));
+                txt += `- ${item.n} ${sIcon}: (${item.p} P / ${item.f} F)\n`;
+            });
             txt += `\n🔵 *AZUL (${d.scoreA})*\n`;
-            infoAzul.forEach(item => txt += `- ${item.n}${item.icon}: (${item.p} P / ${item.f} F)\n`);
+            infoAzul.forEach(item => {
+                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "(SUSP)" : ""));
+                txt += `- ${item.n} ${sIcon}: (${item.p} P / ${item.f} F)\n`;
+            });
             txt += `\n⏱ *Encerrado por:* ${motivo}`;
             
             d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt });
@@ -199,10 +209,7 @@
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            d.players_log = []; 
-            d.white.forEach(p => logarParticipacao(p, 'W')); 
-            d.blue.forEach(p => logarParticipacao(p, 'A')); 
-            sync();
+            d.players_log = []; d.white.forEach(p => logarParticipacao(p, 'W')); d.blue.forEach(p => logarParticipacao(p, 'A')); sync();
         }
 
         window.removerAtleta = (nome, local, motivo) => {
@@ -266,7 +273,13 @@
             }).join(' ');
             
             document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => ![...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
-            document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
+            
+            // RENDERIZAÇÃO CORRIGIDA DA LISTA DE CADASTRO
+            document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `
+                <div class="item-cadastro">
+                    <span>${p}</span>
+                    <button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button>
+                </div>`).join('');
             
             let htmlStats = "";
             d.all.sort().forEach(p => {
