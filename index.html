@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V22.6</title>
+    <title>AVABRA MASTER V22.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -57,7 +57,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA MASTER V22.6</div></div>
+        <div class="header"><div class="logo">AVABRA MASTER V22.7</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -135,7 +135,6 @@
             osc.connect(g); g.connect(audioContext.destination); osc.start(now); osc.stop(now + 0.8);
         }
         function testarEfeitoMaster() { somBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1000); }
-
         function formatTime(s) { const val = Math.max(0, Math.floor(s)); return `${Math.floor(val/60).toString().padStart(2,'0')}:${(val%60).toString().padStart(2,'0')}`; }
 
         function iniciarTudo() { 
@@ -158,8 +157,9 @@
             sync();
         }
 
-        function resetClock() { if(confirm("Zerar cronômetro?")) { if(d.is_recording) calcTempo(); d.clock_running=false; d.target_time=null; d.remaining_seconds=600; sync(); } }
+        function resetClock() { if(confirm("Zerar cronômetro?")) { if(d.is_recording) calcTempo(); d.clock_running=false; d.target_time=null; d.remaining_seconds=600; buzzerPlayed=false; sync(); } }
 
+        // ATUALIZAÇÃO VISUAL SEM SYNC (NÃO TRAVA)
         function updateClock() {
             const el = document.getElementById('game-clock');
             const btns = [document.getElementById('end-t-br'),document.getElementById('end-t-az'),document.getElementById('end-t-em')];
@@ -169,11 +169,8 @@
                 el.innerText = "00:00"; el.classList.add('expired'); btns.forEach(b => b.classList.add('highlight'));
                 if(d.clock_running && !buzzerPlayed) {
                     somBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1200);
-                    buzzerPlayed = true;
-                    // TRAVA DE SEGURANÇA: Para o cronômetro para não travar o celular
-                    d.clock_running = false; d.remaining_seconds = 0; d.target_time = null;
-                    if(d.is_recording) calcTempo();
-                    sync();
+                    buzzerPlayed = true; 
+                    // Nota: Não chamamos sync aqui para evitar travamento. O estado mudará no clique do botão final.
                 }
             } else {
                 el.innerText = formatTime(s); el.classList.remove('expired'); btns.forEach(b => b.classList.remove('highlight'));
@@ -242,7 +239,7 @@
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="d.all=d.all.filter(x=>x!==p);sync()">EXCLUIR</button></div>`).join('');
             let hS = ""; d.all.sort().forEach(p => { const pts = d.hist_pts[p]||0, t = d.hist_time[p]||0; if(pts>0 || t>0) hS += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${formatTime(t)}</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = hS;
-            let hH = ""; [...d.history_matches].reverse().forEach((j, idx) => { const rIdx = d.history_matches.length - 1 - idx; hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block;font-size:10px;color:#888;">${j.data}</span><b>JOGO ${rIdx+1}</b></div>${j.mabel?'<div class="label-mabel">MABEL</div>':''}<div style="color:var(--yellow);font-weight:bold;">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarZapSumula(${rIdx})">ZAP</button></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}${p.f>=3?"🟥":""}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}${p.f>=3?"🟥":""}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div></div></div>`; });
+            let hH = ""; [...d.history_matches].reverse().forEach((j, idx) => { const rIdx = d.history_matches.length - 1 - idx; hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block;font-size:10px;color:#888;">${j.data}</span><b>JOGO ${rIdx+1}</b></div>${j.mabel?'<div class="label-mabel">MABEL</div>':''}<div style="color:var(--yellow);font-weight:bold;">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarZapSumula(${rIdx})">ZAP</button></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}${p.f>=3?"🟥":""}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${p.n}${p.f>=3?"🟥":""}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div></div></div>`; });
             document.getElementById('lista-historico-partidas').innerHTML = hH;
         }
         load();
