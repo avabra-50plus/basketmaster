@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V18.5</title>
+    <title>BASKETMASTER AVABRA V18.6</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -64,7 +64,6 @@
         .team-box.br { border-left-color: #fff; }
         .team-box.az { border-left-color: var(--blue); }
         .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 6px 0; font-family: sans-serif; font-size: 10px; }
-        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -94,7 +93,6 @@
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
-
     <div id="view-stats" style="display:none; padding:15px;">
         <h2 style="color:var(--orange); font-size:18px;">PONTUAÇÃO GERAL (TREINO)</h2>
         <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">ENVIAR CESTINHAS DO DIA</button>
@@ -103,7 +101,6 @@
         <h2 style="color:var(--yellow); font-size:18px;">HISTÓRICO DE PARTIDAS</h2>
         <div id="lista-historico-partidas"></div>
     </div>
-
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
@@ -111,14 +108,12 @@
             <button style="background:var(--red); color:#fff; border:none; padding:10px 20px; border-radius:4px; font-size:12px; font-weight:bold;" onclick="resetarRacha()">ZERAR TODO O JOGO</button>
         </div>
     </div>
-    
     <div style="height:120px"></div>
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">Racha</div>
         <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Estatísticas</div>
         <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">Cadastro</div>
     </div>
-
     <script>
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
@@ -177,32 +172,31 @@
             if(!p) {
                 let finalStatus = status;
                 if(!status && (d.scoreW > 0 || d.scoreA > 0)) finalStatus = "ENTROU";
-                // Guardamos o tempo acumulado que ele tinha ANTES de entrar neste jogo
+                // CRÍTICO: t_ini deve ser o tempo que ele já tinha ANTES deste jogo começar
                 d.players_log.push({ n: nome, t: time, s: finalStatus, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0, t_ini: d.hist_time[nome]||0 });
-            } else if(status) { 
-                p.s = status; 
-            }
+            } else if(status) { p.s = status; }
         }
 
         function registrarPartida(motivo) {
             const now = Date.now();
             const durationSec = d.match_start_time ? (now - d.match_start_time) / 1000 : 0;
             
-            // 1. Primeiro atualiza o tempo acumulado no 'd.hist_time' de todos em quadra
+            // 1. Primeiro atualiza o 'd.hist_time' global com os segundos ganhos até o exato fim
             finalizarContagemTempo();
             
             const dataAtual = new Date().toLocaleDateString('pt-BR');
             const numPartida = d.history_matches.length + 1;
             
-            // 2. Garante que quem terminou em quadra está no log
+            // 2. Garante que quem terminou em quadra está no log para capturar os pontos/faltas finais
             d.white.forEach(p => logarParticipacao(p, 'W'));
             d.blue.forEach(p => logarParticipacao(p, 'A'));
             
-            // 3. Processa a súmula pegando o tempo que eles ganharam SÓ NESTA partida
+            // 3. Processa a súmula com a diferença matemática (Valor Final - Valor Inicial do jogo)
             const processar = (timeKey) => {
                 return d.players_log.filter(x => x.t === timeKey).map(x => {
                     let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
                     let flsNaPartida = (d.fouls[x.n]||0) - (x.f_ini||0);
+                    // O tempo na súmula agora é só o que ele ganhou NESTE jogo
                     let tNaPartida = (d.hist_time[x.n]||0) - (x.t_ini||0);
                     return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s, t: tNaPartida };
                 });
@@ -226,7 +220,7 @@
 
             d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, duration: durationSec, textoWhatsApp: txt });
             
-            // 4. Limpa estados da partida
+            // 4. Reseta para a próxima partida
             d.players_log = []; d.match_start_time = null; d.players_entry_time = {};
         }
 
@@ -260,7 +254,10 @@
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            d.players_log = []; d.white.forEach(p => logarParticipacao(p, 'W')); d.blue.forEach(p => logarParticipacao(p, 'A')); sync();
+            d.players_log = []; 
+            d.white.forEach(p => logarParticipacao(p, 'W')); 
+            d.blue.forEach(p => logarParticipacao(p, 'A')); 
+            sync();
         }
 
         window.removerAtleta = (nome, local, motivo) => {
@@ -310,10 +307,9 @@
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
             const btnTimer = document.getElementById('btn-master-timer');
-            const timerTxt = document.getElementById('timer-text');
-            const timerIcon = document.getElementById('timer-icon');
-            if (d.match_start_time) { btnTimer.className = "btn-timer timer-on"; timerTxt.innerText = "Encerrar Partida"; timerIcon.innerText = "⏹️"; }
-            else { btnTimer.className = "btn-timer timer-off"; timerTxt.innerText = "Iniciar Partida"; timerIcon.innerText = "▶️"; }
+            if (d.match_start_time) { btnTimer.className = "btn-timer timer-on"; btnTimer.innerHTML = "⏹️ Encerrar Partida"; }
+            else { btnTimer.className = "btn-timer timer-off"; btnTimer.innerHTML = "▶️ Iniciar Partida"; }
+
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${az ? 'azul' : ''}">
@@ -325,12 +321,14 @@
             document.getElementById('q-list').innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => { const corClasse = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde"; return `<span class="espera-item ${corClasse}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (S)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')" style="color:#fff; background:red; border:none; border-radius:3px; margin-left:5px; font-size:9px;">X</button></span>`; }).join(' ');
             document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => ![...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
+            
             let htmlStats = "";
             d.all.sort().forEach(p => {
                 const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const tStr = formatarSegundos((d.hist_time||{})[p] || 0);
                 if (pts > 0 || fls > 0 || (d.hist_time||{})[p] > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${fls} F | ${tStr}</span></div>`;
             });
             document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Nenhum registro.";
+
             let htmlHistory = "";
             [...d.history_matches].reverse().forEach((jogo, index) => {
                 const realIndex = d.history_matches.length - 1 - index;
@@ -346,20 +344,20 @@
                             <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333">BRANCO</strong>
                             ${jogo.branco.map(p => {
                                 let label = p.n;
-                                let iconeSeta = ""; let corSeta = "";
-                                if(p.s === "SUBS") { iconeSeta = "&#9660;"; corSeta = "var(--red)"; }
-                                else if(p.s === "ENTROU") { iconeSeta = "&#9650;"; corSeta = "var(--green)"; }
-                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}; font-size:12px;">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F / ${formatarSegundos(p.t)}</span></div>`;
+                                let icSeta = ""; let cSeta = "";
+                                if(p.s === "SUBS") { icSeta = "&#9660;"; cSeta = "var(--red)"; }
+                                else if(p.s === "ENTROU") { icSeta = "&#9650;"; cSeta = "var(--green)"; }
+                                return `<div class="player-line"><span>${label} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
                             }).join('')}
                         </div>
                         <div class="team-box az">
                             <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333">AZUL</strong>
                             ${jogo.azul.map(p => {
                                 let label = p.n;
-                                let iconeSeta = ""; let corSeta = "";
-                                if(p.s === "SUBS") { iconeSeta = "&#9660;"; corSeta = "var(--red)"; }
-                                else if(p.s === "ENTROU") { iconeSeta = "&#9650;"; corSeta = "var(--green)"; }
-                                return `<div class="player-line"><span>${label} <b style="color:${corSeta}; font-size:12px;">${iconeSeta}</b></span><span>${p.p}P / ${p.f}F / ${formatarSegundos(p.t)}</span></div>`;
+                                let icSeta = ""; let cSeta = "";
+                                if(p.s === "SUBS") { icSeta = "&#9660;"; cSeta = "var(--red)"; }
+                                else if(p.s === "ENTROU") { icSeta = "&#9650;"; cSeta = "var(--green)"; }
+                                return `<div class="player-line"><span>${label} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
                             }).join('')}
                         </div>
                     </div>
