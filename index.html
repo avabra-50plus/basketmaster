@@ -3,50 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER - ESTÁVEL</title>
+    <title>AVABRA MASTER - VERSÃO ESTÁVEL V21.4</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { padding: 15px; background: #000; border-bottom: 1px solid #222; text-align: center; color: var(--orange); font-weight: bold; }
+        
         .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
-        .placar-numero { font-size: 48px; font-weight: bold; font-family: monospace; padding: 5px 20px; border-radius: 8px; background: #222; border: 2px solid #333; }
+        .placar-numero { font-size: 48px; font-weight: bold; font-family: monospace; padding: 5px 20px; border-radius: 8px; background: #222; border: 2px solid #333; color: #fff; }
+        .placar-numero.az { color: var(--blue); }
+
         .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
         #game-clock { font-size: 52px; font-family: monospace; color: var(--yellow); }
-        .btn-big { width: 90%; margin: 5px 5%; padding: 18px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-        .btn-start { background: var(--green); color: #000; }
-        .btn-pause { background: var(--orange); color: #fff; }
+        
+        .btn-big-start { width: calc(100% - 30px); margin: 15px; background: var(--green); color: #000; padding: 20px; border: none; border-radius: 8px; font-weight: 900; font-size: 18px; text-transform: uppercase; cursor: pointer; }
+        .clock-controls { display: flex; justify-content: center; gap: 10px; padding: 10px; }
+        .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+
+        .vitoria-btns { display: flex; gap: 10px; padding: 10px; }
+        .btn-v { flex: 1; padding: 18px; border: none; border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 12px; }
+        .btn-v-br { background: #fff; color: #000; }
+        .btn-v-az { background: var(--blue); color: #fff; }
+
         .faixa { background: #111; color: #888; padding: 8px 15px; font-size: 11px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
-        .linha { display: flex; align-items: center; padding: 10px; background: #fff; color: #000; border-bottom: 1px solid #ddd; }
+        .linha { display: flex; align-items: center; padding: 10px; background: #fff; color: #000; border-bottom: 1px solid #eee; }
         .linha.azul { background: var(--blue); color: #fff; }
+        
         .info { flex: 1; font-weight: bold; font-size: 14px; }
-        .f-box { background: #8b0000; color: #fff; padding: 12px; border-radius: 4px; margin: 0 5px; font-weight: bold; cursor: pointer; }
-        .btn-p { width: 45px; height: 45px; background: #222; color: #fff; border: none; border-radius: 4px; font-weight: bold; }
-        .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 15px 0; z-index: 1000;}
+        .stats-row { font-size: 11px; margin-top: 4px; color: #555; }
+        .linha.azul .stats-row { color: #ccc; }
+        
+        .acoes { display: flex; align-items: center; gap: 4px; }
+        .f-box { background: #8b0000; color: #fff; padding: 12px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-p { width: 44px; height: 44px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; cursor: pointer; }
+
+        #q-list { padding: 15px; background: #0a0a0a; font-size: 13px; font-weight: bold; line-height: 2.2; color: var(--yellow); }
+        .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 15px 0; z-index: 1000; }
         .nav-b { flex: 1; text-align: center; font-size: 11px; font-weight: bold; color: #fff; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
-        .item-list { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
-        #q-list { padding: 15px; font-weight: bold; color: var(--yellow); background: #0a0a0a; line-height: 1.8; }
+        .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
+        .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header">AVABRA - MODO OPERADOR</div>
+        <div class="header">AVABRA MASTER - V21.4</div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
-            <div style="font-weight: bold; font-size: 24px; color: #444;">X</div>
-            <div id="score-az" class="placar-numero" style="color:var(--blue)">0</div>
+            <div style="font-weight: bold; color: #444;">X</div>
+            <div id="score-az" class="placar-numero az">0</div>
         </div>
         <div class="game-clock-area">
             <div id="game-clock">12:00</div>
-            <button id="btn-master-clock" class="btn-big btn-start" onclick="toggleClock()">🏀 Iniciar Jogo</button>
+            <div id="init-action-area">
+                <button class="btn-big-start" onclick="iniciarTudo()">🏀 INICIAR A PARTIDA</button>
+            </div>
+            <div id="clock-controls-area" class="clock-controls" style="display:none;">
+                <button id="btn-toggle-clock" class="btn-clock" style="background:var(--orange); color:#fff;" onclick="toggleClock()">⏸️ Pausar</button>
+                <button class="btn-clock" style="background:#333;color:#888;" onclick="resetClock()">🔄 Zerar</button>
+            </div>
         </div>
-        <div style="display: flex; gap: 5px; padding: 10px;">
-            <button class="btn-big" style="background:#fff; color:#000; flex: 1;" onclick="vitoria('W')">Vitória Branco</button>
-            <button class="btn-big" style="background:var(--blue); color:#fff; flex: 1;" onclick="vitoria('A')">Vitória Azul</button>
+        <div class="vitoria-btns">
+            <button class="btn-v btn-v-br" onclick="vitoria('W')">Vitória Branco</button>
+            <button class="btn-v btn-v-az" onclick="vitoria('A')">Vitória Azul</button>
         </div>
-        <div class="timer-area" style="display: flex; gap: 5px; padding: 0 10px 10px 10px;">
-            <button class="btn-big" style="background:#555; font-size: 11px;" onclick="terminoPorTempo()">⏱️ Terminou por Tempo</button>
+        <div style="padding: 0 10px 10px 10px;">
+            <button class="btn-clock" style="width:100%; background:#444;" onclick="terminoTempo()">⏱️ Fim por Tempo / Empate</button>
         </div>
         <div class="faixa">Time Branco</div><div id="w-list"></div>
         <div class="faixa">Time Azul</div><div id="a-list"></div>
@@ -55,21 +78,20 @@
     </div>
 
     <div id="view-stats" style="display:none; padding:15px;">
-        <button class="btn-big" style="background:var(--green); color:#000;" onclick="enviarZapGeral()">ENVIAR CESTINHAS DO DIA (ZAP)</button>
-        <div id="lista-estatisticas-geral"></div>
+        <button class="btn-big-start" style="background:var(--green); margin:0 0 20px 0; width:100%;" onclick="enviarWhatsAppGeral()">ENVIAR RANKING DO DIA (ZAP)</button>
+        <div id="lista-stats"></div>
     </div>
 
     <div id="view-admin" style="display:none; padding:20px;">
-        <button class="btn-big" style="background:var(--orange); color:#fff;" onclick="cadastrarAtleta()">+ Cadastrar Atleta</button>
+        <button class="btn-big-start" style="background:var(--orange); color:#fff; margin:0 0 20px 0; width:100%;" onclick="cadastrarAtleta()">+ CADASTRAR NOVO ATLETA</button>
         <div id="lista-cadastrados"></div>
-        <button class="btn-big" style="background:#333; color:#ccc; margin-top:30px;" onclick="desfazer()">↩ Desfazer Último Rodízio</button>
-        <button class="btn-big" style="background:var(--red); color:#fff;" onclick="resetGeral()">⚠️ Zerar Tudo</button>
+        <button class="btn-big-start" style="background:var(--red); color:#fff; margin-top:40px; width:100%;" onclick="resetarTudo()">⚠️ ZERAR TODO O RACHA</button>
     </div>
 
     <div style="height:100px"></div>
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">Racha</div>
-        <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Súmulas</div>
+        <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Ranking</div>
         <div id="nav-admin" class="nav-b" onclick="mudarAba('admin')">Admin</div>
     </div>
 
@@ -78,73 +100,61 @@
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        let d = { all: [], white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {}, last_state: null };
-        let timer = 720; let running = false;
+        let d = { all: [], white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {} };
+        let timer = 720; let running = false; let abaAtiva = 'racha';
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) {
-                const localRunning = running; const localTime = timer;
+                const localStatus = running; const localTime = timer;
                 d = data.data;
-                if(localRunning) { running = true; timer = localTime; }
+                if(localStatus) { running = true; timer = localTime; }
             }
             render();
         }
 
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function toggleClock() {
-            running = !running;
-            document.getElementById('btn-master-clock').innerText = running ? "⏸️ Pausar Jogo" : "▶️ Retomar Jogo";
-            document.getElementById('btn-master-clock').className = running ? "btn-big btn-pause" : "btn-big btn-start";
-        }
+        function iniciarTudo() { running = true; d.is_recording = true; sync(); }
+        function toggleClock() { running = !running; render(); }
+        function resetClock() { if(confirm("Zerar tempo?")) { timer = 720; running = false; render(); } }
 
         setInterval(() => {
             if (running && timer > 0) {
                 timer--;
                 document.getElementById('game-clock').innerText = `${Math.floor(timer/60).toString().padStart(2,'0')}:${(timer%60).toString().padStart(2,'0')}`;
+                if (timer === 0) running = false;
             }
         }, 1000);
 
         function vitoria(v) {
-            if(!confirm("Finalizar partida e rodar times?")) return;
-            d.last_state = JSON.parse(JSON.stringify(d));
-            
+            if(!confirm("Confirmar vitória?")) return;
             if (v === 'W') {
                 d.streakW++; d.streakA = 0;
-                if (d.streakW >= 2) {
-                    d.queue.push(...d.white); d.queue.push(...d.blue);
-                    d.white = []; d.blue = []; d.streakW = 0;
-                } else {
-                    d.queue.push(...d.blue); d.blue = [];
-                }
+                if (d.streakW >= 2) { d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; }
+                else { d.queue.push(...d.blue); d.blue = []; }
             } else {
                 d.streakA++; d.streakW = 0;
-                if (d.streakA >= 2) {
-                    d.queue.push(...d.blue); d.queue.push(...d.white);
-                    d.white = []; d.blue = []; d.streakA = 0;
-                } else {
-                    d.queue.push(...d.white); d.white = [];
-                }
+                if (d.streakA >= 2) { d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; }
+                else { d.queue.push(...d.white); d.white = []; }
             }
-            rodarEFinalizar();
+            executarRodizio();
         }
 
-        function terminoPorTempo() {
-            if(!confirm("Encerrar racha por tempo?")) return;
-            d.last_state = JSON.parse(JSON.stringify(d));
-            if (d.scoreW > d.scoreA) { d.queue.push(...d.white); d.queue.push(...d.blue); }
-            else if (d.scoreA > d.scoreW) { d.queue.push(...d.blue); d.queue.push(...d.white); }
+        function terminoTempo() {
+            if(!confirm("Encerrar racha?")) return;
+            if (d.scoreW > d.scoreA) { d.queue.push(...d.white, ...d.blue); }
+            else if (d.scoreA > d.scoreW) { d.queue.push(...d.blue, ...d.white); }
             else { 
-                const emQuadra = [...d.white, ...d.blue];
-                const ordemGinasio = d.all.filter(p => emQuadra.includes(p));
-                d.queue.push(...ordemGinasio);
+                const naQuadra = [...d.white, ...d.blue];
+                const ordemOriginal = d.all.filter(p => naQuadra.includes(p));
+                d.queue.push(...ordemOriginal);
             }
             d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0;
-            rodarEFinalizar();
+            executarRodizio();
         }
 
-        function rodarEFinalizar() {
+        function executarRodizio() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             d.scoreW = 0; d.scoreA = 0; timer = 720; running = false;
@@ -152,40 +162,38 @@
             sync();
         }
 
-        function cadastrarAtleta() { const n = prompt("Nome:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } }
-        function entrar(n) { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); }
         function addPt(n, p) { d.points[n] = (d.points[n]||0) + p; d.hist_pts[n] = (d.hist_pts[n]||0) + p; if(d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); }
         function addFl(n) { d.fouls[n] = (d.fouls[n]||0) + 1; sync(); }
-        function desfazer() { if(d.last_state && confirm("Desfazer?")) { d = d.last_state; sync(); } }
-        function resetGeral() { if(confirm("ZERAR TUDO?")) { d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {} }; timer=720; running=false; sync(); } }
+        function cadastrarAtleta() { const n = prompt("Nome:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } }
+        function entrar(n) { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); }
+        function resetarTudo() { if(confirm("APAGAR TUDO?")) { d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {} }; timer=720; running=false; sync(); } }
+        function mudarAba(a) { abaAtiva = a; ['racha','stats','admin'].forEach(x => document.getElementById('view-'+x).style.display='none'); document.getElementById('view-'+a).style.display='block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById('nav-'+a).classList.add('active'); }
+        function enviarWhatsAppGeral() { let m = "*CESTINHAS AVABRA*\n\n"; d.all.sort().forEach(p => { if(d.hist_pts[p]>0) m += `🏀 *${p}*: ${d.hist_pts[p]} PTS\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(m)}`); }
 
         function render() {
             document.getElementById('score-br').innerText = d.scoreW;
             document.getElementById('score-az').innerText = d.scoreA;
-            const dw = (list, id, isAz) => {
+            document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'block';
+            document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
+            document.getElementById('btn-toggle-clock').innerText = running ? "⏸️ Pausar" : "▶️ Retomar";
+            
+            const draw = (list, id, isAz) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${isAz ? 'azul' : ''}">
-                        <div class="info">${p}<br><small>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</small></div>
-                        <div class="f-box" onclick="addFl('${p}')">F+</div>
+                        <div class="info">${p}<div class="stats-row">P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</div></div>
+                        <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div>
                         <button class="btn-p" onclick="addPt('${p}',1)">1</button>
                         <button class="btn-p" onclick="addPt('${p}',2)">2</button>
-                        <button class="btn-p" onclick="addPt('${p}',3)">3</button>
+                        <button class="btn-p" onclick="addPt('${p}',3)">3</button></div>
                     </div>
                 `).join('');
             };
-            dw(d.white, 'w-list', false); dw(d.blue, 'a-list', true);
+            draw(d.white, 'w-list', false); draw(d.blue, 'a-list', true);
             document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span>${i+1}.${p} </span>`).join(' ');
-            document.getElementById('disp-list').innerHTML = d.all.filter(p => !d.white.includes(p) && !d.blue.includes(p) && !d.queue.includes(p)).sort().map(p => `<div class="item-list"><span>${p}</span><button onclick="entrar('${p}')">CHEGOU</button></div>`).join('');
-            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-list"><span>${p}</span></div>`).join('');
-            let hS = ""; d.all.sort().forEach(p => { if(d.hist_pts[p]>0) hS += `<div class="item-list"><span>${p}</span><span>${d.hist_pts[p]} PTS</span></div>`; });
-            document.getElementById('lista-estatisticas-geral').innerHTML = hS;
-        }
-
-        function mudarAba(a) { 
-            ['racha','stats','admin'].forEach(x => document.getElementById('view-'+x).style.display='none');
-            document.getElementById('view-'+a).style.display='block';
-            document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active'));
-            document.getElementById('nav-'+a).classList.add('active');
+            document.getElementById('disp-list').innerHTML = d.all.filter(p => !d.white.includes(p) && !d.blue.includes(p) && !d.queue.includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrar('${p}')">CHEGOU</button></div>`).join('');
+            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span></div>`).join('');
+            let hS = ""; d.all.sort().forEach(p => { if(d.hist_pts[p]>0) hS += `<div class="lista-disp"><span>${p}</span><span>${d.hist_pts[p]} PTS</span></div>`; });
+            document.getElementById('lista-stats').innerHTML = hS;
         }
         load();
     </script>
