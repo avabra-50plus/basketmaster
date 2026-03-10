@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V22.3</title>
+    <title>BASKETMASTER AVABRA V22.4 - MASTER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -69,7 +69,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V22.3 - MASTER</div></div>
+        <div class="header"><div class="logo">AVABRA V22.4 - MASTER</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -131,9 +131,10 @@
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
+                    const oldStatus = d.clock_running;
                     d = data.data;
-                    // Garantir compatibilidade de estrutura antiga
-                    if(d.remaining_seconds === undefined) d.remaining_seconds = 600;
+                    // Se o status de pausa mudou remotamente, resetamos o buzzer
+                    if (oldStatus !== d.clock_running) buzzerPlayed = false;
                 }
                 render();
             } catch (e) { console.error(e); }
@@ -159,24 +160,19 @@
             playTone(now, 0.4, 400); playTone(now + 0.5, 0.4, 400); playTone(now + 1.0, 0.8, 350);
         }
 
-        function testarEfeitoMaster() { 
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); 
-            playBuzzer(); setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 1500); 
-        }
+        function testarEfeitoMaster() { if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); playBuzzer(); setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 1500); }
 
         function formatTimeDisplay(s) { 
-            const val = Math.max(0, s);
+            const val = Math.max(0, Math.floor(s));
             const min = Math.floor(val / 60); 
-            const sec = Math.floor(val % 60); 
+            const sec = val % 60; 
             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`; 
         }
 
         function iniciarTudo() { 
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); 
             const now = Date.now(); 
-            d.is_recording = true; 
-            d.clock_running = true; 
-            buzzerPlayed = false; 
+            d.is_recording = true; d.clock_running = true; buzzerPlayed = false; 
             d.target_time = now + (d.remaining_seconds * 1000); 
             [...d.white, ...d.blue].forEach(p => { logarParticipacao(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; }); 
             sync(); 
@@ -210,18 +206,20 @@
             const el = document.getElementById('game-clock'); 
             const btns = [document.getElementById('end-t-br'), document.getElementById('end-t-az'), document.getElementById('end-t-em')];
             
-            let displaySecs = d.remaining_seconds;
+            let currentSecs;
             if (d.clock_running && d.target_time) {
-                displaySecs = (d.target_time - Date.now()) / 1000;
+                currentSecs = (d.target_time - Date.now()) / 1000;
+            } else {
+                currentSecs = d.remaining_seconds;
             }
 
-            if (displaySecs <= 0) { 
+            if (currentSecs <= 0) { 
                 el.innerText = "00:00"; el.classList.add('expired'); btns.forEach(b => b.classList.add('highlight')); 
                 if(d.clock_running && !buzzerPlayed) { 
                     playBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1500); buzzerPlayed = true; 
                 } 
             } else { 
-                el.innerText = formatTimeDisplay(displaySecs); el.classList.remove('expired'); 
+                el.innerText = formatTimeDisplay(currentSecs); el.classList.remove('expired'); 
                 btns.forEach(b => b.classList.remove('highlight')); 
             }
         }
@@ -241,27 +239,16 @@
             d.last_state = JSON.parse(JSON.stringify({ white: d.white, blue: d.blue, queue: d.queue, scoreW: d.scoreW, scoreA: d.scoreA, points: d.points, fouls: d.fouls, streakW: d.streakW, streakA: d.streakA, players_log: d.players_log, remaining_seconds: d.remaining_seconds }));
             const isMabel = (motivo === 'Placar' && (d.scoreW === 0 || d.scoreA === 0));
             if (isMabel) setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 500);
-            
             if(d.is_recording) finalizarContagemTempoAtletas();
-            
-            const processar = (tK) => d.players_log.filter(x => x.t === tK).map(x => { 
-                return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), s: x.s, t: (d.hist_time[x.n]||0) - (x.t_ini||0) }; 
-            });
-
+            const processar = (tK) => d.players_log.filter(x => x.t === tK).map(x => { return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), s: x.s, t: (d.hist_time[x.n]||0) - (x.t_ini||0) }; });
             const iW = processar('W'); const iA = processar('A');
             const jogoID = d.history_matches.length + 1;
-            
-            let zap = `🏀 *AVABRA - JOGO ${jogoID}*\n`;
-            if(isMabel) zap += `⚠️ *FOI MABEL!* 🍪\n`;
-            zap += `📊 *Placar:* ⚪️ ${d.scoreW} x 🔵 ${d.scoreA}\n\n`;
-            zap += `⚪️ *BRANCO:*\n` + iW.map(x => `${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}${x.f>=3?"🟥":""}: ${x.p}P|${x.f}F|${formatTimeDisplay(x.t)}`).join('\n');
-            zap += `\n\n🔵 *AZUL:*\n` + iA.map(x => `${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}${x.f>=3?"🟥":""}: ${x.p}P|${x.f}F|${formatTimeDisplay(x.t)}`).join('\n');
-
+            let zap = `🏀 *AVABRA - JOGO ${jogoID}*\n${isMabel ? '⚠️ *FOI MABEL!* 🍪\n' : ''}📊 *Placar:* ⚪️ ${d.scoreW} x 🔵 ${d.scoreA}\n\n⚪️ *BRANCO:*\n` + iW.map(x => `${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}${x.f>=3?"🟥":""}: ${x.p}P|${x.f}F|${formatTimeDisplay(x.t)}`).join('\n') + `\n\n🔵 *AZUL:*\n` + iA.map(x => `${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}${x.f>=3?"🟥":""}: ${x.p}P|${x.f}F|${formatTimeDisplay(x.t)}`).join('\n');
             d.history_matches.push({ id: jogoID, data: new Date().toLocaleDateString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}`, branco: iW, azul: iA, mabel: isMabel, zap: zap });
             d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false; buzzerPlayed = false;
         }
 
-        window.enviarZapSumula = (realIdx) => { const j = d.history_matches[realIdx]; if(j) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(j.zap)}`); };
+        window.enviarZapSumula = (idx) => { const j = d.history_matches[idx]; if(j) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(j.zap)}`); };
         window.enviarWhatsAppGeral = () => {
             let msg = "🏀 *RANKING AVABRA DO DIA*\n\n";
             d.all.sort().forEach(p => {
@@ -270,7 +257,6 @@
             });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`);
         };
-
         window.vitoriaPlacar = (v) => { if(!confirm("Vitória?")) return; registrarPartida('Placar'); if(v==='B'){ d.streakW++; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } } else { d.streakA++; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } } d.scoreW=0; d.scoreA=0; executarRodizio(); };
         window.terminoTempo = (b) => { if(!confirm("Tempo?")) return; registrarPartida('Tempo'); if(b==='B') d.queue.push(...d.white,...d.blue); else if(b==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; executarRodizio(); };
         function executarRodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); [...d.white, ...d.blue].forEach(p=>{d.fouls[p]=0; d.points[p]=0;}); sync(); }
@@ -296,6 +282,7 @@
         
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0; 
+            document.getElementById('btn-undo-op').style.display = d.last_state ? 'block' : 'none';
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex'; 
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
             const bT = document.getElementById('btn-toggle-clock'); bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
