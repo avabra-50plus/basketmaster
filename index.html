@@ -3,46 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA RECONSTRUÇÃO - PASSO 1</title>
+    <title>AVABRA RECONSTRUÇÃO - PASSO 2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { padding: 15px; background: #000; border-bottom: 1px solid #222; text-align: center; color: var(--orange); font-weight: bold; }
-        .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; }
+        .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
         .placar-numero { font-size: 48px; font-weight: bold; font-family: monospace; padding: 5px 20px; border-radius: 8px; background: #222; border: 2px solid #333; }
-        .game-clock-area { background: #000; padding: 15px; text-align: center; border-bottom: 2px solid #222; }
+        .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
         #game-clock { font-size: 52px; font-family: monospace; color: var(--yellow); }
-        .btn-big { width: 90%; margin: 10px 5%; padding: 20px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .btn-big { width: 90%; margin: 5px 5%; padding: 18px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .btn-start { background: var(--green); color: #000; }
         .btn-pause { background: var(--orange); color: #fff; }
-        .faixa { background: #111; color: #888; padding: 8px 15px; font-size: 12px; text-transform: uppercase; font-weight: bold; }
+        .btn-v-br { background: #fff; color: #000; flex: 1; }
+        .btn-v-az { background: var(--blue); color: #fff; flex: 1; }
+        .faixa { background: #111; color: #888; padding: 8px 15px; font-size: 11px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         .linha { display: flex; align-items: center; padding: 10px; background: #fff; color: #000; border-bottom: 1px solid #ddd; }
         .linha.azul { background: var(--blue); color: #fff; }
-        .info { flex: 1; font-weight: bold; }
+        .info { flex: 1; font-weight: bold; font-size: 14px; }
         .f-box { background: #8b0000; color: #fff; padding: 12px; border-radius: 4px; margin: 0 5px; font-weight: bold; }
-        .btn-p { width: 45px; height: 45px; background: #222; color: #fff; border: none; border-radius: 4px; font-weight: bold; margin-left: 2px; }
+        .btn-p { width: 45px; height: 45px; background: #222; color: #fff; border: none; border-radius: 4px; font-weight: bold; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 15px 0; }
-        .nav-b { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #fff; }
+        .nav-b { flex: 1; text-align: center; font-size: 11px; font-weight: bold; color: #fff; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
-        .item-list { display: flex; justify-content: space-between; padding: 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
+        .item-list { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
+        #q-list { padding: 15px; font-weight: bold; color: var(--yellow); background: #0a0a0a; line-height: 1.8; }
+        .hist-item { background: #1a1a1a; margin: 10px; padding: 10px; border-radius: 6px; border-left: 4px solid var(--orange); }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header">AVABRA - PASSO 1 (ESTABILIDADE)</div>
+        <div class="header">AVABRA - PASSO 2 (RODÍZIO)</div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
-            <div style="font-weight: bold;">X</div>
+            <div style="font-weight: bold; font-size: 24px; color: #444;">X</div>
             <div id="score-az" class="placar-numero" style="color:var(--blue)">0</div>
         </div>
         <div class="game-clock-area">
             <div id="game-clock">10:00</div>
             <button id="btn-master-clock" class="btn-big btn-start" onclick="toggleClock()">🏀 Iniciar Jogo</button>
         </div>
+        <div style="display: flex; gap: 5px; padding: 10px;">
+            <button class="btn-v-br btn-big" style="width: auto;" onclick="vitoria('W')">Vitória Branco</button>
+            <button class="btn-v-az btn-big" style="width: auto;" onclick="vitoria('A')">Vitória Azul</button>
+        </div>
         <div class="faixa">Time Branco</div><div id="w-list"></div>
         <div class="faixa">Time Azul</div><div id="a-list"></div>
-        <div class="faixa">No Ginásio (Clique para Entrar)</div><div id="disp-list"></div>
+        <div class="faixa">Lista de Espera</div><div id="q-list"></div>
+        <div class="faixa">No Ginásio</div><div id="disp-list"></div>
+    </div>
+
+    <div id="view-stats" style="display:none; padding:15px;">
+        <h2 style="color:var(--orange)">Histórico de Jogos</h2>
+        <div id="lista-historico"></div>
     </div>
 
     <div id="view-admin" style="display:none; padding:20px;">
@@ -53,8 +67,9 @@
 
     <div style="height:100px"></div>
     <div class="rodape">
-        <div class="nav-b active" onclick="mudarAba('racha')">Racha</div>
-        <div class="nav-b" onclick="mudarAba('admin')">Admin</div>
+        <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">Racha</div>
+        <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Histórico</div>
+        <div id="nav-admin" class="nav-b" onclick="mudarAba('admin')">Admin</div>
     </div>
 
     <script>
@@ -62,20 +77,16 @@
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        let d = { all: [], white: [], blue: [], scoreW: 0, scoreA: 0, points: {}, fouls: {} };
+        let d = { all: [], white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, points: {}, fouls: {}, history: [] };
         let timer = 600; let running = false;
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) {
-                // Carrega apenas o que é essencial para o placar e jogadores
-                d.all = data.data.all || [];
-                d.white = data.data.white || [];
-                d.blue = data.data.blue || [];
-                d.scoreW = data.data.scoreW || 0;
-                d.scoreA = data.data.scoreA || 0;
-                d.points = data.data.points || {};
-                d.fouls = data.data.fouls || {};
+                const oldStatus = d.all; // Apenas para checar se é o primeiro load
+                d = data.data;
+                if(!d.queue) d.queue = [];
+                if(!d.history) d.history = [];
             }
             render();
         }
@@ -95,7 +106,6 @@
                 const min = Math.floor(timer / 60).toString().padStart(2, '0');
                 const sec = (timer % 60).toString().padStart(2, '0');
                 document.getElementById('game-clock').innerText = `${min}:${sec}`;
-                if (timer === 0) running = false;
             }
         }, 1000);
 
@@ -105,6 +115,35 @@
         function entrar(n) {
             if (d.white.length < 5) d.white.push(n);
             else if (d.blue.length < 5) d.blue.push(n);
+            else d.queue.push(n);
+            sync();
+        }
+
+        function vitoria(v) {
+            if(!confirm("Finalizar partida e rodar times?")) return;
+            
+            // Grava histórico
+            d.history.push({ placar: `${d.scoreW} x ${d.scoreA}`, data: new Date().toLocaleTimeString() });
+
+            // Rodízio
+            if (v === 'W') {
+                d.queue.push(...d.blue); // Azul perde e vai pra fila
+                d.blue = [];
+            } else {
+                d.queue.push(...d.white); // Branco perde e vai pra fila
+                d.white = [];
+            }
+
+            // Completa times com quem está na fila
+            while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
+            while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
+
+            // Reseta Jogo
+            d.scoreW = 0; d.scoreA = 0;
+            [...d.white, ...d.blue].forEach(p => { d.points[p] = 0; d.fouls[p] = 0; });
+            timer = 600; running = false;
+            document.getElementById('game-clock').innerText = "10:00";
+            
             sync();
         }
 
@@ -115,15 +154,16 @@
 
         function mudarAba(a) {
             document.getElementById('view-racha').style.display = (a === 'racha') ? 'block' : 'none';
+            document.getElementById('view-stats').style.display = (a === 'stats') ? 'block' : 'none';
             document.getElementById('view-admin').style.display = (a === 'admin') ? 'block' : 'none';
+            document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + a).classList.add('active');
         }
 
         function resetGeral() {
             if(confirm("Zerar tudo?")) {
-                d = { all: d.all, white: [], blue: [], scoreW: 0, scoreA: 0, points: {}, fouls: {} };
-                timer = 600; running = false;
-                document.getElementById('game-clock').innerText = "10:00";
-                sync();
+                d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, points: {}, fouls: {}, history: [] };
+                timer = 600; running = false; sync();
             }
         }
 
@@ -145,12 +185,17 @@
             draw(d.white, 'w-list', false);
             draw(d.blue, 'a-list', true);
 
+            document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span>${i+1}.${p} </span>`).join(' ');
+
             document.getElementById('disp-list').innerHTML = d.all
-                .filter(p => !d.white.includes(p) && !d.blue.includes(p))
+                .filter(p => !d.white.includes(p) && !d.blue.includes(p) && !d.queue.includes(p))
                 .map(p => `<div class="item-list"><span>${p}</span><button onclick="entrar('${p}')">CHEGOU</button></div>`).join('');
             
             document.getElementById('lista-cadastrados').innerHTML = d.all
                 .map(p => `<div class="item-list"><span>${p}</span></div>`).join('');
+
+            document.getElementById('lista-historico').innerHTML = d.history
+                .map(h => `<div class="hist-item"><b>Placar: ${h.placar}</b><br><small>${h.data}</small></div>`).reverse().join('');
         }
         load();
     </script>
