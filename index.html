@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V22.14 - FINAL FIX</title>
+    <title>AVABRA MASTER V22.15 - FIX DEFINITIVO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -28,7 +28,6 @@
         .linha.azul { background: var(--blue); color: #fff; }
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
-        .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; font-size: 11px; }
         .acoes { display: flex; gap: 4px; }
         .f-box { background: #8b0000; color: #fff; padding: 10px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-p { width: 40px; height: 40px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; cursor: pointer; }
@@ -44,11 +43,12 @@
         .nav-b.active { color: var(--orange); }
         .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
         .btn-whatsapp-full { background: var(--green); color: #000; width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
+        .label-mabel { background: var(--red); color: #fff; font-weight: 900; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V22.14</div></div>
+        <div class="header"><div class="logo">AVABRA V22.15</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 24px; font-weight: bold; color: #444;">X</div>
@@ -89,7 +89,7 @@
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR ATLETA</button>
         <div id="lista-cadastrados"></div>
         <button style="background:#333;color:#ccc;border:none;padding:15px;width:100%;border-radius:8px;margin-top:30px;" onclick="desfazerRotacao()">↩ DESFAZER ÚLTIMA ROTAÇÃO</button>
-        <button style="background:var(--red);color:#fff;border:none;padding:15px;width:100%;border-radius:8px;margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <button style="background:var(--red);color:#fff;border:none;padding:15px;width:100%;border-radius:8px;margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TUDO</button>
     </div>
 
     <div style="height:100px"></div>
@@ -110,9 +110,10 @@
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
-                    const localStatus = d.clock_running; const localTime = d.remaining_seconds; const localRec = d.is_recording;
+                    const localStatus = d.clock_running;
+                    const localTime = d.remaining_seconds;
                     d = data.data;
-                    d.clock_running = localStatus; d.remaining_seconds = localTime; d.is_recording = localRec;
+                    d.clock_running = localStatus; d.remaining_seconds = localTime;
                     if(!d.white) d.white=[]; if(!d.blue) d.blue=[]; if(!d.queue) d.queue=[]; if(!d.all) d.all=[];
                 }
                 render();
@@ -120,6 +121,17 @@
         }
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
+
+        function falar(t) { try { const m = new SpeechSynthesisUtterance(t); m.lang = 'pt-BR'; m.pitch = 0.8; m.rate = 0.9; window.speechSynthesis.speak(m); } catch(e){} }
+        function somBuzzer() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime; const osc = ctx.createOscillator(); const g = ctx.createGain();
+                osc.type = 'square'; osc.frequency.setValueAtTime(400, now);
+                g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now + 0.8);
+            } catch(e){}
+        }
 
         function formatTime(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
 
@@ -136,44 +148,76 @@
             render();
         }
 
-        function resetClock() { if(confirm("Zerar cronômetro e placar?")) { calcTempo(); d.clock_running=false; d.remaining_seconds=600; d.scoreW=0; d.scoreA=0; render(); } }
+        function resetClock() { 
+            if(confirm("Zerar cronômetro e placar?")) { 
+                calcTempo(); d.clock_running=false; d.remaining_seconds=600; d.scoreW=0; d.scoreA=0; render(); 
+            } 
+        }
 
         setInterval(() => {
             if (d.clock_running && d.remaining_seconds > 0) {
                 d.remaining_seconds -= 1;
                 document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
-                if (d.remaining_seconds <= 0) { d.clock_running = false; render(); }
+                if (d.remaining_seconds <= 0) {
+                    d.clock_running = false; somBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1200); render();
+                }
             }
         }, 1000);
 
         function calcTempo() {
             const now = Date.now();
-            [...d.white, ...d.blue].forEach(p => { if(d.players_entry_time[p]) { d.hist_time[p] = (d.hist_time[p]||0) + (now - d.players_entry_time[p])/1000; delete d.players_entry_time[p]; } });
+            [...d.white, ...d.blue].forEach(p => { 
+                if(d.players_entry_time[p]) { 
+                    d.hist_time[p] = (d.hist_time[p]||0) + (now - d.players_entry_time[p])/1000; 
+                    delete d.players_entry_time[p]; 
+                } 
+            });
         }
 
-        function registrar() {
+        function registrar(motivo) {
             d.clock_running = false; 
+            calcTempo(); // CALCULA TEMPO ANTES DE RESETAR TUDO
             d.last_state = JSON.parse(JSON.stringify(d));
-            calcTempo();
+            const mabel = (motivo === 'Placar' && (d.scoreW === 0 || d.scoreA === 0));
+            if (mabel) setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 500);
+            
             const proc = (tK) => d.players_log.filter(x => x.t === tK).map(x => { 
-                return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), t: (d.hist_time[x.n]||0) - (x.t_ini||0) }; 
+                return { 
+                    n: x.n, 
+                    p: (d.points[x.n]||0) - (x.p_ini||0), 
+                    f: (d.fouls[x.n]||0) - (x.f_ini||0), 
+                    t: (d.hist_time[x.n]||0) - (x.t_ini||0) 
+                }; 
             });
-            d.history_matches.push({ data: new Date().toLocaleDateString('pt-BR'), placar: `${d.scoreW}x${d.scoreA}`, branco: proc('W'), azul: proc('A') });
-            d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false; 
-            d.scoreW = 0; d.scoreA = 0; // RESET DO PLACAR PRINCIPAL
+
+            d.history_matches.push({ 
+                data: new Date().toLocaleDateString('pt-BR'), 
+                placar: `${d.scoreW}x${d.scoreA}`, 
+                branco: proc('W'), 
+                azul: proc('A'), 
+                mabel: mabel 
+            });
+
+            // LIMPEZA IMEDIATA
+            d.remaining_seconds = 600; 
+            d.scoreW = 0; 
+            d.scoreA = 0; 
+            d.players_entry_time = {}; 
+            d.players_log = []; 
+            d.is_recording = false;
         }
 
         window.vitoriaPlacar = (v) => { 
-            if(!confirm("Finalizar Jogo e Placar?")) return;
-            registrar();
+            if(!confirm("Confirmar vitória?")) return;
+            registrar('Placar');
             if(v==='B') d.queue.push(...d.blue); else d.queue.push(...d.white);
             if(v==='B') d.blue=[]; else d.white=[];
             rodizio();
         };
 
         window.terminoTempo = (v) => {
-            if(!confirm("Encerrar por tempo e zerar placar?")) return;
-            registrar();
+            if(!confirm("Encerrar por tempo?")) return;
+            registrar('Tempo');
             d.queue.push(...d.white, ...d.blue); d.white=[]; d.blue=[];
             rodizio();
         };
@@ -187,7 +231,7 @@
 
         window.desfazerRotacao = () => { if(d.last_state && confirm("Desfazer?")) { Object.assign(d, d.last_state); d.last_state=null; sync(); mudarAba('racha'); } };
         window.removerAtleta = (n, l, mot) => {
-            if(!confirm("Remover?")) return;
+            if(!confirm("Remover atleta?")) return;
             if (d.players_entry_time[n]) { d.hist_time[n] = (d.hist_time[n]||0) + (Date.now() - d.players_entry_time[n])/1000; delete d.players_entry_time[n]; }
             let sub = null; if (mot === 'sub' && d.queue.length > 0) { logLog(n, l==='white'?'W':'A', "SUBS"); sub = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop(); }
             d[l] = d[l].filter(p => p !== n); if (mot === 'falta') { logLog(n, l==='white'?'W':'A', "SUSP"); d.queue.unshift(n); }
@@ -204,9 +248,10 @@
         window.subFl = (n) => { if(d.fouls[n]>0) { d.fouls[n]--; d.hist_fls[n]--; sync(); } };
         window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all || [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, history_matches: [], players_log: [], remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
         window.enviarWhatsAppGeral = () => { let m = "🏀 *RANKING AVABRA*\n\n"; (d.all||[]).sort().forEach(p => { const pts = d.hist_pts[p]||0, t = d.hist_time[p]||0; if(pts>0 || t>0) m += `👤 *${p}*: ${pts} PTS | ⏱️ ${formatTime(t)}\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(m)}`); };
+        window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
 
         function render() {
-            document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0;
+            document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'block';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
             document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
@@ -221,10 +266,9 @@
             document.getElementById('lista-cadastrados').innerHTML = (d.all||[]).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
             let hS = ""; (d.all||[]).sort().forEach(p => { const pts = d.hist_pts[p]||0, t = d.hist_time[p]||0; if(pts>0 || t>0) hS += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${formatTime(t)}</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = hS;
-            let hH = ""; (d.history_matches||[]).reverse().forEach((j, idx) => { const rIdx = d.history_matches.length - 1 - idx; hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block;font-size:10px;color:#888;">${j.data}</span><b>JOGO ${rIdx+1}</b></div><div style="color:var(--yellow);font-weight:bold;">${j.placar}</div></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p=>`<div class="player-line"><span>${p.n}</span><span>${p.p}P|${formatTime(p.t)}</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p=>`<div class="player-line"><span>${p.n}</span><span>${p.p}P|${formatTime(p.t)}</span></div>`).join('')}</div></div></div>`; });
+            let hH = ""; (d.history_matches||[]).reverse().forEach((j, idx) => { const rIdx = d.history_matches.length - 1 - idx; hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block;font-size:10px;color:#888;">${j.data}</span><b>JOGO ${rIdx+1}</b></div>${j.mabel?'<div class="label-mabel">MABEL</div>':''}<div style="color:var(--yellow);font-weight:bold;">${j.placar}</div></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p=>`<div class="player-line"><span>${p.n}</span><span>${p.p}P|${formatTime(p.t)}</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p=>`<div class="player-line"><span>${p.n}</span><span>${p.p}P|${formatTime(p.t)}</span></div>`).join('')}</div></div></div>`; });
             document.getElementById('lista-historico-partidas').innerHTML = hH;
         }
-        window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
         load();
     </script>
 </body>
