@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.1</title>
+    <title>BASKETMASTER AVABRA V21.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -64,7 +64,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA 50+ V21.1</div></div>
+        <div class="header"><div class="logo">AVABRA 50+ V21.2</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -222,10 +222,7 @@
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
         window.subFl = (n) => { if ((d.fouls[n]||0) > 0) { d.fouls[n]--; d.hist_fls[n]--; } sync(); };
         window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
-        window.enviarWhatsApp = () => { 
-            let msg = "*CESTINHAS AVABRA*\n"; d.all.sort().forEach(p => { const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay((d.hist_time||{})[p] || 0); if (pts > 0 || (d.hist_time||{})[p] > 0) msg += `🏀 ${p}: ${pts} PTS (${tStr})\n`; });
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); 
-        };
+        window.enviarWhatsApp = () => { let msg = "*CESTINHAS AVABRA*\n"; d.all.sort().forEach(p => { const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay((d.hist_time||{})[p] || 0); if (pts > 0 || (d.hist_time||{})[p] > 0) msg += `🏀 ${p}: ${pts} PTS (${tStr})\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); };
         window.enviarSumulaJogo = (index) => { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(d.history_matches[index].textoWhatsApp)}`); };
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
@@ -256,8 +253,10 @@
                 hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block; font-size:10px; color:#888;">${j.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${realIdx})">WHATSAPP</button></div><div class="sumula-teams">
                 <div class="team-box"><b>BR</b><br>${j.branco.map(p => {
                     let icone = ""; let corSeta = "";
+                    // BLOQUEIO DA SETA PARA QUEM COMEÇOU O JOGO (STATUS "INICIO")
                     if(p.s === "SUBS") { icone = "&#9660;"; corSeta = "var(--red)"; }
                     else if(p.s === "ENTROU") { icone = "&#9650;"; corSeta = "var(--green)"; }
+                    // Quem tem status "INICIO" não entra nestas condições e fica sem icone.
                     return `<div class="player-line" style="${p.s==='SUSP'?'color:red;font-weight:bold;':''}"><span>${p.n} <b style="color:${corSeta}">${icone}</b></span><span>${p.p}P/${p.f}F/${formatTimeDisplay(p.t)}</span></div>`
                 }).join('')}</div>
                 <div class="team-box"><b>AZ</b><br>${j.azul.map(p => {
@@ -269,7 +268,7 @@
             });
             document.getElementById('lista-historico-partidas').innerHTML = hH || "Sem partidas.";
         }
-            load();
+        load();
     </script>
 </body>
 </html>
