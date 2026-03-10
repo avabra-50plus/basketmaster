@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V20.4</title>
+    <title>BASKETMASTER AVABRA V21.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
         body { font-family: Arial, sans-serif; background: var(--dark); color: #fff; margin: 0; padding: 0; user-select: none; }
         .header { display: flex; justify-content: center; align-items: center; padding: 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+        
         .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
         .placar-box { text-align: center; min-width: 80px; }
         .placar-numero { font-size: 32px; font-weight: bold; font-family: monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; }
@@ -23,7 +24,7 @@
         
         /* BOTÃO INICIAL UNIFICADO */
         .area-start-match { padding: 15px; display: flex; justify-content: center; background: #111; }
-        .btn-big-start { width: 100%; background: var(--green); color: #000; padding: 20px; border: none; border-radius: 8px; font-weight: 900; font-size: 18px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); }
+        .btn-big-start { width: 100%; background: var(--green); color: #000; padding: 22px; border: none; border-radius: 8px; font-weight: 900; font-size: 18px; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 20px rgba(37, 211, 102, 0.4); }
 
         /* CONTROLES DURANTE O JOGO */
         .clock-controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
@@ -32,9 +33,12 @@
         .btn-resume { background: var(--green); color: #000; }
         .btn-reset { background: #333; color: #888; border: 1px solid #444; }
 
+        /* BOTÕES DE ENCERRAMENTO POR TEMPO */
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
-        .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; text-transform: uppercase; }
+        .btn-t { flex: 1; padding: 14px 5px; border: none; border-radius: 4px; font-weight: bold; font-size: 10px; cursor: pointer; text-transform: uppercase; line-height: 1.2; }
         .t-br { background: #ffffff; color: #000; } .t-az { background: var(--blue); color: #fff; } .t-em { background: #555; color: #fff; }
+        
+        /* VITÓRIA POR PLACAR */
         .vitoria-btns { display: flex; gap: 5px; padding: 10px 10px 0 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; } .btn-blue { background: var(--blue); color: #fff; }
@@ -45,11 +49,12 @@
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
+        .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
         .acoes { display: flex; gap: 4px; }
         .f-box { background: #8b0000; color: #fff; padding: 10px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-p { width: 42px; height: 44px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
         .btn-p.laranja { background: var(--orange); }
-        .btn-corrige { font-size: 11px; color: #d32f2f; background: #fff; border: 2px solid #d32f2f; padding: 5px 8px; border-radius: 6px; font-weight: bold; }
+        .btn-corrige { font-size: 11px; color: #d32f2f; background: #fff; border: 2px solid #d32f2f; padding: 4px 6px; border-radius: 4px; font-weight: bold; }
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 9px; padding: 8px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .btn-lesao { background: #555; color: #fff; } .btn-falta3 { background: var(--red); color: #fff; }
@@ -57,7 +62,6 @@
         #q-list { padding: 15px; background: #0a0a0a; font-size: 13px; font-weight: bold; line-height: 2.2; }
         .espera-item { display: inline-block; margin-right: 15px; border-bottom: 1px solid #222; }
         .espera-amarela { color: var(--yellow); } .espera-verde { color: var(--green); }
-        
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
@@ -69,12 +73,12 @@
         .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
         .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .team-box { background: #000; padding: 8px; border-radius: 4px; border-left: 3px solid #666; }
-        .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 5px 0; font-size: 10px; }
+        .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 5px 0; font-size: 9px; line-height: 1.2; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA 50+ V20.4</div></div>
+        <div class="header"><div class="logo">AVABRA 50+ V21.0</div></div>
         
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
@@ -96,9 +100,9 @@
         </div>
 
         <div class="timer-area">
-            <button class="btn-t t-br" onclick="terminoTempo('B')">BR +</button>
-            <button class="btn-t t-az" onclick="terminoTempo('A')">AZ +</button>
-            <button class="btn-t t-em" onclick="terminoTempo('E')">EMPATE</button>
+            <button class="btn-t t-br" onclick="terminoTempo('B')">Tempo<br>Branco</button>
+            <button class="btn-t t-az" onclick="terminoTempo('A')">Tempo<br>Azul</button>
+            <button class="btn-t t-em" onclick="terminoTempo('E')">Tempo<br>Empate</button>
         </div>
         
         <div class="vitoria-btns">
@@ -114,7 +118,7 @@
     </div>
 
     <div id="view-stats" style="display:none; padding:15px;">
-        <h2 style="color:var(--orange); font-size:18px;">PONTUAÇÃO GERAL (TREINO)</h2>
+        <h2 style="color:var(--orange); font-size:18px;">PONTUAÇÃO GERAL</h2>
         <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">ENVIAR CESTINHAS DO DIA</button>
         <div id="lista-estatisticas-geral"></div>
         <hr style="border:0; border-top:2px dashed #333; margin:30px 0;">
@@ -141,13 +145,7 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        let d = { 
-            white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, 
-            scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], 
-            players_entry_time: {}, last_state: null,
-            target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false 
-        };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], players_entry_time: {}, last_state: null, target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false };
         let abaAtiva = 'racha';
 
         async function load() {
@@ -164,13 +162,17 @@
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
+        function formatTimeDisplay(s) {
+            const min = Math.floor(s / 60); const sec = Math.floor(s % 60);
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        }
+
         function iniciarTudo() {
             const now = Date.now();
-            d.is_recording = true;
-            d.clock_running = true;
+            d.is_recording = true; d.clock_running = true;
             d.target_time = now + (d.remaining_seconds * 1000);
             [...d.white, ...d.blue].forEach(p => {
-                logarParticipacao(p, d.white.includes(p)?'W':'A');
+                logarParticipacao(p, d.white.includes(p)?'W':'A', "ENTROU");
                 d.players_entry_time[p] = now;
             });
             sync();
@@ -181,36 +183,25 @@
             if (!d.clock_running) {
                 d.target_time = now + (d.remaining_seconds * 1000);
                 d.clock_running = true;
-                if(d.is_recording) [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = now);
+                if(d.is_recording) [...d.white, ...d.blue].forEach(p => { if(!d.players_entry_time[p]) d.players_entry_time[p] = now; });
             } else {
                 if(d.is_recording) finalizarContagemTempoAtletas();
-                d.remaining_seconds = Math.max(0, Math.floor((d.target_time - now) / 1000));
+                d.remaining_seconds = Math.max(0, (d.target_time - now) / 1000);
                 d.clock_running = false; d.target_time = null; d.players_entry_time = {};
             }
             sync();
         }
 
-        function resetClock() {
-            if (confirm("Resetar cronômetro para 10:00?")) {
-                if(d.is_recording) finalizarContagemTempoAtletas();
-                d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {};
-                sync();
-            }
-        }
+        function resetClock() { if (confirm("Reiniciar cronômetro?")) { if(d.is_recording) finalizarContagemTempoAtletas(); d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {}; sync(); } }
 
         function updateDisplayClock() {
             const el = document.getElementById('game-clock');
             if (!d.clock_running) { el.innerText = formatTimeDisplay(d.remaining_seconds); return; }
-            const diff = Math.floor((d.target_time - Date.now()) / 1000);
+            const diff = (d.target_time - Date.now()) / 1000;
             if (diff <= 0) { el.innerText = "00:00"; el.style.color = "red"; } 
             else { el.innerText = formatTimeDisplay(diff); el.style.color = "var(--yellow)"; }
         }
         setInterval(updateDisplayClock, 500);
-
-        function formatTimeDisplay(s) {
-            const min = Math.floor(s / 60); const sec = s % 60;
-            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        }
 
         function finalizarContagemTempoAtletas() {
             const now = Date.now();
@@ -223,10 +214,7 @@
         }
 
         function registrarPartida(motivo) {
-            d.last_state = JSON.parse(JSON.stringify({
-                white: d.white, blue: d.blue, queue: d.queue, scoreW: d.scoreW, scoreA: d.scoreA, 
-                points: d.points, fouls: d.fouls, streakW: d.streakW, streakA: d.streakA, players_log: d.players_log
-            }));
+            d.last_state = JSON.parse(JSON.stringify({ white: d.white, blue: d.blue, queue: d.queue, scoreW: d.scoreW, scoreA: d.scoreA, points: d.points, fouls: d.fouls, streakW: d.streakW, streakA: d.streakA, players_log: d.players_log }));
             if(d.is_recording) finalizarContagemTempoAtletas();
             const dataAtual = new Date().toLocaleDateString('pt-BR');
             const processar = (timeKey) => {
@@ -239,9 +227,9 @@
             };
             const iW = processar('W'); const iA = processar('A');
             let txt = `*AVABRA JOGO ${d.history_matches.length + 1}*\n⚪️ *BRANCO (${d.scoreW})*\n`;
-            iW.forEach(i => txt += `- ${i.n}: ${i.p}P/${i.f}F/${formatTimeDisplay(Math.round(i.t))}\n`);
+            iW.forEach(i => txt += `- ${i.n}: ${i.p}P/${i.f}F/${formatTimeDisplay(i.t)}\n`);
             txt += `🔵 *AZUL (${d.scoreA})*\n`;
-            iA.forEach(i => txt += `- ${i.n}: ${i.p}P/${i.f}F/${formatTimeDisplay(Math.round(i.t))}\n`);
+            iA.forEach(i => txt += `- ${i.n}: ${i.p}P/${i.f}F/${formatTimeDisplay(i.t)}\n`);
             d.history_matches.push({ id: d.history_matches.length + 1, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: iW, azul: iA, motivo: motivo, textoWhatsApp: txt });
             d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false;
         }
@@ -286,11 +274,7 @@
         window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
         
         window.enviarWhatsApp = () => { 
-            let msg = "*CESTINHAS AVABRA*\n"; 
-            d.all.sort().forEach(p => {
-                const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay(Math.round((d.hist_time||{})[p] || 0));
-                if (pts > 0 || (d.hist_time||{})[p] > 0) msg += `🏀 ${p}: ${pts} PTS (${tStr})\n`;
-            });
+            let msg = "*CESTINHAS AVABRA*\n"; d.all.sort().forEach(p => { const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay((d.hist_time||{})[p] || 0); if (pts > 0 || (d.hist_time||{})[p] > 0) msg += `🏀 ${p}: ${pts} PTS (${tStr})\n`; });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); 
         };
         window.enviarSumulaJogo = (index) => { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(d.history_matches[index].textoWhatsApp)}`); };
@@ -313,27 +297,30 @@
                         <div class="bottom-row"><button class="btn-excluir btn-lesao" onclick="removerAtleta('${p}', '${slug}', 'sub')">Sair</button><button class="btn-excluir btn-falta3" onclick="removerAtleta('${p}', '${slug}', 'falta')">Faltas</button></div></div>`).join('');
             };
             draw(d.white || [], 'w-list', false, 'white'); draw(d.blue || [], 'a-list', true, 'blue');
-            
-            // CORREÇÃO DA LÓGICA DAS CORES NA LISTA DE ESPERA
-            document.getElementById('q-list').innerHTML = d.queue.map((p, i) => {
-                const corClasse = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde";
-                return `<span class="espera-item ${corClasse}">${i+1}.${p}</span>`;
-            }).join(' ');
-
+            document.getElementById('q-list').innerHTML = d.queue.map((p, i) => { const cor = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde"; return `<span class="espera-item ${cor}">${i+1}.${p}</span>`; }).join(' ');
             document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
             
             let htmlStats = "";
-            d.all.sort().forEach(p => {
-                const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay(Math.round((d.hist_time||{})[p] || 0));
-                if (pts > 0 || (d.hist_time||{})[p] > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${tStr}</span></div>`;
-            });
+            d.all.sort().forEach(p => { const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay((d.hist_time||{})[p] || 0); if (pts > 0 || (d.hist_time||{})[p] > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${tStr}</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Sem registros.";
             
             let hH = "";
             [...d.history_matches].reverse().forEach((j, idx) => {
                 const realIdx = d.history_matches.length - 1 - idx;
-                hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block; font-size:10px; color:#888;">${j.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${realIdx})">WHATSAPP</button></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p => `<div class="player-line" style="${p.s==='SUSP'?'color:red':''}"><span>${p.n}</span><span>${p.p}P/${p.f}F/${formatTimeDisplay(Math.round(p.t))}</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p => `<div class="player-line" style="${p.s==='SUSP'?'color:red':''}"><span>${p.n}</span><span>${p.p}P/${p.f}F/${formatTimeDisplay(Math.round(p.t))}</span></div>`).join('')}</div></div></div>`;
+                hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block; font-size:10px; color:#888;">${j.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${realIdx})">WHATSAPP</button></div><div class="sumula-teams">
+                <div class="team-box"><b>BR</b><br>${j.branco.map(p => {
+                    let icone = ""; let corSeta = "";
+                    if(p.s === "SUBS") { icone = "&#9660;"; corSeta = "var(--red)"; }
+                    else if(p.s === "ENTROU") { icone = "&#9650;"; corSeta = "var(--green)"; }
+                    return `<div class="player-line" style="${p.s==='SUSP'?'color:red;font-weight:bold;':''}"><span>${p.n} <b style="color:${corSeta}">${icone}</b></span><span>${p.p}P/${p.f}F/${formatTimeDisplay(p.t)}</span></div>`
+                }).join('')}</div>
+                <div class="team-box"><b>AZ</b><br>${j.azul.map(p => {
+                    let icone = ""; let corSeta = "";
+                    if(p.s === "SUBS") { icone = "&#9660;"; corSeta = "var(--red)"; }
+                    else if(p.s === "ENTROU") { icone = "&#9650;"; corSeta = "var(--green)"; }
+                    return `<div class="player-line" style="${p.s==='SUSP'?'color:red;font-weight:bold;':''}"><span>${p.n} <b style="color:${corSeta}">${icone}</b></span><span>${p.p}P/${p.f}F/${formatTimeDisplay(p.t)}</span></div>`
+                }).join('')}</div></div></div>`;
             });
             document.getElementById('lista-historico-partidas').innerHTML = hH || "Sem partidas.";
         }
