@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.8 - FINAL</title>
+    <title>BASKETMASTER AVABRA V22.0 - FINAL BOSS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -15,7 +15,6 @@
         .placar-numero { font-size: 32px; font-weight: bold; font-family: monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; }
         .placar-numero.br { background: #fff; color: #000; }
         .placar-numero.az { background: var(--blue); color: #fff; }
-        .placar-label { font-size: 10px; font-weight: bold; margin-top: 5px; color: #666; text-transform: uppercase; }
         .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; position: relative; }
         #game-clock { font-family: 'Courier New', monospace; font-size: 52px; font-weight: bold; color: var(--yellow); letter-spacing: 2px; }
         #game-clock.expired { color: var(--red); animation: blink 0.5s step-start infinite; }
@@ -59,18 +58,19 @@
         .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
         .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
-        .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
-        .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
+        .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; gap: 10px; }
+        .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); white-space: nowrap; }
         .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .team-box { background: #000; padding: 8px; border-radius: 4px; border-left: 3px solid #666; }
         .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 5px 0; font-size: 9px; line-height: 1.2; }
+        .img-mabel-sumula { height: 45px; width: auto; border-radius: 4px; }
         .btn-danger { background: var(--red); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn-secondary { background: #333; color: #ccc; border: 1px solid #444; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 30px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.8 - MASTER</div></div>
+        <div class="header"><div class="logo">AVABRA V22.0 - MASTER</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -107,7 +107,6 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        
         <button id="btn-undo-op" class="btn-secondary" onclick="desfazerRotacao()">↩ DESFAZER ÚLTIMA ROTAÇÃO</button>
         <button class="btn-danger" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
@@ -119,8 +118,11 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
+        // IMAGEM MABEL CONVERTIDA PARA CÓDIGO
+        const MABEL_IMG = "data:image/jpeg;base64,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";
+
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], players_entry_time: {}, last_state: null, target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false };
-        let buzzerPlayed = false; let audioContext;
+        let buzzerPlayed = false; let audioContext; let abaAtiva = 'racha';
 
         async function load() {
             try {
@@ -155,46 +157,10 @@
             setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 1500); 
         }
 
-        function formatTimeDisplay(s) { const min = Math.floor(Math.max(0, s) / 60); const sec = Math.floor(Math.max(0, s) % 60); return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`; }
-        
-        function iniciarTudo() { 
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); 
-            const now = Date.now(); 
-            d.is_recording = true; 
-            d.clock_running = true; 
-            buzzerPlayed = false; 
-            d.target_time = now + (d.remaining_seconds * 1000); 
-            [...d.white, ...d.blue].forEach(p => { logarParticipacao(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; }); 
-            sync(); 
-        }
-
-        function toggleClock() { 
-            const now = Date.now(); 
-            if (!d.clock_running) { 
-                d.target_time = now + (d.remaining_seconds * 1000); 
-                d.clock_running = true; 
-                if(d.is_recording) [...d.white, ...d.blue].forEach(p => { if(!d.players_entry_time[p]) d.players_entry_time[p] = now; }); 
-            } else { 
-                if(d.is_recording) finalizarContagemTempoAtletas(); 
-                d.remaining_seconds = Math.max(0, (d.target_time - now) / 1000); 
-                d.clock_running = false; 
-                d.target_time = null; 
-                d.players_entry_time = {}; 
-            } 
-            sync(); 
-        }
-
-        function resetClock() { 
-            if (confirm("Zerar cronômetro?")) { 
-                if(d.is_recording) finalizarContagemTempoAtletas(); 
-                buzzerPlayed = false; 
-                d.clock_running = false; 
-                d.target_time = null; 
-                d.remaining_seconds = 600; 
-                d.players_entry_time = {}; 
-                sync(); 
-            } 
-        }
+        function formatTimeDisplay(s) { const min = Math.floor(s / 60); const sec = Math.floor(s % 60); return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`; }
+        function iniciarTudo() { if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); const now = Date.now(); d.is_recording = true; d.clock_running = true; buzzerPlayed = false; d.target_time = now + (d.remaining_seconds * 1000); [...d.white, ...d.blue].forEach(p => { logarParticipacao(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; }); sync(); }
+        function toggleClock() { const now = Date.now(); if (!d.clock_running) { d.target_time = now + (d.remaining_seconds * 1000); d.clock_running = true; if(d.is_recording) [...d.white, ...d.blue].forEach(p => { if(!d.players_entry_time[p]) d.players_entry_time[p] = now; }); } else { if(d.is_recording) finalizarContagemTempoAtletas(); d.remaining_seconds = Math.max(0, (d.target_time - now) / 1000); d.clock_running = false; d.target_time = null; d.players_entry_time = {}; } sync(); }
+        function resetClock() { if (confirm("Zerar?")) { if(d.is_recording) finalizarContagemTempoAtletas(); buzzerPlayed = false; d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {}; sync(); } }
         
         function updateDisplayClock() {
             const el = document.getElementById('game-clock'); const btns = [document.getElementById('end-t-br'), document.getElementById('end-t-az'), document.getElementById('end-t-em')];
@@ -213,105 +179,65 @@
         
         function registrarPartida(motivo) {
             d.last_state = JSON.parse(JSON.stringify({ white: d.white, blue: d.blue, queue: d.queue, scoreW: d.scoreW, scoreA: d.scoreA, points: d.points, fouls: d.fouls, streakW: d.streakW, streakA: d.streakA, players_log: d.players_log }));
-            
-            if (motivo === 'Placar') {
-                if (d.scoreW === 0 || d.scoreA === 0) {
-                    setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 500);
-                }
-            }
-
+            const isMabel = (motivo === 'Placar' && (d.scoreW === 0 || d.scoreA === 0));
+            if (isMabel) setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 500);
             if(d.is_recording) finalizarContagemTempoAtletas();
             const processar = (tK) => d.players_log.filter(x => x.t === tK).map(x => { return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), s: x.s, t: (d.hist_time[x.n]||0) - (x.t_ini||0) }; });
-            d.history_matches.push({ id: d.history_matches.length+1, data: new Date().toLocaleDateString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}`, branco: processar('W'), azul: processar('A') });
-            
-            d.clock_running = false; 
-            d.target_time = null; 
-            d.remaining_seconds = 600; 
-            d.players_entry_time = {}; 
-            d.players_log = []; 
-            d.is_recording = false; 
-            buzzerPlayed = false;
+            d.history_matches.push({ id: d.history_matches.length+1, data: new Date().toLocaleDateString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}`, branco: processar('W'), azul: processar('A'), mabel: isMabel });
+            d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false; buzzerPlayed = false;
         }
 
-        window.vitoriaPlacar = (v) => { 
-            if(!confirm("Confirmar vitória e rodízio?")) return; 
-            registrarPartida('Placar'); 
-            if(v==='B'){ 
-                d.streakW++; d.streakA=0; 
-                if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } 
-                else { d.queue.push(...d.blue); d.blue=[]; } 
-            } else { 
-                d.streakA++; d.streakW=0; 
-                if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } 
-                else { d.queue.push(...d.white); d.white=[]; } 
-            } 
-            d.scoreW=0; d.scoreA=0; 
-            executarRodizio(); 
-        };
-
-        window.terminoTempo = (b) => { 
-            if(!confirm("Encerrar partida por tempo?")) return; 
-            registrarPartida('Tempo'); 
-            if(b==='B') d.queue.push(...d.white,...d.blue); 
-            else if(b==='A') d.queue.push(...d.blue,...d.white); 
-            else d.queue.push(...d.white,...d.blue); 
-            d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; 
-            executarRodizio(); 
-        };
-
+        window.vitoriaPlacar = (v) => { if(!confirm("Vitória?")) return; registrarPartida('Placar'); if(v==='B'){ d.streakW++; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } } else { d.streakA++; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } } d.scoreW=0; d.scoreA=0; executarRodizio(); };
+        window.terminoTempo = (b) => { if(!confirm("Tempo?")) return; registrarPartida('Tempo'); if(b==='B') d.queue.push(...d.white,...d.blue); else if(b==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; executarRodizio(); };
         function executarRodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); [...d.white, ...d.blue].forEach(p=>{d.fouls[p]=0; d.points[p]=0;}); sync(); }
-        
-        window.desfazerRotacao = () => { if(!d.last_state || !confirm("CUIDADO: Isso reverterá o rodízio e o placar da última partida. Continuar?")) return; Object.assign(d, d.last_state); d.history_matches.pop(); d.last_state=null; sync(); mudarAba('racha'); };
-        
+        window.desfazerRotacao = () => { if(!d.last_state || !confirm("Desfazer?")) return; Object.assign(d, d.last_state); d.history_matches.pop(); d.last_state=null; sync(); mudarAba('racha'); };
         window.removerAtleta = (nome, local, motivo) => {
-            if(!confirm("Remover atleta da quadra?")) return; const now = Date.now();
+            if(!confirm("Remover?")) return; const now = Date.now();
             if (d.is_recording && d.players_entry_time[nome]) { d.hist_time[nome] = (d.hist_time[nome] || 0) + ((now - d.players_entry_time[nome]) / 1000); delete d.players_entry_time[nome]; }
             let sub = null; if (motivo === 'sub' && d.queue.length > 0) { logarParticipacao(nome, local==='white'?'W':'A', "SUBS"); sub = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop(); }
             d[local] = d[local].filter(p => p !== nome); if (motivo === 'falta') { logarParticipacao(nome, local==='white'?'W':'A', "SUSP"); d.queue.unshift(nome); } 
             if (sub) { d.points[sub]=0; d.fouls[sub]=0; d[local].push(sub); logarParticipacao(sub, local==='white'?'W':'A', "ENTROU"); if(d.is_recording && d.clock_running) d.players_entry_time[sub]=now; }
             sync();
         };
-
         function logarParticipacao(n, t, s = "") { if(!d.players_log) d.players_log = []; let p = d.players_log.find(x => x.n === n); if(!p) d.players_log.push({ n: n, t: t, s: s || "ENTROU", p_ini: d.points[n]||0, f_ini: d.fouls[n]||0, t_ini: d.hist_time[n]||0 }); else if(s) p.s = s; }
         window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
-        window.cadastrarNovo = () => { const n = prompt("NOME DO ATLETA:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
-        window.deletarSocio = (n) => { if (confirm(`EXCLUIR ${n} PERMANENTEMENTE?`)) { d.all = d.all.filter(p => p !== n); sync(); } };
+        window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
+        window.deletarSocio = (n) => { if (confirm(`EXCLUIR ${n}?`)) { d.all = d.all.filter(p => p !== n); sync(); } };
         window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
         window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
         window.subPt = (n) => { if ((d.points[n]||0) > 0) { d.points[n]--; d.hist_pts[n]--; if (d.white.includes(n)) d.scoreW--; else d.scoreA--; } sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
         window.subFl = (n) => { if ((d.fouls[n]||0) > 0) { d.fouls[n]--; d.hist_fls[n]--; } sync(); };
-        window.resetarRacha = () => { if(confirm("PERIGO: Isso apagará todos os dados, placares e estatísticas de hoje. Tem certeza?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
+        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
         
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0; 
             document.getElementById('btn-undo-op').style.display = d.last_state ? 'block' : 'none';
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex'; 
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
-            
             const bT = document.getElementById('btn-toggle-clock'); bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
-            
             const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
                 <div class="top-row"><div class="info"><span class="nome">${p} ${d.is_recording?'⏱️':''}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
                 <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div>
                 <div class="bottom-row"><button class="btn-excluir btn-lesao" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir btn-falta3" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join(''); };
-            
             draw(d.white || [], 'w-list', false, 'white'); draw(d.blue || [], 'a-list', true, 'blue');
             document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i / 5) % 2 === 0)?'espera-amarela':'espera-verde'}">${i+1}.${p}</span>`).join(' ');
             document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
-            
             let htmlStats = ""; d.all.sort().forEach(p => { const pts = (d.hist_pts||{})[p] || 0; const tStr = formatTimeDisplay((d.hist_time||{})[p] || 0); if (pts > 0 || (d.hist_time||{})[p] > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${tStr}</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Vazio.";
-            
             let hH = ""; [...d.history_matches].reverse().forEach((j) => {
-                hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block; font-size:10px; color:#888;">${j.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div></div><div class="sumula-teams">
+                hH += `<div class="sumula-card"><div class="sumula-header">
+                    <div><span style="display:block; font-size:10px; color:#888;">${j.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div>
+                    ${j.mabel ? '<img src="' + MABEL_IMG + '" class="img-mabel-sumula">' : ''}
+                    <div class="sumula-placar">${j.placar}</div>
+                </div><div class="sumula-teams">
                 <div class="team-box"><b>BR</b><br>${j.branco.map(p => { let icon = (p.s==="SUBS")?"&#9660;":(p.s==="ENTROU")?"&#9650;":""; let color = (p.s==="SUBS")?"red":"#25d366"; return `<div class="player-line" style="${p.f>=3?'color:red;font-weight:bold;':''}"><span>${p.n} <b style="color:${color}">${icon}</b></span><span>${p.p}P/${p.f}F/${formatTimeDisplay(p.t)}</span></div>` }).join('')}</div>
                 <div class="team-box"><b>AZ</b><br>${j.azul.map(p => { let icon = (p.s==="SUBS")?"&#9660;":(p.s==="ENTROU")?"&#9650;":""; let color = (p.s==="SUBS")?"red":"#25d366"; return `<div class="player-line" style="${p.f>=3?'color:red;font-weight:bold;':''}"><span>${p.n} <b style="color:${color}">${icon}</b></span><span>${p.p}P/${p.f}F/${formatTimeDisplay(p.t)}</span></div>` }).join('')}</div></div></div>`;
             });
             document.getElementById('lista-historico-partidas').innerHTML = hH || "Vazio.";
         }
-        let abaAtiva = 'racha'; load();
+        load();
     </script>
 </body>
 </html>
