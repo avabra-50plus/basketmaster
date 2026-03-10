@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V18.2</title>
+    <title>BASKETMASTER AVABRA V18.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -53,6 +53,12 @@
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #ffffff; font-size: 11px; font-weight: bold; text-align: center; cursor: pointer; text-transform: uppercase; }
         .nav-b.active { color: var(--orange); }
+        
+        /* CORREÇÃO DO ESPAÇAMENTO NAS LISTAS */
+        .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; margin-bottom: 2px; border-radius: 4px; background: #1a1a1a; border-bottom: 1px solid #222; }
+        .btn-entrar { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .btn-del-socio { background: transparent; color: var(--red); border: 1px solid var(--red); padding: 6px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
+
         .sumula-card { background: #1a1a1a; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
         .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
         .sumula-placar { font-family: monospace; font-size: 22px; font-weight: bold; color: var(--yellow); }
@@ -62,8 +68,6 @@
         .team-box.az { border-left-color: var(--blue); }
         .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 6px 0; font-family: sans-serif; }
         .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
-        .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #222; background: #0a0a0a; }
-        .btn-del-socio { background: transparent; color: var(--red); border: 1px solid var(--red); padding: 6px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -91,7 +95,7 @@
         <div class="faixa">Time Branco</div><div id="w-list"></div>
         <div class="faixa">Time Azul</div><div id="a-list"></div>
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
-        <div class="faixa">No Ginásio</div><div id="disp-list"></div>
+        <div class="faixa">No Ginásio (Clique para entrar)</div><div id="disp-list"></div>
     </div>
     <div id="view-stats" style="display:none; padding:15px;">
         <h2 style="color:var(--orange); font-size:18px;">PONTUAÇÃO GERAL (TREINO)</h2>
@@ -305,8 +309,11 @@
             };
             draw(d.white || [], 'w-list', false, 'white'); draw(d.blue || [], 'a-list', true, 'blue');
             document.getElementById('q-list').innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => { const corClasse = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde"; return `<span class="espera-item ${corClasse}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (S)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')" style="color:#fff; background:red; border:none; border-radius:3px; margin-left:5px; font-size:9px;">X</button></span>`; }).join(' ');
+            
+            // LISTAS COM ESPAÇAMENTO CORRIGIDO
             document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => ![...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
+            
             let htmlStats = "";
             d.all.sort().forEach(p => {
                 const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const tStr = formatarSegundos((d.hist_time||{})[p] || 0);
