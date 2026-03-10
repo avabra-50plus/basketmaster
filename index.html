@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.9</title>
+    <title>AVABRA MASTER - V21.8 ESTÁVEL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -40,22 +40,20 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header">AVABRA MASTER - V21.9</div>
+        <div class="header">AVABRA MASTER - V21.8</div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-weight: bold; color: #444;">X</div>
             <div id="score-az" class="placar-numero az">0</div>
         </div>
         <div class="game-clock-area">
-            <div id="game-clock">12:00</div>
+            <div id="game-clock">10:00</div>
             <div id="init-action-area">
                 <button class="btn-big-start" onclick="iniciarTudo()">🏀 INICIAR A PARTIDA</button>
             </div>
-            <div id="clock-controls-area" style="display:none;">
-                <div class="clock-controls">
-                    <button id="btn-toggle-clock" class="btn-clock" style="background:var(--orange); color:#fff;" onclick="toggleClock()">⏸️ Pausar</button>
-                    <button class="btn-clock" style="background:#333;color:#888;" onclick="resetClock()">🔄 Zerar</button>
-                </div>
+            <div id="clock-controls-area" class="clock-controls" style="display:none;">
+                <button id="btn-toggle-clock" class="btn-clock" style="background:var(--orange); color:#fff;" onclick="toggleClock()">⏸️ Pausar</button>
+                <button class="btn-clock" style="background:#333;color:#888;" onclick="resetClock()">🔄 Zerar</button>
             </div>
         </div>
         <div class="vitoria-btns">
@@ -96,37 +94,23 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
         let d = { all: [], white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {}, is_recording: false };
-        let timer = 720; let running = false;
+        let timer = 600; let running = false; let abaAtiva = 'racha';
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
             if (data && data.data) {
-                const localRunning = running; const localTime = timer;
+                const localStatus = running; const localTime = timer;
                 d = data.data;
-                if(localRunning) { running = true; timer = localTime; }
+                if(localStatus) { running = true; timer = localTime; }
             }
             render();
         }
 
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function iniciarTudo() { 
-            running = true; 
-            d.is_recording = true; 
-            timer = 720;
-            sync(); 
-        }
-
-        function toggleClock() { 
-            running = !running; 
-            render(); 
-        }
-
-        function resetClock() { 
-            if(confirm("Zerar tempo do jogo atual?")) { 
-                timer = 720; running = false; render(); 
-            } 
-        }
+        function iniciarTudo() { running = true; d.is_recording = true; timer = 600; sync(); }
+        function toggleClock() { running = !running; render(); }
+        function resetClock() { if(confirm("Zerar tempo?")) { timer = 600; running = false; render(); } }
 
         setInterval(() => {
             if (running && timer > 0) {
@@ -142,42 +126,37 @@
             if (v === 'W') {
                 d.streakW++; d.streakA = 0;
                 if (d.streakW >= 2) { 
-                    d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; 
-                } else { 
-                    d.queue.push(...d.blue); d.blue = []; 
-                }
+                    d.queue.push(...d.white); d.queue.push(...d.blue);
+                    d.white = []; d.blue = []; d.streakW = 0; 
+                } else { d.queue.push(...d.blue); d.blue = []; }
             } else {
                 d.streakA++; d.streakW = 0;
                 if (d.streakA >= 2) { 
-                    d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; 
-                } else { 
-                    d.queue.push(...d.white); d.white = []; 
-                }
+                    d.queue.push(...d.blue); d.queue.push(...d.white);
+                    d.white = []; d.blue = []; d.streakA = 0; 
+                } else { d.queue.push(...d.white); d.white = []; }
             }
-            finalizarEDesbloquear();
+            executarRodizio();
         }
 
         function terminoTempo() {
-            if(!confirm("Encerrar racha por tempo/empate?")) return;
+            if(!confirm("Encerrar racha?")) return;
             d.last_state = JSON.parse(JSON.stringify(d));
-            if (d.scoreW > d.scoreA) { d.queue.push(...d.white, ...d.blue); }
-            else if (d.scoreA > d.scoreW) { d.queue.push(...d.blue, ...d.white); }
+            if (d.scoreW > d.scoreA) { d.queue.push(...d.white); d.queue.push(...d.blue); }
+            else if (d.scoreA > d.scoreW) { d.queue.push(...d.blue); d.queue.push(...d.white); }
             else { 
                 const naQuadra = [...d.white, ...d.blue];
                 const ordemOriginal = d.all.filter(p => naQuadra.includes(p));
                 d.queue.push(...ordemOriginal);
             }
             d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0;
-            finalizarEDesbloquear();
+            executarRodizio();
         }
 
-        function finalizarEDesbloquear() {
+        function executarRodizio() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
-            d.scoreW = 0; d.scoreA = 0; 
-            timer = 720; 
-            running = false; 
-            d.is_recording = false; // AQUI FAZ O BOTÃO INICIAR APARECER
+            d.scoreW = 0; d.scoreA = 0; timer = 600; running = false; d.is_recording = false;
             [...d.white, ...d.blue].forEach(p => { d.points[p] = 0; d.fouls[p] = 0; });
             sync();
         }
@@ -186,10 +165,10 @@
         function addFl(n) { d.fouls[n] = (d.fouls[n]||0) + 1; sync(); }
         function cadastrarAtleta() { const n = prompt("Nome:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } }
         function entrar(n) { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); }
-        function desfazer() { if(d.last_state && confirm("Desfazer último rodízio?")) { d = d.last_state; sync(); } }
-        function resetarTudo() { if(confirm("APAGAR TUDO E RECOMEÇAR DO ZERO?")) { d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {}, is_recording: false }; timer=720; running=false; sync(); } }
-        function mudarAba(a) { ['racha','stats','admin'].forEach(x => document.getElementById('view-'+x).style.display='none'); document.getElementById('view-'+a).style.display='block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById('nav-'+a).classList.add('active'); }
-        function enviarWhatsAppGeral() { let m = "*RANKING AVABRA*\n\n"; d.all.sort().forEach(p => { if(d.hist_pts[p]>0) m += `🏀 *${p}*: ${d.hist_pts[p]} PTS\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(m)}`); }
+        function desfazer() { if(d.last_state && confirm("Desfazer?")) { d = d.last_state; sync(); } }
+        function resetarTudo() { if(confirm("APAGAR TUDO?")) { d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {}, is_recording: false }; timer=600; running=false; sync(); } }
+        function mudarAba(a) { abaAtiva = a; ['racha','stats','admin'].forEach(x => document.getElementById('view-'+x).style.display='none'); document.getElementById('view-'+a).style.display='block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById('nav-'+a).classList.add('active'); }
+        function enviarWhatsAppGeral() { let m = "*CESTINHAS AVABRA*\n\n"; d.all.sort().forEach(p => { if(d.hist_pts[p]>0) m += `🏀 *${p}*: ${d.hist_pts[p]} PTS\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(m)}`); }
 
         function render() {
             document.getElementById('score-br').innerText = d.scoreW;
