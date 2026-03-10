@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V18.9</title>
+    <title>BASKETMASTER AVABRA V19.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -207,12 +207,12 @@
             let txt = `*AVABRA - SÚMULA JOGO ${numPartida}*\n📅 *Data:* ${dataAtual}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
             infoBranco.forEach(item => {
-                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "🛑" : ""));
+                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : "");
                 txt += `- ${item.n} ${sIcon}: (${item.p}P/${item.f}F/${formatarSegundos(item.t)})\n`;
             });
             txt += `\n🔵 *AZUL (${d.scoreA})*\n`;
             infoAzul.forEach(item => {
-                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "🛑" : ""));
+                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : "");
                 txt += `- ${item.n} ${sIcon}: (${item.p}P/${item.f}F/${formatarSegundos(item.t)})\n`;
             });
             d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt });
@@ -355,7 +355,6 @@
                                 let icSeta = ""; let cSeta = "";
                                 if(p.s === "SUBS") { icSeta = "&#9660;"; cSeta = "var(--red)"; }
                                 else if(p.s === "ENTROU") { icSeta = "&#9650;"; cSeta = "var(--green)"; }
-                                else if(p.s === "SUSP") { icSeta = "🛑"; cSeta = "var(--red)"; }
                                 return `<div class="player-line" style="${styleRed}"><span>${p.n} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
                             }).join('')}
                         </div>
@@ -366,7 +365,6 @@
                                 let icSeta = ""; let cSeta = "";
                                 if(p.s === "SUBS") { icSeta = "&#9660;"; cSeta = "var(--red)"; }
                                 else if(p.s === "ENTROU") { icSeta = "&#9650;"; cSeta = "var(--green)"; }
-                                else if(p.s === "SUSP") { icSeta = "🛑"; cSeta = "var(--red)"; }
                                 return `<div class="player-line" style="${styleRed}"><span>${p.n} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
                             }).join('')}
                         </div>
