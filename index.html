@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V23.1 - RODÍZIO REAL</title>
+    <title>AVABRA MASTER - ESTÁVEL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -13,8 +13,6 @@
         .placar-numero { font-size: 48px; font-weight: bold; font-family: monospace; padding: 5px 20px; border-radius: 8px; background: #222; border: 2px solid #333; }
         .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
         #game-clock { font-size: 52px; font-family: monospace; color: var(--yellow); }
-        #game-clock.expired { color: var(--red); animation: blink 0.5s step-start infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
         .btn-big { width: 90%; margin: 5px 5%; padding: 18px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .btn-start { background: var(--green); color: #000; }
         .btn-pause { background: var(--orange); color: #fff; }
@@ -33,7 +31,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header">AVABRA MASTER - RODÍZIO REAL</div>
+        <div class="header">AVABRA - MODO OPERADOR</div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-weight: bold; font-size: 24px; color: #444;">X</div>
@@ -80,8 +78,8 @@
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
-        let d = { all: [], white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, history: [], hist_pts: {}, last_state: null };
-        let timer = 720; let running = false; let audioCtx;
+        let d = { all: [], white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {}, last_state: null };
+        let timer = 720; let running = false;
 
         async function load() {
             const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
@@ -95,18 +93,7 @@
 
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function somBuzzer() {
-            try {
-                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                osc.type = 'square'; osc.frequency.setValueAtTime(400, now);
-                g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                osc.connect(g); g.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.8);
-            } catch(e){}
-        }
-
         function toggleClock() {
-            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             running = !running;
             document.getElementById('btn-master-clock').innerText = running ? "⏸️ Pausar Jogo" : "▶️ Retomar Jogo";
             document.getElementById('btn-master-clock').className = running ? "btn-big btn-pause" : "btn-big btn-start";
@@ -116,63 +103,48 @@
             if (running && timer > 0) {
                 timer--;
                 document.getElementById('game-clock').innerText = `${Math.floor(timer/60).toString().padStart(2,'0')}:${(timer%60).toString().padStart(2,'0')}`;
-                if (timer === 0) {
-                    running = false; somBuzzer();
-                    document.getElementById('game-clock').classList.add('expired');
-                }
             }
         }, 1000);
 
         function vitoria(v) {
-            if(!confirm("Finalizar partida?")) return;
+            if(!confirm("Finalizar partida e rodar times?")) return;
             d.last_state = JSON.parse(JSON.stringify(d));
             
             if (v === 'W') {
                 d.streakW++; d.streakA = 0;
                 if (d.streakW >= 2) {
-                    // Ganhou 2: Ambos saem, vencedor na frente do perdedor
-                    d.queue.push(...d.white);
-                    d.queue.push(...d.blue);
+                    d.queue.push(...d.white); d.queue.push(...d.blue);
                     d.white = []; d.blue = []; d.streakW = 0;
                 } else {
-                    // Vitória comum: Azul sai para a fila
                     d.queue.push(...d.blue); d.blue = [];
                 }
             } else {
                 d.streakA++; d.streakW = 0;
                 if (d.streakA >= 2) {
-                    // Ganhou 2: Ambos saem, vencedor na frente do perdedor
-                    d.queue.push(...d.blue);
-                    d.queue.push(...d.white);
+                    d.queue.push(...d.blue); d.queue.push(...d.white);
                     d.white = []; d.blue = []; d.streakA = 0;
                 } else {
-                    // Vitória comum: Branco sai para a fila
                     d.queue.push(...d.white); d.white = [];
                 }
             }
-            finalizarGeral();
+            rodarEFinalizar();
         }
 
         function terminoPorTempo() {
-            if(!confirm("Encerrar por tempo?")) return;
+            if(!confirm("Encerrar racha por tempo?")) return;
             d.last_state = JSON.parse(JSON.stringify(d));
-            
-            if (d.scoreW > d.scoreA) {
-                d.queue.push(...d.white); d.queue.push(...d.blue);
-            } else if (d.scoreA > d.scoreW) {
-                d.queue.push(...d.blue); d.queue.push(...d.white);
-            } else {
-                // Empate: Ordem por chegada (all)
+            if (d.scoreW > d.scoreA) { d.queue.push(...d.white); d.queue.push(...d.blue); }
+            else if (d.scoreA > d.scoreW) { d.queue.push(...d.blue); d.queue.push(...d.white); }
+            else { 
                 const emQuadra = [...d.white, ...d.blue];
-                const ordemChegada = d.all.filter(p => emQuadra.includes(p));
-                d.queue.push(...ordemChegada);
+                const ordemGinasio = d.all.filter(p => emQuadra.includes(p));
+                d.queue.push(...ordemGinasio);
             }
-            
             d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0;
-            finalizarGeral();
+            rodarEFinalizar();
         }
 
-        function finalizarGeral() {
+        function rodarEFinalizar() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             d.scoreW = 0; d.scoreA = 0; timer = 720; running = false;
@@ -185,7 +157,7 @@
         function addPt(n, p) { d.points[n] = (d.points[n]||0) + p; d.hist_pts[n] = (d.hist_pts[n]||0) + p; if(d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); }
         function addFl(n) { d.fouls[n] = (d.fouls[n]||0) + 1; sync(); }
         function desfazer() { if(d.last_state && confirm("Desfazer?")) { d = d.last_state; sync(); } }
-        function resetGeral() { if(confirm("APAGAR TUDO?")) { d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, history: [], hist_pts: {} }; timer=720; running=false; sync(); } }
+        function resetGeral() { if(confirm("ZERAR TUDO?")) { d = { all: d.all, white: [], blue: [], queue: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, points: {}, fouls: {}, hist_pts: {} }; timer=720; running=false; sync(); } }
 
         function render() {
             document.getElementById('score-br').innerText = d.scoreW;
@@ -208,6 +180,7 @@
             let hS = ""; d.all.sort().forEach(p => { if(d.hist_pts[p]>0) hS += `<div class="item-list"><span>${p}</span><span>${d.hist_pts[p]} PTS</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = hS;
         }
+
         function mudarAba(a) { 
             ['racha','stats','admin'].forEach(x => document.getElementById('view-'+x).style.display='none');
             document.getElementById('view-'+a).style.display='block';
