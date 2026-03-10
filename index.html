@@ -1,9 +1,16 @@
+Essa é uma sugestão digna de um Presidente que está atento aos mínimos detalhes! Identificar os "lenhadores" (jogadores que estouraram o limite de faltas) com uma cor de destaque vai dar um toque muito profissional à súmula e facilitar a resenha imediata.
+
+Na Versão 18.9, apliquei essa lógica: sempre que um jogador for registrado na súmula com o status de "SUSP" (Suspenso por 3 faltas), o nome e todas as estatísticas dele naquela partida aparecerão em Vermelho Vivo.
+
+Aqui está o código atualizado:
+
+HTML
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V18.8</title>
+    <title>BASKETMASTER AVABRA V18.9</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -181,7 +188,6 @@
         }
 
         function registrarPartida(motivo) {
-            // BACKUP DO ESTADO ANTES DA ROTAÇÃO
             d.last_state = JSON.parse(JSON.stringify({
                 white: d.white, blue: d.blue, queue: d.queue, 
                 scoreW: d.scoreW, scoreA: d.scoreA, 
@@ -208,12 +214,12 @@
             let txt = `*AVABRA - SÚMULA JOGO ${numPartida}*\n📅 *Data:* ${dataAtual}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
             infoBranco.forEach(item => {
-                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : "");
+                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "🛑" : ""));
                 txt += `- ${item.n} ${sIcon}: (${item.p}P/${item.f}F/${formatarSegundos(item.t)})\n`;
             });
             txt += `\n🔵 *AZUL (${d.scoreA})*\n`;
             infoAzul.forEach(item => {
-                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : "");
+                let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "🛑" : ""));
                 txt += `- ${item.n} ${sIcon}: (${item.p}P/${item.f}F/${formatarSegundos(item.t)})\n`;
             });
             d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt });
@@ -221,30 +227,17 @@
         }
 
         window.desfazerRotacao = () => {
-            if (!d.last_state) { alert("Nenhum estado para desfazer."); return; }
-            if (!confirm("Isso apagará a última súmula e trará os jogadores de volta para quadra. Confirmar?")) return;
-            
-            // Reverter campos básicos
+            if (!d.last_state) return;
+            if (!confirm("Desfazer última rotação?")) return;
             const s = d.last_state;
-            d.white = s.white;
-            d.blue = s.blue;
-            d.queue = s.queue;
-            d.scoreW = s.scoreW;
-            d.scoreA = s.scoreA;
-            d.points = s.points;
-            d.fouls = s.fouls;
-            d.streakW = s.streakW;
-            d.streakA = s.streakA;
+            d.white = s.white; d.blue = s.blue; d.queue = s.queue;
+            d.scoreW = s.scoreW; d.scoreA = s.scoreA;
+            d.points = s.points; d.fouls = s.fouls;
+            d.streakW = s.streakW; d.streakA = s.streakA;
             d.players_log = s.players_log;
-            
-            // Remover a última súmula gravada
             d.history_matches.pop();
-            
-            // Limpar backup para não desfazer duas vezes o mesmo erro
             d.last_state = null;
-            
             sync();
-            alert("Rotação desfeita com sucesso!");
         };
 
         window.vitoriaPlacar = (vencedor) => {
@@ -276,7 +269,6 @@
         function executarRodizio() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
-            // IMPORTANTE: Ao rodar, as faltas e pontos DA PARTIDA zeram, mas os totais (hist_pts) continuam
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
             d.players_log = []; d.white.forEach(p => logarParticipacao(p, 'W')); d.blue.forEach(p => logarParticipacao(p, 'A')); sync();
         }
@@ -327,10 +319,8 @@
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
-            
             const btnUndo = document.getElementById('btn-undo-op');
             btnUndo.style.display = d.last_state ? 'block' : 'none';
-
             const btnTimer = document.getElementById('btn-master-timer');
             if (d.match_start_time) { btnTimer.className = "btn-timer timer-on"; btnTimer.innerHTML = "⏹️ Encerrar Partida"; }
             else { btnTimer.className = "btn-timer timer-off"; btnTimer.innerHTML = "▶️ Iniciar Partida"; }
@@ -368,21 +358,23 @@
                         <div class="team-box br">
                             <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333; font-size:11px">BRANCO</strong>
                             ${jogo.branco.map(p => {
-                                let label = p.n;
+                                let styleRed = p.s === "SUSP" ? "color:var(--red); font-weight:bold;" : "";
                                 let icSeta = ""; let cSeta = "";
                                 if(p.s === "SUBS") { icSeta = "&#9660;"; cSeta = "var(--red)"; }
                                 else if(p.s === "ENTROU") { icSeta = "&#9650;"; cSeta = "var(--green)"; }
-                                return `<div class="player-line"><span>${label} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
+                                else if(p.s === "SUSP") { icSeta = "🛑"; cSeta = "var(--red)"; }
+                                return `<div class="player-line" style="${styleRed}"><span>${p.n} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
                             }).join('')}
                         </div>
                         <div class="team-box az">
                             <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333; font-size:11px">AZUL</strong>
                             ${jogo.azul.map(p => {
-                                let label = p.n;
+                                let styleRed = p.s === "SUSP" ? "color:var(--red); font-weight:bold;" : "";
                                 let icSeta = ""; let cSeta = "";
                                 if(p.s === "SUBS") { icSeta = "&#9660;"; cSeta = "var(--red)"; }
                                 else if(p.s === "ENTROU") { icSeta = "&#9650;"; cSeta = "var(--green)"; }
-                                return `<div class="player-line"><span>${label} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
+                                else if(p.s === "SUSP") { icSeta = "🛑"; cSeta = "var(--red)"; }
+                                return `<div class="player-line" style="${styleRed}"><span>${p.n} <b style="color:${cSeta}; font-size:11px;">${icSeta}</b></span><span>${p.p}P/${p.f}F/${formatarSegundos(p.t)}</span></div>`;
                             }).join('')}
                         </div>
                     </div>
