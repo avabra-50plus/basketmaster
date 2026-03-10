@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V18.6</title>
+    <title>BASKETMASTER AVABRA V18.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -64,6 +64,7 @@
         .team-box.br { border-left-color: #fff; }
         .team-box.az { border-left-color: var(--blue); }
         .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 6px 0; font-family: sans-serif; font-size: 10px; }
+        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -172,41 +173,27 @@
             if(!p) {
                 let finalStatus = status;
                 if(!status && (d.scoreW > 0 || d.scoreA > 0)) finalStatus = "ENTROU";
-                // CRÍTICO: t_ini deve ser o tempo que ele já tinha ANTES deste jogo começar
                 d.players_log.push({ n: nome, t: time, s: finalStatus, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0, t_ini: d.hist_time[nome]||0 });
             } else if(status) { p.s = status; }
         }
 
         function registrarPartida(motivo) {
-            const now = Date.now();
-            const durationSec = d.match_start_time ? (now - d.match_start_time) / 1000 : 0;
-            
-            // 1. Primeiro atualiza o 'd.hist_time' global com os segundos ganhos até o exato fim
             finalizarContagemTempo();
-            
             const dataAtual = new Date().toLocaleDateString('pt-BR');
             const numPartida = d.history_matches.length + 1;
-            
-            // 2. Garante que quem terminou em quadra está no log para capturar os pontos/faltas finais
             d.white.forEach(p => logarParticipacao(p, 'W'));
             d.blue.forEach(p => logarParticipacao(p, 'A'));
-            
-            // 3. Processa a súmula com a diferença matemática (Valor Final - Valor Inicial do jogo)
             const processar = (timeKey) => {
                 return d.players_log.filter(x => x.t === timeKey).map(x => {
                     let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
                     let flsNaPartida = (d.fouls[x.n]||0) - (x.f_ini||0);
-                    // O tempo na súmula agora é só o que ele ganhou NESTE jogo
                     let tNaPartida = (d.hist_time[x.n]||0) - (x.t_ini||0);
                     return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s, t: tNaPartida };
                 });
             };
-
             const infoBranco = processar('W');
             const infoAzul = processar('A');
-            const tempoTexto = formatarSegundos(durationSec);
-
-            let txt = `*AVABRA - SÚMULA JOGO ${numPartida}*\n📅 *Data:* ${dataAtual}\n⏱ *Duração:* ${tempoTexto}\n\n`;
+            let txt = `*AVABRA - SÚMULA JOGO ${numPartida}*\n📅 *Data:* ${dataAtual}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
             infoBranco.forEach(item => {
                 let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : "");
@@ -217,10 +204,7 @@
                 let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : "");
                 txt += `- ${item.n} ${sIcon}: (${item.p}P/${item.f}F/${formatarSegundos(item.t)})\n`;
             });
-
-            d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, duration: durationSec, textoWhatsApp: txt });
-            
-            // 4. Reseta para a próxima partida
+            d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt });
             d.players_log = []; d.match_start_time = null; d.players_entry_time = {};
         }
 
@@ -254,10 +238,7 @@
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            d.players_log = []; 
-            d.white.forEach(p => logarParticipacao(p, 'W')); 
-            d.blue.forEach(p => logarParticipacao(p, 'A')); 
-            sync();
+            d.players_log = []; d.white.forEach(p => logarParticipacao(p, 'W')); d.blue.forEach(p => logarParticipacao(p, 'A')); sync();
         }
 
         window.removerAtleta = (nome, local, motivo) => {
@@ -309,7 +290,6 @@
             const btnTimer = document.getElementById('btn-master-timer');
             if (d.match_start_time) { btnTimer.className = "btn-timer timer-on"; btnTimer.innerHTML = "⏹️ Encerrar Partida"; }
             else { btnTimer.className = "btn-timer timer-off"; btnTimer.innerHTML = "▶️ Iniciar Partida"; }
-
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${az ? 'azul' : ''}">
@@ -321,27 +301,25 @@
             document.getElementById('q-list').innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => { const corClasse = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde"; return `<span class="espera-item ${corClasse}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (S)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')" style="color:#fff; background:red; border:none; border-radius:3px; margin-left:5px; font-size:9px;">X</button></span>`; }).join(' ');
             document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => ![...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
-            
             let htmlStats = "";
             d.all.sort().forEach(p => {
                 const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const tStr = formatarSegundos((d.hist_time||{})[p] || 0);
                 if (pts > 0 || fls > 0 || (d.hist_time||{})[p] > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${fls} F | ${tStr}</span></div>`;
             });
             document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Nenhum registro.";
-
             let htmlHistory = "";
             [...d.history_matches].reverse().forEach((jogo, index) => {
                 const realIndex = d.history_matches.length - 1 - index;
                 htmlHistory += `
                 <div class="sumula-card">
                     <div class="sumula-header">
-                        <div><span style="display:block; font-size:10px; color:#888;">${jogo.data} | Dur: ${formatarSegundos(jogo.duration)}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${jogo.id}</span></div>
+                        <div><span style="display:block; font-size:10px; color:#888;">${jogo.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${jogo.id}</span></div>
                         <div class="sumula-placar">${jogo.placar}</div>
                         <button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${realIndex})">ENVIAR WHATSAPP</button>
                     </div>
                     <div class="sumula-teams">
                         <div class="team-box br">
-                            <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333">BRANCO</strong>
+                            <strong style="color:#fff; display:block; margin-bottom:5px; border-bottom:1px solid #333; font-size:11px">BRANCO</strong>
                             ${jogo.branco.map(p => {
                                 let label = p.n;
                                 let icSeta = ""; let cSeta = "";
@@ -351,7 +329,7 @@
                             }).join('')}
                         </div>
                         <div class="team-box az">
-                            <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333">AZUL</strong>
+                            <strong style="color:var(--blue); display:block; margin-bottom:5px; border-bottom:1px solid #333; font-size:11px">AZUL</strong>
                             ${jogo.azul.map(p => {
                                 let label = p.n;
                                 let icSeta = ""; let cSeta = "";
