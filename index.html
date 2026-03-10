@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V18.0</title>
+    <title>BASKETMASTER AVABRA V18.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -15,14 +16,11 @@
         .placar-numero.br { background: #fff; color: #000; }
         .placar-numero.az { background: var(--blue); color: #fff; }
         .placar-label { font-size: 10px; font-weight: bold; margin-top: 5px; color: #666; text-transform: uppercase; }
-        
-        /* NOVO: Botão de Cronômetro */
         .timer-control { display: flex; justify-content: center; padding: 10px; background: #111; }
         .btn-timer { width: 80%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; }
         .timer-off { background: var(--green); color: #000; }
         .timer-on { background: var(--red); color: #fff; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
         .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .t-br { background: #ffffff; color: #000; } 
@@ -76,13 +74,11 @@
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
             <div class="placar-box"><div id="score-az" class="placar-numero az">0</div><div class="placar-label">Azul</div></div>
         </div>
-
         <div class="timer-control">
             <button id="btn-master-timer" class="btn-timer timer-off" onclick="toggleTimer()">
                 <span id="timer-icon">▶️</span> <span id="timer-text">Iniciar Partida</span>
             </button>
         </div>
-
         <div class="timer-area">
             <button class="btn-t t-br" onclick="terminoTempo('B')">BR +</button>
             <button class="btn-t t-az" onclick="terminoTempo('A')">AZ +</button>
@@ -97,7 +93,6 @@
         <div class="faixa">Lista de Espera</div><div id="q-list"></div>
         <div class="faixa">No Ginásio</div><div id="disp-list"></div>
     </div>
-
     <div id="view-stats" style="display:none; padding:15px;">
         <h2 style="color:var(--orange); font-size:18px;">PONTUAÇÃO GERAL (TREINO)</h2>
         <button style="background:var(--green);color:white;padding:15px;width:100%;border:none;border-radius:8px;font-weight:bold;margin-bottom:20px;" onclick="enviarWhatsApp()">ENVIAR CESTINHAS DO DIA</button>
@@ -106,7 +101,6 @@
         <h2 style="color:var(--yellow); font-size:18px;">HISTÓRICO DE PARTIDAS</h2>
         <div id="lista-historico-partidas"></div>
     </div>
-
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
@@ -114,30 +108,18 @@
             <button style="background:var(--red); color:#fff; border:none; padding:10px 20px; border-radius:4px; font-size:12px; font-weight:bold;" onclick="resetarRacha()">ZERAR TODO O JOGO</button>
         </div>
     </div>
-    
     <div style="height:120px"></div>
     <div class="rodape">
         <div id="nav-racha" class="nav-b active" onclick="mudarAba('racha')">Racha</div>
         <div id="nav-stats" class="nav-b" onclick="mudarAba('stats')">Estatísticas</div>
         <div id="nav-atletas" class="nav-b" onclick="mudarAba('atletas')">Cadastro</div>
     </div>
-
     <script>
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        let d = { 
-            white: [], blue: [], queue: [], all: [], 
-            points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, 
-            hist_time: {}, // Tempo acumulado em segundos
-            streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, 
-            suspended: [], history_matches: [], players_log: [],
-            match_start_time: null, // Timestamp de quando a partida começou
-            players_entry_time: {} // Guarda quando cada jogador entrou em quadra
-        };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, streakW: 0, streakA: 0, scoreW: 0, scoreA: 0, suspended: [], history_matches: [], players_log: [], match_start_time: null, players_entry_time: {} };
         let abaAtiva = 'racha';
-
         async function load() {
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
@@ -151,22 +133,18 @@
         }
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
-
         function toggleTimer() {
             const now = Date.now();
             if (!d.match_start_time) {
-                // Iniciar
                 d.match_start_time = now;
                 [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = now);
             } else {
-                // Parar Manualmente (Diferente de finalizar jogo)
                 finalizarContagemTempo();
                 d.match_start_time = null;
                 d.players_entry_time = {};
             }
             sync();
         }
-
         function finalizarContagemTempo() {
             if (!d.match_start_time) return;
             const now = Date.now();
@@ -177,14 +155,12 @@
                 }
             });
         }
-
         function formatarSegundos(totalSeconds) {
-            if (!totalSeconds) return "0m";
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+            if (!totalSeconds || totalSeconds < 0) return "0s";
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            return m > 0 ? `${m}m ${s}s` : `${s}s`;
         }
-
         function logarParticipacao(nome, time, status = "") {
             if(!d.players_log) d.players_log = [];
             let p = d.players_log.find(x => x.n === nome);
@@ -194,16 +170,13 @@
                 d.players_log.push({ n: nome, t: time, s: finalStatus, p_ini: d.points[nome]||0, f_ini: d.fouls[nome]||0 });
             } else if(status) { p.s = status; }
         }
-
         function registrarPartida(motivo) {
             const durationSec = d.match_start_time ? Math.floor((Date.now() - d.match_start_time) / 1000) : 0;
             finalizarContagemTempo();
-            
             const dataAtual = new Date().toLocaleDateString('pt-BR');
             const numPartida = d.history_matches.length + 1;
             d.white.forEach(p => logarParticipacao(p, 'W'));
             d.blue.forEach(p => logarParticipacao(p, 'A'));
-
             const processar = (timeKey) => {
                 return d.players_log.filter(x => x.t === timeKey).map(x => {
                     let ptsNaPartida = (d.points[x.n]||0) - (x.p_ini||0);
@@ -215,10 +188,10 @@
                     return { n: x.n, p: ptsNaPartida, f: flsNaPartida, s: x.s, icon: icone };
                 });
             };
-
             const infoBranco = processar('W');
             const infoAzul = processar('A');
-            let txt = `*AVABRA - SÚMULA JOGO ${numPartida}*\n📅 *Data:* ${dataAtual}\n⏱ *Duração:* ${Math.floor(durationSec/60)}m\n\n`;
+            const tempoTexto = formatarSegundos(durationSec);
+            let txt = `*AVABRA - SÚMULA JOGO ${numPartida}*\n📅 *Data:* ${dataAtual}\n⏱ *Duração:* ${tempoTexto}\n\n`;
             txt += `⚪️ *BRANCO (${d.scoreW})*\n`;
             infoBranco.forEach(item => {
                 let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "(SUSP)" : ""));
@@ -229,13 +202,9 @@
                 let sIcon = item.s === "SUBS" ? "🔻" : (item.s === "ENTROU" ? "🔺" : (item.s === "SUSP" ? "(SUSP)" : ""));
                 txt += `- ${item.n} ${sIcon}: (${item.p} P / ${item.f} F)\n`;
             });
-            
             d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, duration: durationSec, textoWhatsApp: txt });
-            d.players_log = [];
-            d.match_start_time = null;
-            d.players_entry_time = {};
+            d.players_log = []; d.match_start_time = null; d.players_entry_time = {};
         }
-
         window.vitoriaPlacar = (vencedor) => {
             if(!confirm("Encerrar por Placar?")) return;
             registrarPartida('Placar');
@@ -251,7 +220,6 @@
             }
             d.scoreW = 0; d.scoreA = 0; executarRodizio();
         };
-
         window.terminoTempo = (btn) => {
             if(!confirm("Encerrar por Tempo? Ambas saem.")) return;
             registrarPartida('Tempo');
@@ -261,30 +229,22 @@
             else d.queue.push(...d.white, ...d.blue);
             d.white = []; d.blue = []; d.scoreW = 0; d.scoreA = 0; d.streakW = 0; d.streakA = 0; executarRodizio();
         };
-
         function executarRodizio() {
             while (d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
             while (d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
             [...d.white, ...d.blue].forEach(p => { d.fouls[p] = 0; d.points[p] = 0; });
-            d.players_log = []; 
-            d.white.forEach(p => logarParticipacao(p, 'W')); 
-            d.blue.forEach(p => logarParticipacao(p, 'A')); 
-            sync();
+            d.players_log = []; d.white.forEach(p => logarParticipacao(p, 'W')); d.blue.forEach(p => logarParticipacao(p, 'A')); sync();
         }
-
         window.removerAtleta = (nome, local, motivo) => {
             if(!confirm("Remover atleta?")) return;
             const now = Date.now();
             let timeKey = local === 'white' ? 'W' : 'A';
             let substituto = null;
-
-            // Se o cronômetro estiver rodando, computa o tempo dele agora
             if (d.match_start_time && d.players_entry_time[nome]) {
                 const diff = Math.floor((now - d.players_entry_time[nome]) / 1000);
                 d.hist_time[nome] = (d.hist_time[nome] || 0) + diff;
                 delete d.players_entry_time[nome];
             }
-
             if (motivo === 'sub' && d.queue.length > 0) {
                 logarParticipacao(nome, timeKey, "SUBS");
                 if ((d.streakW||0) === 0 && (d.scoreW + d.scoreA) === 0) {
@@ -293,25 +253,12 @@
                     }
                 } else { substituto = d.queue.pop(); }
             }
-
             d[local] = d[local].filter(p => p !== nome);
             if (motivo === 'falta') { logarParticipacao(nome, timeKey, "SUSP"); d.queue.unshift(nome); if(!d.suspended) d.suspended = []; d.suspended.push(nome); } 
-            
-            if (substituto) { 
-                d.points[substituto] = 0; d.fouls[substituto] = 0; d[local].push(substituto); 
-                logarParticipacao(substituto, timeKey, "ENTROU"); 
-                if (d.match_start_time) d.players_entry_time[substituto] = now;
-            }
+            if (substituto) { d.points[substituto] = 0; d.fouls[substituto] = 0; d[local].push(substituto); logarParticipacao(substituto, timeKey, "ENTROU"); if (d.match_start_time) d.players_entry_time[substituto] = now; }
             sync();
         };
-
-        window.mudarAba = (aba) => { 
-            abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
-            document.getElementById(`view-${aba}`).style.display = 'block';
-            document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active'));
-            document.getElementById(`nav-${aba}`).classList.add('active');
-        };
-
+        window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
         window.deletarSocio = (nome) => { if (confirm(`EXCLUIR ${nome}?`)) { d.all = d.all.filter(p => p !== nome); sync(); } };
         window.entrarNoJogo = (nome) => { d.points[nome] = 0; d.fouls[nome] = 0; if (d.white.length < 5) { d.white.push(nome); logarParticipacao(nome, 'W'); } else if (d.blue.length < 5) { d.blue.push(nome); logarParticipacao(nome, 'A'); } else d.queue.push(nome); sync(); };
@@ -323,31 +270,20 @@
         window.enviarWhatsApp = () => { 
             let msg = "*AVABRA: CESTINHAS DO DIA*\n\n"; 
             d.all.sort().forEach(p => {
-                const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const time = formatarSegundos((d.hist_time||{})[p] || 0);
-                if (pts > 0 || fls > 0) msg += `🏀 *${p}*: ${pts} PTS | ${fls} F | ${time}\n`;
+                const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const tStr = formatarSegundos((d.hist_time||{})[p] || 0);
+                if (pts > 0 || fls > 0) msg += `🏀 *${p}*: ${pts} PTS | ${fls} F | ${tStr}\n`;
             });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); 
         };
         window.enviarSumulaJogo = (index) => { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(d.history_matches[index].textoWhatsApp)}`); };
-
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
-
-            // Render do Botão de Cronômetro
             const btnTimer = document.getElementById('btn-master-timer');
             const timerTxt = document.getElementById('timer-text');
             const timerIcon = document.getElementById('timer-icon');
-            if (d.match_start_time) {
-                btnTimer.className = "btn-timer timer-on";
-                timerTxt.innerText = "Encerrar Partida";
-                timerIcon.innerText = "⏹️";
-            } else {
-                btnTimer.className = "btn-timer timer-off";
-                timerTxt.innerText = "Iniciar Partida";
-                timerIcon.innerText = "▶️";
-            }
-
+            if (d.match_start_time) { btnTimer.className = "btn-timer timer-on"; timerTxt.innerText = "Encerrar Partida"; timerIcon.innerText = "⏹️"; }
+            else { btnTimer.className = "btn-timer timer-off"; timerTxt.innerText = "Iniciar Partida"; timerIcon.innerText = "▶️"; }
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
                     <div class="linha ${az ? 'azul' : ''}">
@@ -356,29 +292,22 @@
                         <div class="bottom-row"><button class="btn-excluir btn-lesao" onclick="removerAtleta('${p}', '${slug}', 'sub')">Sair do Jogo</button><button class="btn-excluir btn-falta3" onclick="removerAtleta('${p}', '${slug}', 'falta')">Sair (3 Faltas)</button></div></div>`).join('');
             };
             draw(d.white || [], 'w-list', false, 'white'); draw(d.blue || [], 'a-list', true, 'blue');
-            
-            document.getElementById('q-list').innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => {
-                const corClasse = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde";
-                return `<span class="espera-item ${corClasse}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (S)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')" style="color:#fff; background:red; border:none; border-radius:3px; margin-left:5px; font-size:9px;">X</button></span>`;
-            }).join(' ');
-            
+            document.getElementById('q-list').innerHTML = (d.queue || []).length === 0 ? "Vazio" : d.queue.map((p, i) => { const corClasse = (Math.floor(i / 5) % 2 === 0) ? "espera-amarela" : "espera-verde"; return `<span class="espera-item ${corClasse}">${i+1}.${p}${(d.suspended||[]).includes(p)?' (S)':''}<button class="btn-del-fila" onclick="removerAtleta('${p}', 'queue')" style="color:#fff; background:red; border:none; border-radius:3px; margin-left:5px; font-size:9px;">X</button></span>`; }).join(' ');
             document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => ![...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button class="btn-del-socio" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
-            
             let htmlStats = "";
             d.all.sort().forEach(p => {
-                const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const time = formatarSegundos((d.hist_time||{})[p] || 0);
-                if (pts > 0 || fls > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${fls} F | ${time}</span></div>`;
+                const pts = (d.hist_pts||{})[p] || 0; const fls = (d.hist_fls||{})[p] || 0; const tStr = formatarSegundos((d.hist_time||{})[p] || 0);
+                if (pts > 0 || fls > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${fls} F | ${tStr}</span></div>`;
             });
             document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Nenhum registro.";
-
             let htmlHistory = "";
             [...d.history_matches].reverse().forEach((jogo, index) => {
                 const realIndex = d.history_matches.length - 1 - index;
                 htmlHistory += `
                 <div class="sumula-card">
                     <div class="sumula-header">
-                        <div><span style="display:block; font-size:10px; color:#888;">${jogo.data} | Dur: ${Math.floor(jogo.duration/60)}m</span><span style="font-weight:bold; color:var(--orange)">JOGO ${jogo.id}</span></div>
+                        <div><span style="display:block; font-size:10px; color:#888;">${jogo.data} | Dur: ${formatarSegundos(jogo.duration)}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${jogo.id}</span></div>
                         <div class="sumula-placar">${jogo.placar}</div>
                         <button class="btn-whatsapp-small" onclick="enviarSumulaJogo(${realIndex})">ENVIAR WHATSAPP</button>
                     </div>
