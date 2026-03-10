@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V22.10</title>
+    <title>AVABRA MASTER V22.11 - RESGATE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -13,18 +13,18 @@
         .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
         .placar-numero { font-size: 42px; font-weight: bold; font-family: monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; background: #222; color: #fff; }
         .placar-numero.az { color: var(--blue); }
-        .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; position: relative; }
+        .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
         #game-clock { font-family: 'Courier New', monospace; font-size: 52px; font-weight: bold; color: var(--yellow); letter-spacing: 2px; }
         #game-clock.expired { color: var(--red); animation: blink 0.5s step-start infinite; }
         @keyframes blink { 50% { opacity: 0; } }
-        .btn-big-start { width: calc(100% - 30px); margin: 15px; background: var(--green); color: #000; padding: 20px; border: none; border-radius: 8px; font-weight: 900; font-size: 18px; text-transform: uppercase; }
+        .btn-big-start { width: calc(100% - 30px); margin: 15px; background: var(--green); color: #000; padding: 20px; border: none; border-radius: 8px; font-weight: 900; font-size: 18px; text-transform: uppercase; cursor: pointer; }
         .clock-controls { display: flex; justify-content: center; gap: 10px; padding: 10px; }
-        .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; }
-        .btn-t { flex: 1; padding: 12px 5px; border: none; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; background: #333; color: #fff; }
+        .btn-t { flex: 1; padding: 12px 5px; border: none; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; background: #333; color: #fff; cursor: pointer; }
         .btn-t.highlight { border: 3px solid var(--yellow); }
         .vitoria-btns { display: flex; gap: 5px; padding: 10px; }
-        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; } .btn-blue { background: var(--blue); color: #fff; }
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
@@ -32,28 +32,29 @@
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; font-size: 11px; }
-        .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; font-weight: bold; }
-        .btn-p { width: 40px; height: 40px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; }
-        .btn-corrige { font-size: 10px; color: #d32f2f; background: #fff; border: 1px solid #d32f2f; padding: 2px 4px; border-radius: 4px; }
+        .f-box { background: #8b0000; color: #fff; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-p { width: 40px; height: 40px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; cursor: pointer; }
+        .btn-corrige { font-size: 10px; color: #d32f2f; background: #fff; border: 1px solid #d32f2f; padding: 2px 4px; border-radius: 4px; cursor: pointer; }
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
-        .btn-excluir { flex: 1; font-size: 9px; padding: 8px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #555; color: #fff; }
+        .btn-excluir { flex: 1; font-size: 9px; padding: 8px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #555; color: #fff; cursor: pointer; }
         #q-list { padding: 15px; background: #0a0a0a; font-size: 13px; font-weight: bold; line-height: 2; }
         .espera-item { display: inline-block; margin-right: 15px; border-bottom: 1px solid #222; }
         .espera-amarela { color: var(--yellow); } .espera-verde { color: var(--green); }
         .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
         .label-mabel { background: var(--red); color: #fff; font-weight: 900; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-        .btn-whatsapp-full { background: var(--green); color: #000; width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
-        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 6px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .btn-whatsapp-full { background: var(--green); color: #000; width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 20px; cursor: pointer; }
+        .btn-whatsapp-small { background: var(--green); color: #000; border: none; padding: 6px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 100; }
-        .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; }
+        .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
         .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
+        .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V22.10 - MASTER</div></div>
+        <div class="header"><div class="logo">AVABRA MASTER V22.11</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 24px; font-weight: bold; color: #444;">X</div>
@@ -94,7 +95,7 @@
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR ATLETA</button>
         <div id="lista-cadastrados"></div>
         <button style="background:#333;color:#ccc;border:none;padding:15px;width:100%;border-radius:8px;margin-top:30px;" onclick="desfazerRotacao()">↩ DESFAZER ÚLTIMA ROTAÇÃO</button>
-        <button style="background:var(--red);color:#fff;border:none;padding:15px;width:100%;border-radius:8px;margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <button style="background:var(--red);color:#fff;border:none;padding:15px;width:100%;border-radius:8px;margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TUDO</button>
     </div>
 
     <div style="height:100px"></div>
@@ -108,10 +109,8 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        // DADOS LOCAIS - CRONOMETRO É 100% DO OPERADOR
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, history_matches: [], players_log: [], players_entry_time: {}, last_state: null, remaining_seconds: 600, clock_running: false, is_recording: false };
-        let audioContext; let buzzerPlayed = false; let abaAtiva = 'racha';
+        let abaAtiva = 'racha'; let buzzerPlayed = false;
 
         async function load() {
             try {
@@ -121,10 +120,8 @@
                     const localTime = d.remaining_seconds;
                     const localRecording = d.is_recording;
                     d = data.data;
-                    // BLINDAGEM: Não deixa o banco mexer no tempo se o jogo estiver rolando ou gravando
-                    d.clock_running = localStatus;
-                    d.remaining_seconds = localTime;
-                    d.is_recording = localRecording;
+                    d.clock_running = localStatus; d.remaining_seconds = localTime; d.is_recording = localRecording;
+                    if(!d.white) d.white=[]; if(!d.blue) d.blue=[]; if(!d.queue) d.queue=[]; if(!d.all) d.all=[];
                 }
                 render();
             } catch (e) {}
@@ -132,23 +129,21 @@
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function falar(t) { try { const m = new SpeechSynthesisUtterance(t); m.lang = 'pt-BR'; m.pitch = 0.8; m.rate = 0.9; window.speechSynthesis.speak(m); } catch(e){} }
         function somBuzzer() {
             try {
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const now = audioContext.currentTime;
-                const osc = audioContext.createOscillator(); const g = audioContext.createGain();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime; const osc = ctx.createOscillator(); const g = ctx.createGain();
                 osc.type = 'square'; osc.frequency.setValueAtTime(400, now);
                 g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                osc.connect(g); g.connect(audioContext.destination); osc.start(now); osc.stop(now + 0.8);
+                osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now + 0.8);
             } catch(e){}
         }
+        function falar(t) { try { const m = new SpeechSynthesisUtterance(t); m.lang = 'pt-BR'; m.pitch = 0.8; m.rate = 0.9; window.speechSynthesis.speak(m); } catch(e){} }
 
-        function formatTime(s) { const val = Math.max(0, Math.floor(s)); return `${Math.floor(val/60).toString().padStart(2,'0')}:${(val%60).toString().padStart(2,'0')}`; }
+        function formatTime(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
 
         function iniciarTudo() { 
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            d.is_recording = true; d.clock_running = true; buzzerPlayed = false; d.remaining_seconds = 600;
+            d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; buzzerPlayed = false;
             d.white.forEach(p => logLog(p, 'W', "INICIO")); d.blue.forEach(p => logLog(p, 'A', "INICIO"));
             [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = Date.now());
             sync(); 
@@ -156,25 +151,19 @@
 
         function toggleClock() {
             d.clock_running = !d.clock_running;
-            if (d.clock_running) {
-                [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = Date.now());
-            } else {
-                calcTempo();
-            }
-            render(); // Atualiza UI sem sync pesado
+            if (d.clock_running) [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = Date.now());
+            else calcTempo();
+            render();
         }
 
         function resetClock() { if(confirm("Zerar cronômetro?")) { calcTempo(); d.clock_running=false; d.remaining_seconds=600; buzzerPlayed=false; render(); } }
 
-        // MOTOR DO CRONOMETRO 100% LOCAL
         setInterval(() => {
             if (d.clock_running && d.remaining_seconds > 0) {
                 d.remaining_seconds -= 1;
                 document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
                 if (d.remaining_seconds <= 0) {
-                    d.clock_running = false;
-                    somBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1200);
-                    render();
+                    d.clock_running = false; somBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1200); render();
                 }
             }
         }, 1000);
@@ -185,19 +174,16 @@
         }
 
         function registrar(motivo) {
+            d.clock_running = false; // MATA O RELOGIO NA HORA
             d.last_state = JSON.parse(JSON.stringify(d));
             const mabel = (motivo === 'Placar' && (d.scoreW === 0 || d.scoreA === 0));
             if (mabel) setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 500);
             calcTempo();
-            const proc = (tK) => d.players_log.filter(x => x.t === tK).map(x => { 
-                return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), s: x.s, t: (d.hist_time[x.n]||0) - (x.t_ini||0) }; 
-            });
+            const proc = (tK) => d.players_log.filter(x => x.t === tK).map(x => { return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), s: x.s, t: (d.hist_time[x.n]||0) - (x.t_ini||0) }; });
             const iW = proc('W'), iA = proc('A');
-            const zap = `🏀 *AVABRA JOGO ${d.history_matches.length+1}*\n${mabel?'*MABEL!* 🍪\n':''}⚪️ ${d.scoreW} x 🔵 ${d.scoreA}\n\n` + 
-                iW.map(x=>`${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}${x.f>=3?"🟥":""}: ${x.p}P|${x.f}F|${formatTime(x.t)}`).join('\n') + `\n\n` + 
-                iA.map(x=>`${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}${x.f>=3?"🟥":""}: ${x.p}P|${x.f}F|${formatTime(x.t)}`).join('\n');
+            const zap = `🏀 *AVABRA JOGO ${d.history_matches.length+1}*\n${mabel?'*MABEL!* 🍪\n':''}⚪️ ${d.scoreW} x 🔵 ${d.scoreA}\n\n` + iW.map(x=>`${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}: ${x.p}P|${x.f}F`).join('\n') + `\n\n` + iA.map(x=>`${x.s==="SUBS"?"🔻":x.s==="ENTROU"?"🔺":"▫️"} ${x.n}: ${x.p}P|${x.f}F`).join('\n');
             d.history_matches.push({ data: new Date().toLocaleDateString('pt-BR'), placar: `${d.scoreW}x${d.scoreA}`, branco: iW, azul: iA, mabel: mabel, zap: zap });
-            d.clock_running = false; d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false; buzzerPlayed = false;
+            d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false; buzzerPlayed = false;
         }
 
         window.vitoriaPlacar = (v) => { if(confirm("Confirmar vitória?")) { registrar('Placar'); if(v==='B') { d.queue.push(...d.blue); d.blue=[]; } else { d.queue.push(...d.white); d.white=[]; } d.scoreW=0; d.scoreA=0; rodizio(); } };
@@ -217,20 +203,21 @@
         function logLog(n, t, s) { if(!d.players_log) d.players_log = []; let p = d.players_log.find(x => x.n === n); if(!p) d.players_log.push({ n: n, t: t, s: s, p_ini: d.points[n]||0, f_ini: d.fouls[n]||0, t_ini: d.hist_time[n]||0 }); else p.s = s; }
         window.mudarAba = (a) => { abaAtiva = a; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${a}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${a}`).classList.add('active'); };
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { if(!d.all) d.all = []; d.all.push(n.toUpperCase().trim()); sync(); } };
+        window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
         window.addPt = (n, p) => { d.points[n] = (d.points[n]||0)+p; d.hist_pts[n] = (d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
         window.subPt = (n) => { if(d.points[n]>0) { d.points[n]--; d.hist_pts[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n]||0)+1; d.hist_fls[n] = (d.hist_fls[n]||0)+1; sync(); };
         window.subFl = (n) => { if(d.fouls[n]>0) { d.fouls[n]--; d.hist_fls[n]--; sync(); } };
         window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all || [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, history_matches: [], players_log: [], remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
-        window.enviarWhatsAppGeral = () => { let m = "🏀 *RANKING AVABRA*\n\n"; (d.all||[]).sort().forEach(p => { const pts = d.hist_pts[p]||0, t = d.hist_time[p]||0; if(pts>0 || t>0) m += `👤 *${p}*\n   └ ${pts} PTS | ⏱️ ${formatTime(t)}\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(m)}`); };
+        window.enviarWhatsAppGeral = () => { let m = "🏀 *RANKING AVABRA*\n\n"; (d.all||[]).sort().forEach(p => { const pts = d.hist_pts[p]||0, t = d.hist_time[p]||0; if(pts>0 || t>0) m += `👤 *${p}*: ${pts} PTS | ⏱️ ${formatTime(t)}\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(m)}`); };
         window.enviarZapSumula = (idx) => { const j = d.history_matches[idx]; if(j) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(j.zap)}`); };
 
         function render() {
-            document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
+            document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0;
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'block';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
             document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
-            const bT = document.getElementById('btn-toggle-clock'); bT.innerText = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
+            document.getElementById('btn-toggle-clock').innerText = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
             const dw = (list, id, az, slug) => { document.getElementById(id).innerHTML = (list||[]).map(p => `<div class="linha ${az?'azul':''}">
                 <div class="top-row"><div class="info"><span class="nome">${p} ${d.is_recording?'⏱️':''}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span> <button class="btn-corrige" onclick="subPt('${p}')">P-</button> <button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
                 <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div></div>
@@ -241,10 +228,9 @@
             document.getElementById('lista-cadastrados').innerHTML = (d.all||[]).sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
             let hS = ""; (d.all||[]).sort().forEach(p => { const pts = d.hist_pts[p]||0, t = d.hist_time[p]||0; if(pts>0 || t>0) hS += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS | ${formatTime(t)}</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = hS;
-            let hH = ""; (d.history_matches||[]).reverse().forEach((j, idx) => { const rIdx = d.history_matches.length - 1 - idx; hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block;font-size:10px;color:#888;">${j.data}</span><b>JOGO ${rIdx+1}</b></div>${j.mabel?'<div class="label-mabel">MABEL</div>':''}<div style="color:var(--yellow);font-weight:bold;font-family:monospace;">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarZapSumula(${rIdx})">ZAP</button></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div></div></div>`; });
+            let hH = ""; (d.history_matches||[]).reverse().forEach((j, idx) => { const rIdx = d.history_matches.length - 1 - idx; hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block;font-size:10px;color:#888;">${j.data}</span><b>JOGO ${rIdx+1}</b></div>${j.mabel?'<div class="label-mabel">MABEL</div>':''}<div style="color:var(--yellow);font-weight:bold;">${j.placar}</div><button class="btn-whatsapp-small" onclick="enviarZapSumula(${rIdx})">ZAP</button></div><div class="sumula-teams"><div class="team-box"><b>BR</b><br>${j.branco.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div><div class="team-box"><b>AZ</b><br>${j.azul.map(p=>`<div class="player-line"><span>${p.s==="SUBS"?"🔻":p.s==="ENTROU"?"🔺":"▫️"} ${p.n}</span><span>${p.p}P|${p.f}F</span></div>`).join('')}</div></div></div>`; });
             document.getElementById('lista-historico-partidas').innerHTML = hH;
         }
-        window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
         load();
     </script>
 </body>
