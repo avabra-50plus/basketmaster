@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V20.2</title>
+    <title>BASKETMASTER AVABRA V20.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -17,19 +17,20 @@
         .placar-numero.az { background: var(--blue); color: #fff; }
         .placar-label { font-size: 10px; font-weight: bold; margin-top: 5px; color: #666; text-transform: uppercase; }
 
-        /* CRONÔMETRO */
+        /* CRONÔMETRO UNIFICADO */
         .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
-        #game-clock { font-family: 'Courier New', monospace; font-size: 48px; font-weight: bold; color: var(--yellow); letter-spacing: 2px; }
-        .clock-controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 11px; cursor: pointer; }
-        .btn-start { background: var(--green); color: #000; }
-        .btn-pause { background: var(--orange); color: #fff; }
-        .btn-reset { background: #333; color: #fff; border: 1px solid #444; }
+        #game-clock { font-family: 'Courier New', monospace; font-size: 52px; font-weight: bold; color: var(--yellow); letter-spacing: 2px; }
+        
+        /* BOTÃO INICIAL GRANDE */
+        .area-start-match { padding: 15px; display: flex; justify-content: center; background: #111; }
+        .btn-big-start { width: 100%; background: var(--green); color: #000; padding: 18px; border: none; border-radius: 8px; font-weight: 900; font-size: 16px; text-transform: uppercase; cursor: pointer; }
 
-        /* REGISTRO DE PARTIDA */
-        .match-gate { padding: 10px; background: #111; display: flex; justify-content: center; }
-        .btn-match-start { width: 90%; background: #006400; color: #fff; padding: 15px; border: 2px solid var(--green); border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; animation: pulse-green 2s infinite; }
-        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 211, 10 green, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
+        /* CONTROLES DURANTE O JOGO */
+        .clock-controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
+        .btn-pause { background: var(--orange); color: #fff; }
+        .btn-resume { background: var(--green); color: #000; }
+        .btn-reset { background: #333; color: #888; border: 1px solid #444; }
 
         .timer-area { display: flex; gap: 5px; padding: 10px; background: #111; justify-content: center; }
         .btn-t { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; text-transform: uppercase; }
@@ -37,7 +38,7 @@
         .vitoria-btns { display: flex; gap: 5px; padding: 10px 10px 0 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
         .btn-white { background: #fff; color: #000; } .btn-blue { background: var(--blue); color: #fff; }
-        .btn-undo { width: calc(100% - 20px); margin: 10px; padding: 10px; background: #222; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; font-size: 11px; text-transform: uppercase; cursor: pointer; }
+        .btn-undo { width: calc(100% - 20px); margin: 10px; padding: 8px; background: #1a1a1a; color: #555; border: 1px solid #222; border-radius: 6px; font-weight: bold; font-size: 10px; text-transform: uppercase; cursor: pointer; }
 
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
@@ -61,7 +62,6 @@
         .nav-b.active { color: var(--orange); }
         
         .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
-        .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; }
         .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
         .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
@@ -82,14 +82,15 @@
 
         <div class="game-clock-area">
             <div id="game-clock">10:00</div>
-            <div class="clock-controls">
-                <button id="btn-master-clock" class="btn-clock btn-start" onclick="toggleClock()">▶️ Iniciar Relógio</button>
+            
+            <div id="init-action-area" class="area-start-match">
+                <button class="btn-big-start" onclick="iniciarTudo()">🏀 INICIAR A PARTIDA</button>
+            </div>
+
+            <div id="clock-controls-area" class="clock-controls" style="display:none;">
+                <button id="btn-toggle-clock" class="btn-clock" onclick="toggleClock()">⏸️ Pausar</button>
                 <button class="btn-clock btn-reset" onclick="resetClock()">🔄 Zerar</button>
             </div>
-        </div>
-
-        <div id="area-match-start" class="match-gate">
-            <button class="btn-match-start" onclick="iniciarGravacaoPartida()">🏀 INICIAR GRAVAÇÃO JOGO</button>
         </div>
 
         <div class="timer-area">
@@ -140,13 +141,10 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
         let d = { 
-            white: [], blue: [], queue: [], all: [], 
-            points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, 
-            scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, 
-            history_matches: [], players_log: [], 
+            white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, 
+            scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], 
             players_entry_time: {}, last_state: null,
-            target_time: null, remaining_seconds: 600, clock_running: false,
-            is_recording: false // Controle de quando o tempo dos jogadores deve contar
+            target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false 
         };
         let abaAtiva = 'racha';
 
@@ -164,6 +162,19 @@
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
+        function iniciarTudo() {
+            const now = Date.now();
+            d.is_recording = true;
+            d.clock_running = true;
+            d.target_time = now + (d.remaining_seconds * 1000);
+            
+            [...d.white, ...d.blue].forEach(p => {
+                logarParticipacao(p, d.white.includes(p)?'W':'A');
+                d.players_entry_time[p] = now;
+            });
+            sync();
+        }
+
         function toggleClock() {
             const now = Date.now();
             if (!d.clock_running) {
@@ -179,27 +190,11 @@
         }
 
         function resetClock() {
-            if (confirm("Resetar cronômetro para 10:00?")) {
+            if (confirm("Reiniciar cronômetro para 10:00?")) {
                 if(d.is_recording) finalizarContagemTempoAtletas();
                 d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {};
                 sync();
             }
-        }
-
-        function iniciarGravacaoPartida() {
-            const now = Date.now();
-            d.is_recording = true;
-            // Carimba entrada dos 10 em quadra
-            [...d.white, ...d.blue].forEach(p => {
-                logarParticipacao(p, d.white.includes(p)?'W':'A');
-                d.players_entry_time[p] = now;
-            });
-            // Liga o relógio automaticamente se estiver parado
-            if (!d.clock_running) {
-                d.target_time = now + (d.remaining_seconds * 1000);
-                d.clock_running = true;
-            }
-            sync();
         }
 
         function updateDisplayClock() {
@@ -235,8 +230,6 @@
             if(d.is_recording) finalizarContagemTempoAtletas();
             
             const dataAtual = new Date().toLocaleDateString('pt-BR');
-            const numPartida = d.history_matches.length + 1;
-            
             const processar = (timeKey) => {
                 return d.players_log.filter(x => x.t === timeKey).map(x => {
                     let pts = (d.points[x.n]||0) - (x.p_ini||0);
@@ -247,12 +240,12 @@
             };
 
             const infoBranco = processar('W'); const infoAzul = processar('A');
-            let txt = `*AVABRA JOGO ${numPartida}*\n⚪️ *BRANCO (${d.scoreW})*\n`;
+            let txt = `*AVABRA JOGO ${d.history_matches.length + 1}*\n⚪️ *BRANCO (${d.scoreW})*\n`;
             infoBranco.forEach(i => txt += `- ${i.n}: ${i.p}P/${i.f}F/${formatTimeDisplay(Math.round(i.t))}\n`);
             txt += `🔵 *AZUL (${d.scoreA})*\n`;
             infoAzul.forEach(i => txt += `- ${i.n}: ${i.p}P/${i.f}F/${formatTimeDisplay(Math.round(i.t))}\n`);
 
-            d.history_matches.push({ id: numPartida, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt });
+            d.history_matches.push({ id: d.history_matches.length + 1, data: dataAtual, placar: `${d.scoreW} x ${d.scoreA}`, branco: infoBranco, azul: infoAzul, motivo: motivo, textoWhatsApp: txt });
             
             d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.players_entry_time = {}; d.players_log = []; d.is_recording = false;
         }
@@ -296,7 +289,6 @@
         window.removerAtleta = (nome, local, motivo) => {
             if(!confirm("Remover atleta?")) return;
             const now = Date.now();
-            let timeKey = local === 'white' ? 'W' : 'A';
             if (d.is_recording && d.players_entry_time[nome]) {
                 const diff = (now - d.players_entry_time[nome]) / 1000;
                 d.hist_time[nome] = (d.hist_time[nome] || 0) + diff;
@@ -304,14 +296,14 @@
             }
             let sub = null;
             if (motivo === 'sub' && d.queue.length > 0) {
-                logarParticipacao(nome, timeKey, "SUBS");
+                logarParticipacao(nome, local==='white'?'W':'A', "SUBS");
                 sub = d.queue.pop();
             }
             d[local] = d[local].filter(p => p !== nome);
-            if (motivo === 'falta') { logarParticipacao(nome, timeKey, "SUSP"); d.queue.unshift(nome); } 
+            if (motivo === 'falta') { logarParticipacao(nome, local==='white'?'W':'A', "SUSP"); d.queue.unshift(nome); } 
             if (sub) { 
                 d.points[sub] = 0; d.fouls[sub] = 0; d[local].push(sub); 
-                logarParticipacao(sub, timeKey, "ENTROU"); 
+                logarParticipacao(sub, local==='white'?'W':'A', "ENTROU"); 
                 if (d.is_recording && d.clock_running) d.players_entry_time[sub] = now; 
             }
             sync();
@@ -347,10 +339,21 @@
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
             document.getElementById('btn-undo-op').style.display = d.last_state ? 'block' : 'none';
-            document.getElementById('area-match-start').style.display = d.is_recording ? 'none' : 'flex';
-            const bP = document.getElementById('btn-master-clock');
-            bP.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-start";
-            bP.innerHTML = d.clock_running ? "⏸️ Pausar Relógio" : "▶️ Iniciar Relógio";
+            
+            // Lógica de Visibilidade dos Botões
+            const initArea = document.getElementById('init-action-area');
+            const controlsArea = document.getElementById('clock-controls-area');
+            const bT = document.getElementById('btn-toggle-clock');
+
+            if (!d.is_recording) {
+                initArea.style.display = 'flex';
+                controlsArea.style.display = 'none';
+            } else {
+                initArea.style.display = 'none';
+                controlsArea.style.display = 'flex';
+                bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume";
+                bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
+            }
 
             const draw = (list, id, az, slug) => {
                 document.getElementById(id).innerHTML = list.map(p => `
