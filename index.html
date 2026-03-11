@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.18</title>
+    <title>BASKETMASTER AVABRA V21.19</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -35,7 +35,7 @@
         .btn-white { background: #fff; color: #000; } .btn-blue { background: var(--blue); color: #fff; }
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
-        .linha.azul { background: var(--blue); color: #fff; }
+        .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
@@ -65,7 +65,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.18 - MASTER</div></div>
+        <div class="header"><div class="logo">AVABRA V21.19</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -128,14 +128,21 @@
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
-                    const localStatus = d.clock_running; const localRem = d.remaining_seconds;
-                    const localAll = d.all;
+                    const localRecording = d.is_recording;
+                    const localClock = d.clock_running;
+                    const localRem = d.remaining_seconds;
+                    
                     d = data.data;
-                    d.all = d.all || localAll;
-                    if(localStatus) { d.clock_running = localStatus; d.remaining_seconds = localRem; }
+                    
+                    // Se estivermos em jogo localmente, mantemos os estados para não piscar os botões
+                    if(localRecording) {
+                        d.is_recording = localRecording;
+                        d.clock_running = localClock;
+                        d.remaining_seconds = localRem;
+                    }
                 }
                 render();
-            } catch (e) { console.error(e); }
+            } catch (e) {}
         }
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
@@ -146,10 +153,13 @@
         }
 
         function iniciarTudo() { 
-            d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; 
+            d.is_recording = true; 
+            d.clock_running = true; 
+            d.remaining_seconds = 600; 
             const now = Date.now();
             [...d.white, ...d.blue].forEach(p => { logarEvento(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; });
-            sync(); 
+            render(); // Primeiro atualiza a tela
+            sync();   // Depois envia pro banco
         }
 
         function toggleClock() { 
@@ -249,7 +259,7 @@
             }
             if (motivo === 'falta') { 
                 logarEvento(nome, local==='white'?'W':'A', "EXPULSO"); 
-                d.queue.unshift(nome); // Expulso volta pra frente da fila
+                d.queue.unshift(nome);
             }
             d[local] = d[local].filter(p => p !== nome);
             if (sub) { 
