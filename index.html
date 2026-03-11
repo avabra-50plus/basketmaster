@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.10 - REPARO</title>
+    <title>BASKETMASTER AVABRA V21.11 - RESGATE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -32,6 +32,7 @@
         .t-br { background: #ffffff; color: #000; } .t-az { background: var(--blue); color: #fff; } .t-em { background: #555; color: #fff; }
         .vitoria-btns { display: flex; gap: 5px; padding: 10px 10px 0 10px; }
         .btn-v { flex: 1; padding: 15px; border: none; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 12px; cursor: pointer; }
+        .btn-white { background: #fff; color: #000; } .btn-blue { background: var(--blue); color: #fff; }
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; }
@@ -47,7 +48,7 @@
         .espera-item { display: inline-block; margin-right: 15px; border-bottom: 1px solid #222; }
         .espera-amarela { color: var(--yellow); } .espera-verde { color: var(--green); }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 100; }
-        .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; }
+        .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
         .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
@@ -56,7 +57,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.10</div></div>
+        <div class="header"><div class="logo">AVABRA V21.11 - RESGATE</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -68,7 +69,7 @@
                 <button class="btn-big-start" onclick="iniciarTudo()">🏀 INICIAR A PARTIDA</button>
             </div>
             <div id="clock-controls-area" class="clock-controls" style="display:none;">
-                <button id="btn-toggle-clock" class="btn-clock" onclick="toggleClock()">⏸️ Pausar</button>
+                <button id="btn-toggle-clock" class="btn-clock btn-pause" onclick="toggleClock()">⏸️ Pausar</button>
                 <button class="btn-clock btn-reset" onclick="resetClock()">🔄 Zerar</button>
             </div>
         </div>
@@ -98,7 +99,6 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
 
     <div style="height:120px"></div>
@@ -112,6 +112,8 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
+        
+        // ESTRUTURA BLINDADA: Inicializa com arrays vazios para não dar erro de undefined
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false };
         let abaAtiva = 'racha';
 
@@ -119,17 +121,39 @@
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
-                    const localStatus = d.clock_running; const localRem = d.remaining_seconds;
-                    d = data.data;
-                    d.clock_running = localStatus; d.remaining_seconds = localRem;
+                    // SE O BANCO TEM "ALL", USA ELE. SE NÃO, MANTÉM O LOCAL.
+                    const banco = data.data;
+                    const localStatus = d.clock_running;
+                    const localRem = d.remaining_seconds;
+                    
+                    // Mescla os dados sem apagar o cadastro se ele existir no banco
+                    d.all = banco.all || d.all;
+                    d.white = banco.white || [];
+                    d.blue = banco.blue || [];
+                    d.queue = banco.queue || [];
+                    d.points = banco.points || {};
+                    d.fouls = banco.fouls || {};
+                    d.hist_pts = banco.hist_pts || {};
+                    d.history_matches = banco.history_matches || [];
+                    
+                    // Mantém o cronômetro local vivo
+                    d.clock_running = localStatus; 
+                    d.remaining_seconds = localRem;
+                    d.is_recording = banco.is_recording || false;
                 }
                 render();
-            } catch (e) {}
+            } catch (e) { console.error("Erro no load:", e); }
         }
+
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function formatTimeDisplay(s) { const min = Math.floor(s/60); const sec = Math.floor(s%60); return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`; }
+        function formatTimeDisplay(s) { 
+            const v = Math.max(0, Math.floor(s));
+            const min = Math.floor(v/60); 
+            const sec = v%60; 
+            return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`; 
+        }
 
         function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; sync(); }
         function toggleClock() { d.clock_running = !d.clock_running; render(); }
@@ -143,47 +167,46 @@
             }
         }, 1000);
 
-        function salvarSumula() {
-            if(!d.history_matches) d.history_matches = [];
-            const jogo = {
-                id: d.history_matches.length + 1,
-                data: new Date().toLocaleTimeString('pt-BR'),
-                placar: `${d.scoreW} x ${d.scoreA}`
-            };
-            d.history_matches.push(jogo);
-        }
-
         window.vitoriaPlacar = (v) => {
             if(!confirm("Confirmar vitória?")) return;
-            salvarSumula();
+            if(!d.history_matches) d.history_matches = [];
+            d.history_matches.push({ id: d.history_matches.length + 1, data: new Date().toLocaleTimeString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}` });
+            
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B'){ d.streakW++; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } }
-            else { d.streakA++; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } }
+            if(v==='B'){ 
+                d.streakW = (d.streakW||0)+1; d.streakA=0; 
+                if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } 
+                else { d.queue.push(...d.blue); d.blue=[]; } 
+            } else { 
+                d.streakA = (d.streakA||0)+1; d.streakW=0; 
+                if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } 
+                else { d.queue.push(...d.white); d.white=[]; } 
+            }
             d.scoreW=0; d.scoreA=0; rodizio();
         };
 
         window.terminoTempo = (v) => {
             if(!confirm("Encerrar partida?")) return;
-            salvarSumula();
+            d.history_matches.push({ id: d.history_matches.length + 1, data: new Date().toLocaleTimeString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}` });
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B') d.queue.push(...d.white,...d.blue); else if(v==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue);
+            if(v==='B') d.queue.push(...d.white,...d.blue); 
+            else if(v==='A') d.queue.push(...d.blue,...d.white); 
+            else d.queue.push(...d.white,...d.blue);
             d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; rodizio();
         };
 
-        function rodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); sync(); }
-
-        window.addPt = (n, p) => { 
-            d.points[n] = (d.points[n] || 0) + p; 
-            d.hist_pts[n] = (d.hist_pts[n] || 0) + p; 
-            if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; 
+        function rodizio() { 
+            while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); 
+            while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); 
+            [...d.white, ...d.blue].forEach(p => { d.points[p]=0; d.fouls[p]=0; });
             sync(); 
-        };
+        }
 
-        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
+        window.addPt = (n, p) => { d.points[n] = (d.points[n]||0)+p; d.hist_pts[n] = (d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW = (d.scoreW||0)+p; else d.scoreA = (d.scoreA||0)+p; sync(); };
+        window.addFl = (n) => { d.fouls[n] = (d.fouls[n]||0)+1; sync(); };
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
         window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
         window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
-        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
 
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
@@ -191,25 +214,24 @@
             document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
-            const bT = document.getElementById('btn-toggle-clock'); if(bT) bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
+            
+            const bT = document.getElementById('btn-toggle-clock'); 
+            if(bT) { bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; }
 
             const draw = (list, id, az) => {
                 document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
                     <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span></div></div>
                     <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div></div>`).join('');
             };
-            draw(d.white, 'w-list', false); draw(d.blue, 'a-list', true);
+            draw(d.white || [], 'w-list', false); draw(d.blue || [], 'a-list', true);
             
-            // CORES DA LISTA DE ESPERA (REATIVADO)
             document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i / 5) % 2 === 0)?'espera-amarela':'espera-verde'}">${i+1}.${p}</span>`).join(' ');
-            
             document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
-            
-            // ESTATISTICAS GERAIS (REATIVADO)
-            let htmlStats = ""; d.all.sort().forEach(p => { const pts = d.hist_pts[p] || 0; if (pts > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS</span></div>`; });
-            document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Vazio.";
+            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
 
-            // HISTORICO (REATIVADO)
+            let hS = ""; d.all.sort().forEach(p => { if((d.hist_pts[p]||0) > 0) hS += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${d.hist_pts[p]} PTS</span></div>`; });
+            document.getElementById('lista-estatisticas-geral').innerHTML = hS || "Vazio.";
+
             let hH = ""; [...(d.history_matches || [])].reverse().forEach((j) => {
                 hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div></div></div>`;
             });
