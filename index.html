@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.11 - RESGATE</title>
+    <title>BASKETMASTER AVABRA V21.12 - AJUSTE FINO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -50,6 +50,8 @@
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 100; }
         .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
+        .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
+        .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
         .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
@@ -57,7 +59,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.11 - RESGATE</div></div>
+        <div class="header"><div class="logo">AVABRA V21.12</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -112,8 +114,6 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        // ESTRUTURA BLINDADA: Inicializa com arrays vazios para não dar erro de undefined
         let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false };
         let abaAtiva = 'racha';
 
@@ -121,12 +121,9 @@
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
-                    // SE O BANCO TEM "ALL", USA ELE. SE NÃO, MANTÉM O LOCAL.
                     const banco = data.data;
                     const localStatus = d.clock_running;
                     const localRem = d.remaining_seconds;
-                    
-                    // Mescla os dados sem apagar o cadastro se ele existir no banco
                     d.all = banco.all || d.all;
                     d.white = banco.white || [];
                     d.blue = banco.blue || [];
@@ -135,26 +132,16 @@
                     d.fouls = banco.fouls || {};
                     d.hist_pts = banco.hist_pts || {};
                     d.history_matches = banco.history_matches || [];
-                    
-                    // Mantém o cronômetro local vivo
-                    d.clock_running = localStatus; 
-                    d.remaining_seconds = localRem;
-                    d.is_recording = banco.is_recording || false;
+                    d.is_recording = (banco.is_recording !== undefined) ? banco.is_recording : d.is_recording;
+                    if(!localStatus) { d.remaining_seconds = localRem; } else { d.clock_running = localStatus; d.remaining_seconds = localRem; }
                 }
                 render();
             } catch (e) { console.error("Erro no load:", e); }
         }
-
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function formatTimeDisplay(s) { 
-            const v = Math.max(0, Math.floor(s));
-            const min = Math.floor(v/60); 
-            const sec = v%60; 
-            return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`; 
-        }
-
+        function formatTimeDisplay(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
         function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; sync(); }
         function toggleClock() { d.clock_running = !d.clock_running; render(); }
         function resetClock() { if(confirm("Zerar cronômetro?")) { d.clock_running = false; d.remaining_seconds = 600; render(); } }
@@ -167,46 +154,36 @@
             }
         }, 1000);
 
-        window.vitoriaPlacar = (v) => {
-            if(!confirm("Confirmar vitória?")) return;
+        function gravarSumula() {
             if(!d.history_matches) d.history_matches = [];
             d.history_matches.push({ id: d.history_matches.length + 1, data: new Date().toLocaleTimeString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}` });
-            
+        }
+
+        window.vitoriaPlacar = (v) => {
+            if(!confirm("Confirmar vitória?")) return;
+            gravarSumula();
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B'){ 
-                d.streakW = (d.streakW||0)+1; d.streakA=0; 
-                if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } 
-                else { d.queue.push(...d.blue); d.blue=[]; } 
-            } else { 
-                d.streakA = (d.streakA||0)+1; d.streakW=0; 
-                if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } 
-                else { d.queue.push(...d.white); d.white=[]; } 
-            }
+            if(v==='B'){ d.streakW = (d.streakW||0)+1; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } }
+            else { d.streakA = (d.streakA||0)+1; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } }
             d.scoreW=0; d.scoreA=0; rodizio();
         };
 
         window.terminoTempo = (v) => {
             if(!confirm("Encerrar partida?")) return;
-            d.history_matches.push({ id: d.history_matches.length + 1, data: new Date().toLocaleTimeString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}` });
+            gravarSumula();
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B') d.queue.push(...d.white,...d.blue); 
-            else if(v==='A') d.queue.push(...d.blue,...d.white); 
-            else d.queue.push(...d.white,...d.blue);
-            d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; rodizio();
+            if(v==='B') d.queue.push(...d.white,...d.blue); else if(v==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue);
+            d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; rodizio();
         };
 
-        function rodizio() { 
-            while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); 
-            while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); 
-            [...d.white, ...d.blue].forEach(p => { d.points[p]=0; d.fouls[p]=0; });
-            sync(); 
-        }
+        function rodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); [...d.white, ...d.blue].forEach(p=>{d.points[p]=0; d.fouls[p]=0;}); sync(); }
 
         window.addPt = (n, p) => { d.points[n] = (d.points[n]||0)+p; d.hist_pts[n] = (d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW = (d.scoreW||0)+p; else d.scoreA = (d.scoreA||0)+p; sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n]||0)+1; sync(); };
-        window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
         window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
+        window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
         window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
+        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
 
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
@@ -214,27 +191,20 @@
             document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
-            
-            const bT = document.getElementById('btn-toggle-clock'); 
-            if(bT) { bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; }
+            const bT = document.getElementById('btn-toggle-clock'); if(bT) { bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; }
 
             const draw = (list, id, az) => {
                 document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
                     <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span></div></div>
                     <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div></div>`).join('');
             };
-            draw(d.white || [], 'w-list', false); draw(d.blue || [], 'a-list', true);
-            
+            draw(d.white, 'w-list', false); draw(d.blue, 'a-list', true);
             document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i / 5) % 2 === 0)?'espera-amarela':'espera-verde'}">${i+1}.${p}</span>`).join(' ');
             document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
             document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
-
             let hS = ""; d.all.sort().forEach(p => { if((d.hist_pts[p]||0) > 0) hS += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${d.hist_pts[p]} PTS</span></div>`; });
             document.getElementById('lista-estatisticas-geral').innerHTML = hS || "Vazio.";
-
-            let hH = ""; [...(d.history_matches || [])].reverse().forEach((j) => {
-                hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div></div></div>`;
-            });
+            let hH = ""; [...(d.history_matches || [])].reverse().forEach((j) => { hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div></div></div>`; });
             document.getElementById('lista-historico-partidas').innerHTML = hH || "Vazio.";
         }
         load();
