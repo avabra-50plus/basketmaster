@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.29 - LAYOUT ORIGINAL</title>
+    <title>AVABRA MASTER V21.30 - CORREÇÃO BOTÕES</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -35,7 +35,7 @@
         .acoes { display: flex; gap: 4px; }
         .f-box { background: #8b0000; color: #fff; padding: 10px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-p { width: 42px; height: 44px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
-        .btn-corrige { font-size: 11px; color: #d32f2f; background: #fff; border: 2px solid #d32f2f; padding: 4px 6px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-right: 4px; }
+        .btn-corrige { font-size: 11px; color: var(--red); background: #fff; border: 1px solid var(--red); padding: 2px 4px; border-radius: 4px; cursor: pointer; margin-right: 4px; }
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 9px; padding: 8px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; }
@@ -47,7 +47,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.29 - MASTER</div></div>
+        <div class="header"><div class="logo">AVABRA V21.30</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -89,7 +89,7 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:20px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
 
     <div style="height:120px"></div>
@@ -119,10 +119,25 @@
     async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
     function formatTimeDisplay(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
-    function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; const now = Date.now(); [...d.white, ...d.blue].forEach(p => { logarEvento(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; }); sync(); }
-    function toggleClock() { const now = Date.now(); if (!d.clock_running) { d.clock_running = true; [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = now); } else { calcularTempo(); d.clock_running = false; } render(); }
+
+    function iniciarTudo() { 
+        d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; 
+        const now = Date.now();
+        [...d.white, ...d.blue].forEach(p => { logarEvento(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; });
+        sync(); 
+    }
+
+    function toggleClock() { 
+        const now = Date.now();
+        if (!d.clock_running) { d.clock_running = true; [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = now); } 
+        else { calcularTempo(); d.clock_running = false; } 
+        render(); 
+    }
+
     function calcularTempo() { const now = Date.now(); [...d.white, ...d.blue].forEach(p => { if (d.players_entry_time[p]) { d.hist_time[p] = (d.hist_time[p] || 0) + ((now - d.players_entry_time[p]) / 1000); d.players_entry_time[p] = now; } }); }
+
     function resetClock() { if(confirm("Zerar?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.is_recording = false; sync(); } }
+
     setInterval(() => { if (d.clock_running && d.remaining_seconds > 0) { d.remaining_seconds--; document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds); } }, 1000);
 
     function logarEvento(n, t, s) { if(!d.players_log) d.players_log = []; let p = d.players_log.find(x => x.n === n); if(!p) d.players_log.push({ n: n, t: t, s: s, p_ini: d.points[n]||0, f_ini: d.fouls[n]||0, t_ini: d.hist_time[n]||0 }); else p.s = s; }
@@ -163,16 +178,19 @@
     };
 
     function rodarTimes() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600; sync(); }
+
     window.addPt = (n, p) => { d.points[n]=(d.points[n]||0)+p; d.hist_pts[n]=(d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
     window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.hist_pts[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
     window.addFl = (n) => { d.fouls[n]=(d.fouls[n]||0)+1; d.hist_fls[n]=(d.hist_fls[n]||0)+1; sync(); };
     window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.hist_fls[n]--; sync(); } };
+
     window.removerAtleta = (n, l, m) => {
         if(!confirm("Remover?")) return; calcularTempo();
         if(m==='falta') { d[l]=d[l].filter(p=>p!==n); d.suspended=[{name:n,team:l}]; d.queue.unshift(n); logarEvento(n, l==='white'?'W':'A', "SUSPENSO"); }
         else { d[l]=d[l].filter(p=>p!==n); if(d.queue.length>0) d[l].push(d.queue.pop()); logarEvento(n, l==='white'?'W':'A', "SUBS"); }
         sync();
     };
+
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length<5) d.white.push(n); else if(d.blue.length<5) d.blue.push(n); else d.queue.push(n); sync(); };
     window.mudarAba = (aba) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v=>v.style.display='none'); document.getElementById(`view-${aba}`).style.display='block'; document.querySelectorAll('.nav-b').forEach(el=>el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
@@ -183,6 +201,8 @@
         document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
         document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
         document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
+        const bT = document.getElementById('btn-toggle-clock'); if(bT) bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
+        
         const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
             <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
             <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div></div>
