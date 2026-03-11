@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.26 - FIX SUSPENSÃO</title>
+    <title>AVABRA MASTER V21.27 - RODÍZIO BLINDADO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -45,7 +45,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.26</div></div>
+        <div class="header"><div class="logo">AVABRA V21.27</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -101,20 +101,9 @@
     async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
     function formatTimeDisplay(s) { const v = Math.max(0, s); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
-    
-    function iniciarTudo() { 
-        d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; 
-        sync(); 
-    }
-
+    function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; sync(); }
     function toggleClock() { d.clock_running = !d.clock_running; render(); }
-    
-    function resetClock() { 
-        if(confirm("Zerar?")) { 
-            d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.is_recording = false; 
-            sync(); 
-        } 
-    }
+    function resetClock() { if(confirm("Zerar?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.is_recording = false; sync(); } }
 
     setInterval(() => { if (d.clock_running && d.remaining_seconds > 0) { d.remaining_seconds--; document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds); } }, 1000);
 
@@ -127,95 +116,75 @@
 
     window.vitoriaPlacar = (v) => {
         if(!confirm("Confirmar vitória?")) return;
-        const winnersSlug = v === 'B' ? 'white' : 'blue';
-        const losersSlug = v === 'B' ? 'blue' : 'white';
+        const winnerKey = v === 'B' ? 'white' : 'blue';
+        const loserKey = v === 'B' ? 'blue' : 'white';
+        
+        // Primeiro: Pega o suspenso da fila se ele existir
+        let suspenso = d.suspended && d.suspended.length > 0 ? d.suspended[0] : null;
+        if(suspenso) d.queue = d.queue.filter(q => q !== suspenso.name);
 
-        // REGRA DE SUSPENSÃO FIX: Filtra para devolver APENAS quem pertence ao time vencedor
-        if(d.suspended && d.suspended.length > 0) {
-            let aindaSuspensos = [];
-            d.suspended.forEach(p => {
-                if(p.team === winnersSlug) {
-                    // O suspenso era do time que ganhou. Volta pro time dele.
-                    if(!d[winnersSlug].includes(p.name)) d[winnersSlug].push(p.name);
-                    // Remove da fila de espera o nome dele
-                    d.queue = d.queue.filter(q => q !== p.name);
-                } else {
-                    // O suspenso era do time que perdeu. Vai pro fim da fila.
-                    d.queue = d.queue.filter(q => q !== p.name);
-                    d.queue.push(p.name);
-                }
-            });
-            d.suspended = [];
-        }
+        if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; }
 
-        if(v === 'B') {
-            d.streakW++; d.streakA = 0;
-            if(d.streakW >= 2) { d.queue.push(...d.white, ...d.blue); d.white = []; d.blue = []; d.streakW = 0; }
-            else { d.queue.push(...d.blue); d.blue = []; }
+        const sequence = (v === 'B' ? d.streakW : d.streakA);
+
+        if (sequence >= 2) {
+            // Ganhou a SEGUNDA: Limpa a quadra
+            let vencedores = [...d[winnerKey]];
+            if(suspenso && suspenso.team === winnerKey) vencedores.push(suspenso.name);
+            
+            let perdedores = [...d[loserKey]];
+            if(suspenso && suspenso.team === loserKey) perdedores.push(suspenso.name);
+
+            d.queue.push(...vencedores, ...perdedores);
+            d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0;
         } else {
-            d.streakA++; d.streakW = 0;
-            if(d.streakA >= 2) { d.queue.push(...d.blue, ...d.white); d.white = []; d.blue = []; d.streakA = 0; }
-            else { d.queue.push(...d.white); d.white = []; }
+            // Ganhou a PRIMEIRA: Fica na quadra
+            if(suspenso) {
+                if(suspenso.team === winnerKey) d[winnerKey].push(suspenso.name); // Volta pro time vencedor
+                else d.queue.push(suspenso.name); // Time dele perdeu, vai pro fim da fila
+            }
+            d.queue.push(...d[loserKey]); // Perdedores vão pro fim da fila
+            d[loserKey] = [];
         }
+        
+        d.suspended = [];
         rodarTimes();
     };
 
     window.vitoriaTempo = (v) => {
-        if(!confirm("Encerrar?")) return;
-        const winnersSlug = v === 'B' ? 'white' : 'blue';
-        const losersSlug = v === 'B' ? 'blue' : 'white';
+        if(!confirm("Encerrar partida?")) return;
+        const winners = v === 'B' ? 'white' : 'blue';
+        const losers = v === 'B' ? 'blue' : 'white';
         
-        // No tempo, todos saem. Limpa a lista de suspensos e joga pro fim da fila conforme regra.
-        let todosEmQuadra = [...d.white, ...d.blue];
-        if(d.suspended) todosEmQuadra.push(...d.suspended.map(s => s.name));
+        let vencedores = [...d[winners]];
+        let perdedores = [...d[losers]];
+        if(d.suspended) d.suspended.forEach(s => { if(s.team === winners) vencedores.push(s.name); else perdedores.push(s.name); });
 
         if (v === 'E') {
-            const original = d.all.filter(p => todosEmQuadra.includes(p));
-            d.queue.push(...original);
+            const emQ = [...d.white, ...d.blue, ...(d.suspended||[]).map(s=>s.name)];
+            d.queue.push(...d.all.filter(p => emQ.includes(p)));
         } else {
-            // Vencedores (incluindo suspensos do time) na frente
-            const vips = [...d[winnersSlug]];
-            if(d.suspended) vips.push(...d.suspended.filter(s => s.team === winnersSlug).map(s => s.name));
-            
-            const lobs = [...d[losersSlug]];
-            if(d.suspended) lobs.push(...d.suspended.filter(s => s.team === losersSlug).map(s => s.name));
-            
-            d.queue.push(...vips, ...lobs);
+            d.queue.push(...vencedores, ...perdedores);
         }
-        
         d.white = []; d.blue = []; d.suspended = []; d.streakW = 0; d.streakA = 0;
         rodarTimes();
     };
 
-    window.addPt = (n, p) => { 
-        d.points[n] = (d.points[n]||0)+p; d.hist_pts[n] = (d.hist_pts[n]||0)+p; 
-        if(d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); 
-    };
-
-    window.subPt = (n) => { 
-        if((d.points[n]||0)>0){ 
-            d.points[n]--; d.hist_pts[n]--; 
-            if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); 
-        } 
-    };
-
+    window.addPt = (n, p) => { d.points[n] = (d.points[n]||0)+p; d.hist_pts[n] = (d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
+    window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.hist_pts[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
     window.addFl = (n) => { d.fouls[n] = (d.fouls[n]||0)+1; sync(); };
     window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; sync(); } };
-
+    
     window.removerAtleta = (nome, local, motivo) => {
         if(!confirm("Remover atleta?")) return;
         if(motivo === 'falta') {
             d[local] = d[local].filter(p => p !== nome);
-            if(!d.suspended) d.suspended = [];
-            d.suspended.push({ name: nome, team: local }); // Registra o time original
+            d.suspended = [{ name: nome, team: local }];
             d.queue = d.queue.filter(q => q !== nome);
-            d.queue.unshift(nome); // Vai para o topo da fila
+            d.queue.unshift(nome);
         } else {
             d[local] = d[local].filter(p => p !== nome);
-            if(d.queue.length > 0) {
-                const reserva = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop();
-                d[local].push(reserva);
-            }
+            if(d.queue.length > 0) d[local].push(d.queue.pop());
         }
         sync();
     };
@@ -223,31 +192,19 @@
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
     window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
-    window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, history_matches: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
+    window.resetarRacha = () => { if(confirm("ZERAR?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, history_matches: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     function render() {
-        document.getElementById('score-br').innerText = d.scoreW;
-        document.getElementById('score-az').innerText = d.scoreA;
+        document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
         document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
-        
-        const areaStart = document.getElementById('init-action-area');
-        const areaClock = document.getElementById('clock-controls-area');
-        if (d.is_recording) { areaStart.style.display = 'none'; areaClock.style.display = 'flex'; } 
-        else { areaStart.style.display = 'flex'; areaClock.style.display = 'none'; }
-
-        const draw = (list, id, az, slug) => {
-            document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
-                <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
-                <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div></div>
-                <div class="bottom-row"><button class="btn-excluir" style="background:#555;color:#fff;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);color:#fff;" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join('');
-        };
+        const areaStart = document.getElementById('init-action-area'); const areaClock = document.getElementById('clock-controls-area');
+        if (d.is_recording) { areaStart.style.display = 'none'; areaClock.style.display = 'flex'; } else { areaStart.style.display = 'flex'; areaClock.style.display = 'none'; }
+        const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
+            <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
+            <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div></div>
+            <div class="bottom-row"><button class="btn-excluir" style="background:#555;color:#fff;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);color:#fff;" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join(''); };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-        
-        document.getElementById('q-list').innerHTML = d.queue.map((p, i) => {
-            const isS = d.suspended && d.suspended.find(s => s.name === p);
-            return `<span style="margin-right:10px; color:${isS?'red':'inherit'}">${i+1}.${p}${isS?'[S]':''}</span>`;
-        }).join(' ');
-        
+        document.getElementById('q-list').innerHTML = d.queue.map((p, i) => { const isS = d.suspended && d.suspended.find(s => s.name === p); return `<span style="margin-right:10px; color:${isS?'red':'inherit'}">${i+1}.${p}${isS?' [S]':''}</span>`; }).join(' ');
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:10px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:10px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
         let hS = ""; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0) hS += `<div style="padding:10px; display:flex; justify-content:space-between; background:#1a1a1a; margin-bottom:2px;"><span>${p}</span><span>${d.hist_pts[p]} PTS</span></div>`; });
