@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.42 - ESTABILIDADE</title>
+    <title>AVABRA MASTER V21.43 - FILA DINÂMICA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -31,16 +31,18 @@
         .btn-corrige { font-size: 11px; color: var(--red); background: #fff; border: 1px solid var(--red); padding: 4px; border-radius: 4px; cursor: pointer; }
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 10px; padding: 10px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; color: #fff; cursor: pointer; }
+        
+        /* Lista de Espera Estilizada */
+        .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .espera-amarela { background: var(--yellow); color: #000; }
+        .espera-verde { background: var(--green); color: #000; }
+        .espera-vermelha { background: var(--red) !important; color: #fff !important; border: 2px solid #fff; }
+        .btn-remove-fila { margin-left: 8px; font-size: 14px; color: inherit; opacity: 0.6; cursor: pointer; }
+
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
         
-        /* Lista de Espera Estilizada */
-        .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-        .espera-amarela { background: var(--yellow); color: #000; }
-        .espera-verde { background: var(--green); color: #000; }
-        .btn-remove-fila { margin-left: 6px; font-weight: bold; color: #8b0000; cursor: pointer; padding: 2px 5px; }
-
         .sumula-card { background: #1a1a1a; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--yellow); border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 10px; font-size: 14px; }
         .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -54,7 +56,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.42</div></div>
+        <div class="header"><div class="logo">AVABRA MASTER V21.43</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -88,7 +90,7 @@
 
     <div id="view-stats" style="display:none; padding:15px;">
         <h3 style="color:var(--orange)">RANKING GERAL</h3><div id="lista-estatisticas-geral"></div>
-        <h3 style="color:var(--yellow); margin-top:20px;">HISTÓRICO DE SÚMULAS</h3><div id="lista-historico-partidas"></div>
+        <h3 style="color:var(--yellow); margin-top:20px;">HISTÓRICO</h3><div id="lista-historico-partidas"></div>
     </div>
 
     <div id="view-atletas" style="display:none; padding:20px;">
@@ -114,9 +116,9 @@
     async function load() {
         const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
         if (data && data.data) {
-            const lClock = d.clock_running; const lRem = d.remaining_seconds;
+            const lC = d.clock_running; const lR = d.remaining_seconds;
             d = data.data;
-            d.clock_running = lClock; d.remaining_seconds = lRem;
+            d.clock_running = lC; d.remaining_seconds = lR;
         }
         render();
     }
@@ -159,8 +161,7 @@
 
     function gravarHistorico() {
         const jogoFinal = {
-            id: (d.history_matches || []).length + 1,
-            placar: `${d.scoreW} x ${d.scoreA}`,
+            id: (d.history_matches || []).length + 1, placar: `${d.scoreW} x ${d.scoreA}`,
             branco: d.current_match_log.filter(x => x.t === 'W').map(x => ({ n: x.n, s: x.s, p: (d.hist_pts[x.n]||0) - x.p_ini, f: (d.hist_fls[x.n]||0) - x.f_ini, t: (d.hist_time[x.n]||0) - x.t_ini })),
             azul: d.current_match_log.filter(x => x.t === 'A').map(x => ({ n: x.n, s: x.s, p: (d.hist_pts[x.n]||0) - x.p_ini, f: (d.hist_fls[x.n]||0) - x.f_ini, t: (d.hist_time[x.n]||0) - x.t_ini }))
         };
@@ -186,7 +187,7 @@
     };
 
     window.vitoriaTempo = (v) => {
-        if(!confirm("Encerrar partida?")) return;
+        if(!confirm("Encerrar?")) return;
         gravarHistorico();
         const win = v === 'B' ? 'white' : 'blue'; const los = v === 'B' ? 'blue' : 'white';
         let court = [...d.white, ...d.blue]; if(d.suspended) court.push(...d.suspended.map(s=>s.name));
@@ -203,7 +204,7 @@
     window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.hist_fls[n]--; sync(); } };
 
     window.removerAtleta = (nome, local, motivo) => {
-        if(!confirm("Remover atleta?")) return;
+        if(!confirm("Confirmar?")) return;
         if(motivo === 'falta') {
             trackPlayer(nome, local==='white'?'W':'A', 'SUSPENSO');
             d[local] = d[local].filter(p => p !== nome);
@@ -214,8 +215,7 @@
             d[local] = d[local].filter(p => p !== nome);
             if(d.queue.length > 0) {
                 const r = (d.scoreW === 0 && d.scoreA === 0) ? d.queue.shift() : d.queue.pop();
-                d[local].push(r);
-                trackPlayer(r, local==='white'?'W':'A', 'IN');
+                d[local].push(r); trackPlayer(r, local==='white'?'W':'A', 'IN');
             }
         }
         sync();
@@ -223,9 +223,8 @@
 
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
-    
     window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
-    window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
+    window.resetarRacha = () => { if(confirm("ZERAR?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     function render() {
         document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
@@ -242,10 +241,10 @@
         };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
         
-        // LISTA DE ESPERA COLORIDA COM BOTÃO (X)
+        // LISTA DE ESPERA COLORIDA COM DESTAQUE VERMELHO [S]
         document.getElementById('q-list').innerHTML = d.queue.map((p, i) => {
-            const colorClass = (Math.floor(i / 5) % 2 === 0) ? 'espera-amarela' : 'espera-verde';
             const isSusp = d.suspended && d.suspended.find(s => s.name === p);
+            const colorClass = isSusp ? 'espera-vermelha' : ((Math.floor(i / 5) % 2 === 0) ? 'espera-amarela' : 'espera-verde');
             return `<span class="espera-item ${colorClass}">${i+1}.${p}${isSusp?' [S]':''} <span class="btn-remove-fila" onclick="if(confirm('Remover da fila?')){d.queue=d.queue.filter(x=>x!=='${p}'); sync();}">X</span></span>`;
         }).join('');
 
@@ -264,7 +263,7 @@
                 const seta = p.s === 'IN' ? '<span class="seta-in">🔺</span>' : p.s === 'OUT' ? '<span class="seta-out">🔻</span>' : '';
                 return `<div class="player-line ${sClass}"><span>${seta}${p.n}</span><span>${p.p}P/${p.f}F/${formatTime(p.t)}</span></div>`;
             }).join('');
-            hH += `<div class="sumula-card"><div class="sumula-header"><span>JOGO ${j.id}</span><span>${j.placar}</span></div><div class="sumula-teams"><div class="sumula-col"><span class="sumula-team-label br">BRANCO</span>${renderP(j.branco)}</div><div class="sumula-col"><span class="sumula-team-label az">AZUL</span>${renderP(j.azul)}</div></div></div>`;
+            hH += `<div class="sumula-card"><div class="sumula-header"><span>JOGO ${j.id}</span><span>${j.placar}</span></div><div class="sumula-teams"><div class="sumula-col"><span class="sumula-team-label" style="color:#fff">BRANCO</span>${renderP(j.branco)}</div><div class="sumula-col"><span class="sumula-team-label" style="color:var(--blue)">AZUL</span>${renderP(j.azul)}</div></div></div>`;
         });
         document.getElementById('lista-historico-partidas').innerHTML = hH || "Nenhum jogo.";
     }
