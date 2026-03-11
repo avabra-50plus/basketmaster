@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.9 - FIX</title>
+    <title>BASKETMASTER AVABRA V21.8 - FINAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -58,19 +58,11 @@
         .nav-b.active { color: var(--orange); }
         .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
         .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
-        .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
-        .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
-        .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .team-box { background: #000; padding: 8px; border-radius: 4px; border-left: 3px solid #666; }
-        .player-line { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 5px 0; font-size: 9px; line-height: 1.2; }
-        .btn-danger { background: var(--red); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .btn-secondary { background: #333; color: #ccc; border: 1px solid #444; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 30px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.9 - MASTER</div></div>
+        <div class="header"><div class="logo">AVABRA V21.8 - MASTER</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -107,8 +99,8 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        <button id="btn-undo-op" class="btn-secondary" onclick="desfazerRotacao()">↩ DESFAZER ÚLTIMA ROTAÇÃO</button>
-        <button class="btn-danger" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <button id="btn-undo-op" style="background:#333; color:#ccc; border:1px solid #444; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:30px;" onclick="desfazerRotacao()">↩ DESFAZER ÚLTIMA ROTAÇÃO</button>
+        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
 
     <div style="height:120px"></div>
@@ -118,133 +110,82 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], players_entry_time: {}, last_state: null, target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], players_entry_time: {}, last_state: null, remaining_seconds: 600, clock_running: false, is_recording: false };
         let buzzerPlayed = false; let audioContext;
 
         async function load() {
             try {
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
-                    const localClock = d.clock_running;
-                    const localTarget = d.target_time;
-                    const localRem = d.remaining_seconds;
+                    const localStatus = d.clock_running; const localRem = d.remaining_seconds;
                     d = data.data;
-                    // Blindagem: Se o cronômetro local estiver rodando, ignora o tempo que vem do banco para não dar salto
-                    if(localClock) { d.clock_running = localClock; d.target_time = localTarget; d.remaining_seconds = localRem; }
-                } 
+                    // Mantém estado local do relógio para não travar no sync
+                    d.clock_running = localStatus; d.remaining_seconds = localRem;
+                }
                 render();
-            } catch (e) { console.error(e); }
+            } catch (e) {}
         }
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-        function falar(texto) { try { const msg = new SpeechSynthesisUtterance(texto); msg.lang = 'pt-BR'; msg.pitch = 0.8; msg.rate = 0.9; window.speechSynthesis.speak(msg); } catch(e){} }
-        function playBuzzer() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioContext.currentTime;
-            const playTone = (t, dur, f) => {
-                const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
-                osc.type = 'square'; osc.frequency.setValueAtTime(f, t);
-                gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + dur);
-                osc.connect(gain); gain.connect(audioContext.destination); osc.start(t); osc.stop(t + dur);
-            };
-            playTone(now, 0.4, 400); playTone(now + 0.5, 0.4, 400); playTone(now + 1.0, 0.8, 350);
-        }
-        function testarEfeitoMaster() { if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); playBuzzer(); setTimeout(() => falar("Mabel. Mabel. Incompetentes."), 1500); }
-
         function formatTimeDisplay(s) { const min = Math.floor(Math.max(0, s) / 60); const sec = Math.floor(Math.max(0, s) % 60); return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`; }
         
         function iniciarTudo() { 
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); 
-            const now = Date.now(); d.is_recording = true; d.clock_running = true; buzzerPlayed = false; 
-            d.target_time = now + (600 * 1000); d.remaining_seconds = 600;
-            [...d.white, ...d.blue].forEach(p => { logarParticipacao(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = now; }); 
-            sync(); 
+            d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; buzzerPlayed = false;
+            sync(); // O render dentro do sync já vai esconder o botão e mostrar o pausar
         }
 
-        function toggleClock() { 
-            const now = Date.now(); 
-            if (!d.clock_running) { 
-                d.target_time = now + (d.remaining_seconds * 1000); d.clock_running = true; 
-            } else { 
-                d.remaining_seconds = Math.max(0, (d.target_time - now) / 1000); d.clock_running = false; d.target_time = null; 
-            } 
-            sync(); 
-        }
+        function toggleClock() { d.clock_running = !d.clock_running; render(); }
+        function resetClock() { if(confirm("Zerar cronômetro?")) { d.clock_running = false; d.remaining_seconds = 600; render(); } }
 
-        function resetClock() { if (confirm("Zerar cronômetro?")) { buzzerPlayed = false; d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; sync(); } }
-        
-        function updateDisplayClock() {
-            const el = document.getElementById('game-clock'); const btns = [document.getElementById('end-t-br'), document.getElementById('end-t-az'), document.getElementById('end-t-em')];
-            let secs = d.remaining_seconds;
-            if (d.clock_running && d.target_time) { secs = (d.target_time - Date.now()) / 1000; }
-            if (secs <= 0) { 
-                el.innerText = "00:00"; el.classList.add('expired'); btns.forEach(b => b.classList.add('highlight')); 
-                if(d.clock_running && !buzzerPlayed) { playBuzzer(); setTimeout(() => falar("Incompetentes. Incompetentes."), 1500); buzzerPlayed = true; } 
-            } else { 
-                el.innerText = formatTimeDisplay(secs); el.classList.remove('expired'); btns.forEach(b => b.classList.remove('highlight')); 
+        setInterval(() => {
+            if (d.clock_running && d.remaining_seconds > 0) {
+                d.remaining_seconds -= 1;
+                document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
+                if (d.remaining_seconds <= 0) { d.clock_running = false; render(); }
             }
-        }
-        setInterval(updateDisplayClock, 500);
-
-        function registrarPartida(motivo) {
-            d.last_state = JSON.parse(JSON.stringify(d));
-            const processar = (tK) => d.players_log.filter(x => x.t === tK).map(x => { return { n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), s: x.s, t: 0 }; });
-            d.history_matches.push({ id: d.history_matches.length+1, data: new Date().toLocaleDateString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}`, branco: processar('W'), azul: processar('A') });
-            d.clock_running = false; d.target_time = null; d.remaining_seconds = 600; d.is_recording = false; buzzerPlayed = false;
-        }
+        }, 1000);
 
         window.vitoriaPlacar = (v) => { 
-            if(!confirm("Confirmar vitória?")) return; registrarPartida('Placar'); 
+            if(!confirm("Confirmar vitória?")) return;
+            d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
+            // Lógica de rodízio original...
             if(v==='B'){ d.streakW++; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } } 
             else { d.streakA++; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } } 
-            d.scoreW=0; d.scoreA=0; executarRodizio(); 
+            d.scoreW=0; d.scoreA=0; executarRodizio();
         };
 
-        window.terminoTempo = (b) => { 
-            if(!confirm("Encerrar partida?")) return; registrarPartida('Tempo'); 
-            if(b==='B') { d.queue.push(...d.white,...d.blue); } else if(b==='A') { d.queue.push(...d.blue,...d.white); } else { d.queue.push(...d.white,...d.blue); }
-            d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; executarRodizio(); 
+        window.terminoTempo = (b) => {
+            if(!confirm("Encerrar partida?")) return;
+            d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
+            if(b==='B') d.queue.push(...d.white,...d.blue); else if(b==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue);
+            d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; executarRodizio();
         };
 
-        function executarRodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); [...d.white, ...d.blue].forEach(p=>{d.fouls[p]=0; d.points[p]=0;}); sync(); }
-        window.desfazerRotacao = () => { if(!d.last_state || !confirm("Desfazer?")) return; Object.assign(d, d.last_state); d.history_matches.pop(); sync(); };
-        window.removerAtleta = (nome, local, motivo) => {
-            if(!confirm("Remover?")) return;
-            let sub = null; if (motivo === 'sub' && d.queue.length > 0) { sub = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop(); }
-            d[local] = d[local].filter(p => p !== nome); if (motivo === 'falta') { d.queue.unshift(nome); } 
-            if (sub) { d.points[sub]=0; d.fouls[sub]=0; d[local].push(sub); } sync();
-        };
-        function logarParticipacao(n, t, s = "") { if(!d.players_log) d.players_log = []; let p = d.players_log.find(x => x.n === n); if(!p) d.players_log.push({ n: n, t: t, s: s || "ENTROU", p_ini: d.points[n]||0, f_ini: d.fouls[n]||0 }); else if(s) p.s = s; }
+        function executarRodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); sync(); }
         window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
-        window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
-        window.deletarSocio = (n) => { if (confirm(`EXCLUIR ${n}?`)) { d.all = d.all.filter(p => p !== n); sync(); } };
+        window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
+        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; sync(); };
         window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
-        window.addPt = (n, p) => { d.points[n] = (d.points[n] || 0) + p; d.hist_pts[n] = (d.hist_pts[n] || 0) + p; if (d.white.includes(n)) d.scoreW += p; else d.scoreA += p; sync(); };
-        window.subPt = (n) => { if ((d.points[n]||0) > 0) { d.points[n]--; d.hist_pts[n]--; if (d.white.includes(n)) d.scoreW--; else d.scoreA--; } sync(); };
-        window.addFl = (n) => { d.fouls[n] = (d.fouls[n] || 0) + 1; d.hist_fls[n] = (d.hist_fls[n] || 0) + 1; sync(); };
-        window.subFl = (n) => { if ((d.fouls[n]||0) > 0) { d.fouls[n]--; d.hist_fls[n]--; } sync(); };
-        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, history_matches: [], players_log: [], target_time: null, remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
-        
+
         function render() {
-            document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0; 
-            document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex'; 
+            document.getElementById('score-br').innerText = d.scoreW || 0;
+            document.getElementById('score-az').innerText = d.scoreA || 0;
+            document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
+            
+            // CORREÇÃO DA VISIBILIDADE DO BOTÃO INICIAR
+            document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
-            const bT = document.getElementById('btn-toggle-clock'); bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
-            const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = (list || []).map(p => `<div class="linha ${az?'azul':''}">
-                <div class="top-row"><div class="info"><span class="nome">${p} ${d.is_recording?'⏱️':''}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
-                <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div>
-                <div class="bottom-row"><button class="btn-excluir btn-lesao" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir btn-falta3" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join(''); };
+            
+            const bT = document.getElementById('btn-toggle-clock');
+            if(bT) { bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; }
+
+            const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
+                <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span></div></div>
+                <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div></div>`).join(''); };
             draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-            document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span class="espera-item ${(Math.floor(i / 5) % 2 === 0)?'espera-amarela':'espera-verde'}">${i+1}.${p}</span>`).join(' ');
+            document.getElementById('q-list').innerHTML = d.queue.map((p, i) => `<span class="espera-item">${i+1}.${p}</span>`).join(' ');
             document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div class="lista-disp"><span>${p}</span><button class="btn-entrar" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
-            document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div class="item-cadastro"><span>${p}</span><button style="color:red;background:none;border:none;" onclick="deletarSocio('${p}')">EXCLUIR</button></div>`).join('');
-            let htmlStats = ""; d.all.sort().forEach(p => { const pts = (d.hist_pts||{})[p] || 0; if (pts > 0) htmlStats += `<div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:4px;display:flex;justify-content:space-between;"><span>${p}</span><span>${pts} PTS</span></div>`; });
-            document.getElementById('lista-estatisticas-geral').innerHTML = htmlStats || "Vazio.";
-            let hH = ""; [...d.history_matches].reverse().forEach((j) => {
-                hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="display:block; font-size:10px; color:#888;">${j.data}</span><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div></div></div>`;
-            });
-            document.getElementById('lista-historico-partidas').innerHTML = hH || "Vazio.";
         }
         let abaAtiva = 'racha'; load();
     </script>
