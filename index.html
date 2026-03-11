@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.17</title>
+    <title>BASKETMASTER AVABRA V21.18</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -35,7 +35,7 @@
         .btn-white { background: #fff; color: #000; } .btn-blue { background: var(--blue); color: #fff; }
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
-        .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
+        .linha.azul { background: var(--blue); color: #fff; }
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
@@ -65,7 +65,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.17</div></div>
+        <div class="header"><div class="logo">AVABRA V21.18 - MASTER</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -129,8 +129,10 @@
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
                     const localStatus = d.clock_running; const localRem = d.remaining_seconds;
+                    const localAll = d.all;
                     d = data.data;
-                    if(!localStatus) { d.remaining_seconds = localRem; } else { d.clock_running = localStatus; d.remaining_seconds = localRem; }
+                    d.all = d.all || localAll;
+                    if(localStatus) { d.clock_running = localStatus; d.remaining_seconds = localRem; }
                 }
                 render();
             } catch (e) { console.error(e); }
@@ -191,6 +193,7 @@
         }
 
         function processarSumula(tK) {
+            if(!d.players_log) return [];
             return d.players_log.filter(x => x.t === tK).map(x => {
                 const p_final = (d.points[x.n]||0) - (x.p_ini||0);
                 const f_final = (d.fouls[x.n]||0) - (x.f_ini||0);
@@ -244,7 +247,10 @@
                 logarEvento(nome, local==='white'?'W':'A', "SUBS");
                 sub = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop(); 
             }
-            if (motivo === 'falta') { logarEvento(nome, local==='white'?'W':'A', "EXPULSO"); d.queue.unshift(nome); }
+            if (motivo === 'falta') { 
+                logarEvento(nome, local==='white'?'W':'A', "EXPULSO"); 
+                d.queue.unshift(nome); // Expulso volta pra frente da fila
+            }
             d[local] = d[local].filter(p => p !== nome);
             if (sub) { 
                 d.points[sub]=0; d.fouls[sub]=0; d[local].push(sub); 
@@ -263,12 +269,14 @@
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
             document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
+            
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
+            
             const bT = document.getElementById('btn-toggle-clock'); if(bT) { bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; }
 
             const draw = (list, id, az, slug) => {
-                document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
+                document.getElementById(id).innerHTML = (list || []).map(p => `<div class="linha ${az?'azul':''}">
                     <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
                     <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div>
                     <div class="bottom-row"><button class="btn-excluir btn-lesao" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir btn-falta3" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join('');
