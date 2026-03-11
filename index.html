@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.41 - SÚMULA FIX</title>
+    <title>AVABRA MASTER V21.42 - ESTABILIDADE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -35,14 +35,18 @@
         .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
         
+        /* Lista de Espera Estilizada */
+        .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+        .espera-amarela { background: var(--yellow); color: #000; }
+        .espera-verde { background: var(--green); color: #000; }
+        .btn-remove-fila { margin-left: 6px; font-weight: bold; color: #8b0000; cursor: pointer; padding: 2px 5px; }
+
         .sumula-card { background: #1a1a1a; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--yellow); border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 10px; font-size: 14px; }
         .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .sumula-col { background: #000; padding: 5px; border-radius: 4px; }
         .sumula-team-label { font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; border-bottom: 1px solid #222; }
-        .sumula-team-label.br { color: #fff; }
-        .sumula-team-label.az { color: var(--blue); }
-        .player-line { font-size: 9px; display: flex; justify-content: space-between; border-bottom: 1px solid #111; padding: 4px 0; color: #aaa; line-height: 1.2; }
+        .player-line { font-size: 9px; display: flex; justify-content: space-between; border-bottom: 1px solid #111; padding: 4px 0; color: #aaa; }
         .player-line.susp { color: var(--red) !important; font-weight: bold; }
         .seta-in { color: var(--green); font-weight: bold; margin-right: 2px; }
         .seta-out { color: var(--red); font-weight: bold; margin-right: 2px; }
@@ -50,7 +54,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA MASTER V21.41</div></div>
+        <div class="header"><div class="logo">AVABRA V21.42</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -77,7 +81,8 @@
         </div>
         <div class="faixa">Time Branco</div><div id="w-list"></div>
         <div class="faixa">Time Azul</div><div id="a-list"></div>
-        <div class="faixa">Fila de Espera</div><div id="q-list" style="padding:15px; background:#000; color:var(--yellow); font-weight:bold;"></div>
+        <div class="faixa">Lista de Espera</div>
+        <div id="q-list" style="padding:15px; background:#000;"></div>
         <div class="faixa">No Ginásio</div><div id="disp-list"></div>
     </div>
 
@@ -103,13 +108,7 @@
     const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
-    let d = { 
-        white: [], blue: [], queue: [], all: [], 
-        points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, 
-        history_matches: [], current_match_log: [], 
-        scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, 
-        remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] 
-    };
+    let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], current_match_log: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] };
     let abaAtiva = 'racha';
 
     async function load() {
@@ -133,13 +132,8 @@
         if(!d.current_match_log) d.current_match_log = [];
         let p = d.current_match_log.find(x => x.n === nome);
         if(!p) {
-            // Só jogadores que entrarem via substituição (IN) ganham seta
-            d.current_match_log.push({ 
-                n: nome, t: time, s: status, 
-                p_ini: d.hist_pts[nome]||0, f_ini: d.hist_fls[nome]||0, t_ini: d.hist_time[nome]||0 
-            });
+            d.current_match_log.push({ n: nome, t: time, s: status, p_ini: d.hist_pts[nome]||0, f_ini: d.hist_fls[nome]||0, t_ini: d.hist_time[nome]||0 });
         } else {
-            // Se já está no log e for sair ou ser expulso, atualiza o status final
             if(status === 'SUSPENSO' || status === 'OUT') p.s = status;
         }
     }
@@ -147,7 +141,6 @@
     function iniciarTudo() { 
         d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; 
         d.current_match_log = []; 
-        // Quem começa o jogo é START (Sem seta)
         d.white.forEach(p => trackPlayer(p, 'W', 'START'));
         d.blue.forEach(p => trackPlayer(p, 'A', 'START'));
         sync(); 
@@ -168,18 +161,8 @@
         const jogoFinal = {
             id: (d.history_matches || []).length + 1,
             placar: `${d.scoreW} x ${d.scoreA}`,
-            branco: d.current_match_log.filter(x => x.t === 'W').map(x => ({
-                n: x.n, s: x.s,
-                p: (d.hist_pts[x.n]||0) - x.p_ini,
-                f: (d.hist_fls[x.n]||0) - x.f_ini,
-                t: (d.hist_time[x.n]||0) - x.t_ini
-            })),
-            azul: d.current_match_log.filter(x => x.t === 'A').map(x => ({
-                n: x.n, s: x.s,
-                p: (d.hist_pts[x.n]||0) - x.p_ini,
-                f: (d.hist_fls[x.n]||0) - x.f_ini,
-                t: (d.hist_time[x.n]||0) - x.t_ini
-            }))
+            branco: d.current_match_log.filter(x => x.t === 'W').map(x => ({ n: x.n, s: x.s, p: (d.hist_pts[x.n]||0) - x.p_ini, f: (d.hist_fls[x.n]||0) - x.f_ini, t: (d.hist_time[x.n]||0) - x.t_ini })),
+            azul: d.current_match_log.filter(x => x.t === 'A').map(x => ({ n: x.n, s: x.s, p: (d.hist_pts[x.n]||0) - x.p_ini, f: (d.hist_fls[x.n]||0) - x.f_ini, t: (d.hist_time[x.n]||0) - x.t_ini }))
         };
         if(!d.history_matches) d.history_matches = [];
         d.history_matches.push(jogoFinal);
@@ -191,9 +174,7 @@
         const winK = v === 'B' ? 'white' : 'blue'; const losK = v === 'B' ? 'blue' : 'white';
         let sus = d.suspended && d.suspended[0] ? d.suspended[0] : null;
         if(sus) d.queue = d.queue.filter(q => q !== sus.name);
-        
         if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; }
-        
         if ((v==='B'?d.streakW:d.streakA) >= 2) {
             d.queue.push(...d[winK], ...d[losK]); if(sus) d.queue.push(sus.name);
             d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0;
@@ -222,7 +203,7 @@
     window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.hist_fls[n]--; sync(); } };
 
     window.removerAtleta = (nome, local, motivo) => {
-        if(!confirm("Confirmar remoção?")) return;
+        if(!confirm("Remover atleta?")) return;
         if(motivo === 'falta') {
             trackPlayer(nome, local==='white'?'W':'A', 'SUSPENSO');
             d[local] = d[local].filter(p => p !== nome);
@@ -234,7 +215,7 @@
             if(d.queue.length > 0) {
                 const r = (d.scoreW === 0 && d.scoreA === 0) ? d.queue.shift() : d.queue.pop();
                 d[local].push(r);
-                trackPlayer(r, local==='white'?'W':'A', 'IN'); // Quem entra ganha seta
+                trackPlayer(r, local==='white'?'W':'A', 'IN');
             }
         }
         sync();
@@ -242,6 +223,7 @@
 
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
+    
     window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
     window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
@@ -259,7 +241,14 @@
                 <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join('');
         };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-        document.getElementById('q-list').innerHTML = "FILA: " + d.queue.map((p, i) => `<span style="color:${(d.suspended||[]).find(s=>s.name===p)?'red':'white'}">${i+1}.${p}</span>`).join(' | ');
+        
+        // LISTA DE ESPERA COLORIDA COM BOTÃO (X)
+        document.getElementById('q-list').innerHTML = d.queue.map((p, i) => {
+            const colorClass = (Math.floor(i / 5) % 2 === 0) ? 'espera-amarela' : 'espera-verde';
+            const isSusp = d.suspended && d.suspended.find(s => s.name === p);
+            return `<span class="espera-item ${colorClass}">${i+1}.${p}${isSusp?' [S]':''} <span class="btn-remove-fila" onclick="if(confirm('Remover da fila?')){d.queue=d.queue.filter(x=>x!=='${p}'); sync();}">X</span></span>`;
+        }).join('');
+
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
         
@@ -273,7 +262,7 @@
             const renderP = (list) => list.map(p => {
                 const sClass = p.s === 'SUSPENSO' ? 'susp' : '';
                 const seta = p.s === 'IN' ? '<span class="seta-in">🔺</span>' : p.s === 'OUT' ? '<span class="seta-out">🔻</span>' : '';
-                return `<div class="player-line ${sClass}"><span>${seta}${p.n}</span><span>${p.p}P / ${p.f}F / ${formatTime(p.t)}</span></div>`;
+                return `<div class="player-line ${sClass}"><span>${seta}${p.n}</span><span>${p.p}P/${p.f}F/${formatTime(p.t)}</span></div>`;
             }).join('');
             hH += `<div class="sumula-card"><div class="sumula-header"><span>JOGO ${j.id}</span><span>${j.placar}</span></div><div class="sumula-teams"><div class="sumula-col"><span class="sumula-team-label br">BRANCO</span>${renderP(j.branco)}</div><div class="sumula-col"><span class="sumula-team-label az">AZUL</span>${renderP(j.azul)}</div></div></div>`;
         });
