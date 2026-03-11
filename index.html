@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.12 - AJUSTE FINO</title>
+    <title>BASKETMASTER AVABRA V21.13</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -51,7 +51,7 @@
         .nav-b { flex: 1; color: #fff; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); }
         .lista-disp, .item-cadastro { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid #222; }
-        .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .btn-entrar { background: var(--green); color: #000; padding: 8px 12px; border:none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; }
         .sumula-card { background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         .sumula-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
         .sumula-placar { font-family: monospace; font-size: 20px; font-weight: bold; color: var(--yellow); }
@@ -59,7 +59,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.12</div></div>
+        <div class="header"><div class="logo">AVABRA V21.13</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -101,6 +101,7 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
+        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
 
     <div style="height:120px"></div>
@@ -124,7 +125,8 @@
                     const banco = data.data;
                     const localStatus = d.clock_running;
                     const localRem = d.remaining_seconds;
-                    d.all = banco.all || d.all;
+                    
+                    d.all = banco.all || [];
                     d.white = banco.white || [];
                     d.blue = banco.blue || [];
                     d.queue = banco.queue || [];
@@ -132,17 +134,34 @@
                     d.fouls = banco.fouls || {};
                     d.hist_pts = banco.hist_pts || {};
                     d.history_matches = banco.history_matches || [];
-                    d.is_recording = (banco.is_recording !== undefined) ? banco.is_recording : d.is_recording;
-                    if(!localStatus) { d.remaining_seconds = localRem; } else { d.clock_running = localStatus; d.remaining_seconds = localRem; }
+                    
+                    // Lógica para aparecer o botão Iniciar:
+                    // Se não estiver rodando localmente, obedece o banco. 
+                    // Se o banco disser is_recording: false, o botão VAI aparecer.
+                    if (!localStatus) {
+                        d.is_recording = banco.is_recording || false;
+                        d.remaining_seconds = localRem;
+                    } else {
+                        d.is_recording = true;
+                        d.clock_running = true;
+                        d.remaining_seconds = localRem;
+                    }
                 }
                 render();
-            } catch (e) { console.error("Erro no load:", e); }
+            } catch (e) { console.error(e); }
         }
         setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         function formatTimeDisplay(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
-        function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; sync(); }
+        
+        function iniciarTudo() { 
+            d.is_recording = true; 
+            d.clock_running = true; 
+            d.remaining_seconds = 600; 
+            sync(); 
+        }
+
         function toggleClock() { d.clock_running = !d.clock_running; render(); }
         function resetClock() { if(confirm("Zerar cronômetro?")) { d.clock_running = false; d.remaining_seconds = 600; render(); } }
 
@@ -156,15 +175,26 @@
 
         function gravarSumula() {
             if(!d.history_matches) d.history_matches = [];
-            d.history_matches.push({ id: d.history_matches.length + 1, data: new Date().toLocaleTimeString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}` });
+            d.history_matches.push({ 
+                id: d.history_matches.length + 1, 
+                data: new Date().toLocaleTimeString('pt-BR'), 
+                placar: `${d.scoreW} x ${d.scoreA}` 
+            });
         }
 
         window.vitoriaPlacar = (v) => {
             if(!confirm("Confirmar vitória?")) return;
             gravarSumula();
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B'){ d.streakW = (d.streakW||0)+1; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } }
-            else { d.streakA = (d.streakA||0)+1; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } }
+            if(v==='B'){ 
+                d.streakW = (d.streakW||0)+1; d.streakA=0; 
+                if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } 
+                else { d.queue.push(...d.blue); d.blue=[]; } 
+            } else { 
+                d.streakA = (d.streakA||0)+1; d.streakW=0; 
+                if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } 
+                else { d.queue.push(...d.white); d.white=[]; } 
+            }
             d.scoreW=0; d.scoreA=0; rodizio();
         };
 
@@ -172,7 +202,9 @@
             if(!confirm("Encerrar partida?")) return;
             gravarSumula();
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B') d.queue.push(...d.white,...d.blue); else if(v==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue);
+            if(v==='B') d.queue.push(...d.white,...d.blue); 
+            else if(v==='A') d.queue.push(...d.blue,...d.white); 
+            else d.queue.push(...d.white,...d.blue);
             d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; rodizio();
         };
 
@@ -183,14 +215,17 @@
         window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
         window.cadastrarNovo = () => { const n = prompt("NOME:"); if (n) { d.all.push(n.toUpperCase().trim()); sync(); } };
         window.mudarAba = (aba) => { abaAtiva = aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(el => el.classList.remove('active')); document.getElementById(`nav-${aba}`).classList.add('active'); };
-        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
+        window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false }; sync(); } };
 
         function render() {
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
             document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
+            
+            // CONTROLE VISUAL DO BOTÃO INICIAR
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
+            
             const bT = document.getElementById('btn-toggle-clock'); if(bT) { bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; }
 
             const draw = (list, id, az) => {
