@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.34 - SÚMULAS COMPLETAS</title>
+    <title>AVABRA MASTER V21.35 - PRIORIDADE VISUAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -21,7 +21,7 @@
         .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; }
         .faixa { background: #111; color: #888; padding: 6px 15px; font-size: 10px; text-transform: uppercase; font-weight: bold; }
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
-        .linha.azul { background: var(--blue); color: #fff; }
+        .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
         .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
@@ -34,18 +34,14 @@
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
-        
-        /* Estilos da Súmula */
         .sumula-card { background: #1a1a1a; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #333; }
-        .sumula-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--yellow); border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 8px; }
-        .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .player-line { font-size: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 4px 0; color: #ccc; }
         .player-line.susp { color: var(--red); font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA MASTER V21.34</div></div>
+        <div class="header"><div class="logo">AVABRA V21.35</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -77,16 +73,14 @@
     </div>
 
     <div id="view-stats" style="display:none; padding:15px;">
-        <h3 style="color:var(--orange)">RANKING GERAL</h3>
-        <div id="lista-estatisticas-geral"></div>
-        <h3 style="color:var(--yellow); margin-top:20px;">SÚMULAS DOS JOGOS</h3>
-        <div id="lista-historico-partidas"></div>
+        <h3 style="color:var(--orange)">RANKING GERAL</h3><div id="lista-estatisticas-geral"></div>
+        <h3 style="color:var(--yellow); margin-top:20px;">SÚMULAS</h3><div id="lista-historico-partidas"></div>
     </div>
 
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:20px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:20px;" onclick="resetarRacha()">⚠️ ZERAR TUDO</button>
     </div>
 
     <div style="height:120px"></div>
@@ -101,45 +95,48 @@
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
     let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], players_log: [], players_entry_time: {}, remaining_seconds: 600, clock_running: false, is_recording: false, scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, suspended: [] };
+    let abaAtiva = 'racha';
 
     async function load() {
         const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
         if (data && data.data) {
-            const localClock = d.clock_running; const localRem = d.remaining_seconds;
+            const lC = d.clock_running; const lR = d.remaining_seconds; const lRec = d.is_recording;
             d = data.data;
-            d.clock_running = localClock; d.remaining_seconds = localRem;
+            d.clock_running = lC; d.remaining_seconds = lR; d.is_recording = lRec;
         }
         render();
     }
     setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
     async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
-    function formatTimeDisplay(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
+    function formatTimeDisplay(s) { const v = Math.max(0, s); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
 
     function iniciarTudo() { 
-        d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; 
+        // AÇÃO IMEDIATA NA TELA
+        document.getElementById('init-action-area').style.display = 'none';
+        document.getElementById('clock-controls-area').style.display = 'flex';
+        
+        d.is_recording = true; 
+        d.clock_running = true; 
+        d.remaining_seconds = 600; 
         const agora = Date.now();
         [...d.white, ...d.blue].forEach(p => { logarEvento(p, d.white.includes(p)?'W':'A', "INICIO"); d.players_entry_time[p] = agora; });
         sync(); 
     }
 
-    function calcularTempoIndividual() {
-        const agora = Date.now();
-        [...d.white, ...d.blue].forEach(p => {
-            if (d.players_entry_time && d.players_entry_time[p]) {
-                const segs = (agora - d.players_entry_time[p]) / 1000;
-                d.hist_time[p] = (d.hist_time[p] || 0) + segs;
-                d.players_entry_time[p] = agora;
-            }
-        });
-    }
-
     function btnPausar() {
-        if (d.clock_running) { calcularTempoIndividual(); d.clock_running = false; } 
-        else { 
+        d.clock_running = !d.clock_running;
+        if (!d.clock_running) {
+            const agora = Date.now();
+            [...d.white, ...d.blue].forEach(p => {
+                if (d.players_entry_time && d.players_entry_time[p]) {
+                    d.hist_time[p] = (d.hist_time[p] || 0) + ((agora - d.players_entry_time[p]) / 1000);
+                    delete d.players_entry_time[p];
+                }
+            });
+        } else {
             const agora = Date.now();
             [...d.white, ...d.blue].forEach(p => d.players_entry_time[p] = agora);
-            d.clock_running = true; 
         }
         render();
     }
@@ -148,22 +145,10 @@
 
     setInterval(() => { if (d.clock_running && d.remaining_seconds > 0) { d.remaining_seconds--; document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds); } }, 1000);
 
-    function logarEvento(n, t, s) {
-        if(!d.players_log) d.players_log = [];
-        let p = d.players_log.find(x => x.n === n);
-        if(!p) d.players_log.push({ n: n, t: t, s: s, p_ini: d.points[n]||0, f_ini: d.fouls[n]||0, t_ini: d.hist_time[n]||0 });
-        else p.s = s;
-    }
+    function logarEvento(n, t, s) { if(!d.players_log) d.players_log = []; let p = d.players_log.find(x => x.n === n); if(!p) d.players_log.push({ n: n, t: t, s: s, p_ini: d.points[n]||0, f_ini: d.fouls[n]||0, t_ini: d.hist_time[n]||0 }); else p.s = s; }
 
-    function processarSumulaFinal() {
-        calcularTempoIndividual();
-        const proc = (tK) => (d.players_log || []).filter(x => x.t === tK).map(x => ({
-            n: x.n,
-            p: (d.points[x.n]||0) - (x.p_ini||0),
-            f: (d.fouls[x.n]||0) - (x.f_ini||0),
-            t: (d.hist_time[x.n]||0) - (x.t_ini||0),
-            s: x.s
-        }));
+    function fecharSumula() {
+        const proc = (tK) => (d.players_log || []).filter(x => x.t === tK).map(x => ({ n: x.n, p: (d.points[x.n]||0) - (x.p_ini||0), f: (d.fouls[x.n]||0) - (x.f_ini||0), t: (d.hist_time[x.n]||0) - (x.t_ini||0), s: x.s }));
         if(!d.history_matches) d.history_matches = [];
         d.history_matches.push({ id: d.history_matches.length+1, placar: `${d.scoreW} x ${d.scoreA}`, branco: proc('W'), azul: proc('A') });
         d.players_log = []; d.players_entry_time = {};
@@ -171,13 +156,11 @@
 
     window.vitoriaPlacar = (v) => {
         if(!confirm("Confirmar vitória?")) return;
-        processarSumulaFinal();
+        fecharSumula();
         const winK = v === 'B' ? 'white' : 'blue'; const losK = v === 'B' ? 'blue' : 'white';
         let sus = d.suspended && d.suspended[0] ? d.suspended[0] : null;
         if(sus) d.queue = d.queue.filter(q => q !== sus.name);
-        
         if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; }
-        
         if ((v==='B'?d.streakW:d.streakA) >= 2) {
             d.queue.push(...d[winK], ...d[losK]); if(sus) d.queue.push(sus.name);
             d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0;
@@ -185,28 +168,20 @@
             if(sus) { if(sus.team === winK) d[winK].push(sus.name); else d.queue.push(sus.name); }
             d.queue.push(...d[losK]); d[losK] = [];
         }
-        d.suspended = []; fecharJogo();
+        d.suspended = []; rodarTimes();
     };
 
     window.vitoriaTempo = (v) => {
-        if(!confirm("Encerrar por tempo?")) return;
-        processarSumulaFinal();
+        if(!confirm("Encerrar?")) return;
+        fecharSumula();
         const win = v === 'B' ? 'white' : 'blue'; const los = v === 'B' ? 'blue' : 'white';
         let court = [...d.white, ...d.blue]; if(d.suspended) court.push(...d.suspended.map(s=>s.name));
         if (v === 'E') d.queue.push(...d.all.filter(p => court.includes(p)));
-        else {
-            let winners = [...d[win]]; if(d.suspended) winners.push(...d.suspended.filter(s=>s.team===win).map(s=>s.name));
-            let losers = [...d[los]]; if(d.suspended) losers.push(...d.suspended.filter(s=>s.team===los).map(s=>s.name));
-            d.queue.push(...winners, ...losers);
-        }
-        d.white=[]; d.blue=[]; d.suspended=[]; d.streakW=0; d.streakA=0; fecharJogo();
+        else d.queue.push(...d[win], ...d[los]);
+        d.white=[]; d.blue=[]; d.suspended=[]; d.streakW=0; d.streakA=0; rodarTimes();
     };
 
-    function fecharJogo() { 
-        while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
-        while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
-        d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600; sync(); 
-    }
+    function rodarTimes() { while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600; sync(); }
 
     window.addPt = (n, p) => { d.points[n]=(d.points[n]||0)+p; d.hist_pts[n]=(d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
     window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.hist_pts[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
@@ -215,7 +190,6 @@
 
     window.removerAtleta = (nome, local, motivo) => {
         if(!confirm("Remover atleta?")) return;
-        calcularTempoIndividual();
         if(motivo === 'falta') {
             d[local] = d[local].filter(p => p !== nome);
             d.suspended = [{ name: nome, team: local }];
@@ -225,10 +199,10 @@
             d[local] = d[local].filter(p => p !== nome);
             logarEvento(nome, local==='white'?'W':'A', "SUBS");
             if(d.queue.length > 0) {
-                const reserva = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop();
-                d[local].push(reserva);
-                logarEvento(reserva, local==='white'?'W':'A', "ENTROU");
-                if(d.clock_running) d.players_entry_time[reserva] = Date.now();
+                const sub = (d.scoreW===0 && d.scoreA===0) ? d.queue.shift() : d.queue.pop();
+                d[local].push(sub);
+                logarEvento(sub, local==='white'?'W':'A', "ENTROU");
+                if(d.clock_running) d.players_entry_time[sub] = Date.now();
             }
         }
         sync();
@@ -236,26 +210,18 @@
 
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
-    
-    let abaAtiva = 'racha';
-    window.mudarAba = (aba, el) => { 
-        abaAtiva = aba;
-        document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); 
-        document.getElementById(`view-${aba}`).style.display = 'block'; 
-        document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); 
-        el.classList.add('active'); 
-    };
-
+    window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
     window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], players_log: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     function render() {
-        document.getElementById('score-br').innerText = d.scoreW;
-        document.getElementById('score-az').innerText = d.scoreA;
+        document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
         document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
         
+        // CONTROLE VISUAL FORÇADO
         document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
         document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
-        const bT = document.getElementById('btn-toggle-clock'); if(bT) bT.innerText = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar";
+        const bT = document.getElementById('btn-toggle-clock'); 
+        if(bT) { bT.innerText = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.style.background = d.clock_running ? "var(--orange)" : "var(--green)"; bT.style.color = d.clock_running ? "#fff" : "#000"; }
 
         const draw = (list, id, az, slug) => {
             document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
@@ -264,26 +230,16 @@
                 <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join('');
         };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-        
         document.getElementById('q-list').innerHTML = "FILA: " + d.queue.map((p, i) => `<span style="color:${(d.suspended||[]).find(s=>s.name===p)?'red':'white'}">${i+1}.${p}</span>`).join(' | ');
-        
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
         
-        // RANKING GERAL NA ABA ESTATÍSTICAS
-        let hS = ""; d.all.sort().forEach(p => { 
-            if((d.hist_pts[p]||0)>0 || (d.hist_fls[p]||0)>0 || (d.hist_time[p]||0)>0)
-            hS += `<div style="background:#1a1a1a; padding:10px; margin-bottom:5px; display:flex; justify-content:space-between; font-size:12px; border-radius:4px;"><span>${p}</span><span>${d.hist_pts[p]||0}P | ${d.hist_fls[p]||0}F | ${formatTimeDisplay(d.hist_time[p]||0)}</span></div>`; 
-        });
+        let hS = ""; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_time[p]||0)>0) hS += `<div style="background:#1a1a1a; padding:10px; margin-bottom:5px; border-radius:4px; display:flex; justify-content:space-between; font-size:12px;"><span>${p}</span><span>${d.hist_pts[p]||0}P | ${d.hist_fls[p]||0}F | ${formatTimeDisplay(d.hist_time[p]||0)}</span></div>`; });
         document.getElementById('lista-estatisticas-geral').innerHTML = hS || "Vazio.";
-
-        // HISTÓRICO DE SÚMULAS
+        
         let hH = ""; [...(d.history_matches || [])].reverse().forEach((j) => {
-            const rt = (tm) => (tm||[]).map(p => {
-                const icon = p.s === 'SUBS' ? '🔻' : p.s === 'ENTROU' ? '🔺' : '';
-                return `<div class="player-line ${p.s==='SUSPENSO'?'susp':''}"><span>${p.n} ${icon}</span><span>${p.p}P / ${p.f}F / ${formatTimeDisplay(p.t)}</span></div>`;
-            }).join('');
-            hH += `<div class="sumula-card"><div class="sumula-header"><span>JOGO ${j.id}</span><span>${j.placar}</span></div><div class="sumula-teams"><div>${rt(j.branco)}</div><div>${rt(j.azul)}</div></div></div>`;
+            const rt = (tm) => (tm||[]).map(p => `<div class="player-line ${p.s==='SUSPENSO'?'susp':''}"><span>${p.n} ${p.s==='SUBS'?'🔻':p.s==='ENTROU'?'🔺':''}</span><span>${p.p}P/${p.f}F/${formatTimeDisplay(p.t)}</span></div>`).join('');
+            hH += `<div class="sumula-card"><div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--yellow); margin-bottom:8px;"><span>JOGO ${j.id}</span><span>${j.placar}</span></div><div class="sumula-teams"><div>${rt(j.branco)}</div><div>${rt(j.azul)}</div></div></div>`;
         });
         document.getElementById('lista-historico-partidas').innerHTML = hH || "Nenhum jogo.";
     }
