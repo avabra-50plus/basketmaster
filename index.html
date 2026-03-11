@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.50 - LAYOUT ORIGINAL RESTAURADO</title>
+    <title>AVABRA MASTER V21.52 - AJUSTE BOTÕES</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -11,12 +11,10 @@
         .header { display: flex; justify-content: center; align-items: center; padding: 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Placar Live */
         .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
         .placar-numero { font-size: 36px; font-weight: bold; font-family: monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; background: #fff; color: #000; }
         .placar-numero.az { background: var(--blue); color: #fff; }
         
-        /* Relógio */
         .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
         #game-clock { font-family: 'Courier New', monospace; font-size: 52px; font-weight: bold; color: var(--yellow); }
         .area-start-match { padding: 15px; display: flex; justify-content: center; }
@@ -24,36 +22,36 @@
         .clock-controls { display: none; justify-content: center; gap: 10px; padding: 10px; }
         .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; }
         
-        /* Faixas Separadoras ORIGINAIS */
         .faixa { background: #111; color: #888; padding: 8px 15px; font-size: 11px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
         
-        /* Linhas dos Jogadores ORIGINAIS */
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
-        .top-row { display: flex; align-items: center; }
-        .info { flex: 1; } .nome { font-weight: bold; font-size: 16px; }
-        .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-        .acoes { display: flex; gap: 4px; }
-        .f-box { background: #8b0000; color: #fff; padding: 12px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 18px; }
-        .btn-p { width: 46px; height: 48px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 18px; cursor: pointer; }
-        .btn-corrige { font-size: 11px; color: var(--red); background: #fff; border: 1px solid var(--red); padding: 4px; border-radius: 4px; cursor: pointer; }
+        .top-row { display: flex; align-items: center; width: 100%; }
+        .info { flex: 1; display: flex; flex-direction: column; } 
+        .nome { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
         
-        /* Botões Sair/Faltas ORIGINAIS */
+        /* Ajuste dos botões AO LADO dos números */
+        .stats-row { display: flex; gap: 10px; align-items: center; }
+        .stat-group { display: flex; align-items: center; gap: 5px; }
+        .stat-value { font-weight: bold; font-size: 14px; min-width: 35px; }
+        .btn-corrige { font-size: 10px; color: var(--red); background: #fff; border: 1px solid var(--red); padding: 3px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        .acoes { display: flex; gap: 4px; margin-left: 10px; }
+        .f-box { background: #8b0000; color: #fff; padding: 12px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 18px; display: flex; align-items: center; }
+        .btn-p { width: 46px; height: 48px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 18px; cursor: pointer; }
+        
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 11px; padding: 12px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; color: #fff; cursor: pointer; }
         
-        /* Lista de Espera */
         .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 8px 14px; border-radius: 4px; font-size: 14px; font-weight: bold; }
         .espera-amarela { background: var(--yellow); color: #000; }
         .espera-verde { background: var(--green); color: #000; }
         .espera-vermelha { background: var(--red) !important; color: #fff !important; border: 2px solid #fff; }
         
-        /* Rodapé */
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 12px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
 
-        /* Súmula Vista Cansada */
         .sumula-card { background: #1a1a1a; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #444; }
         .sumula-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--yellow); border-bottom: 2px solid #444; padding-bottom: 8px; margin-bottom: 12px; font-size: 16px; }
         .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -66,7 +64,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.50</div></div>
+        <div class="header"><div class="logo">AVABRA V21.52</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -183,10 +181,29 @@
         document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
         document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
         document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
+        
         const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
-            <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button></div></div>
-            <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div></div>
-            <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join(''); };
+            <div class="top-row">
+                <div class="info">
+                    <span class="nome">${p}</span>
+                    <div class="stats-row">
+                        <div class="stat-group"><span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button></div>
+                        <div class="stat-group"><span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div>
+                    </div>
+                </div>
+                <div class="acoes">
+                    <div class="f-box" onclick="addFl('${p}')">F+</div>
+                    <button class="btn-p" onclick="addPt('${p}',1)">1</button>
+                    <button class="btn-p" onclick="addPt('${p}',2)">2</button>
+                    <button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button>
+                </div>
+            </div>
+            <div class="bottom-row">
+                <button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button>
+                <button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button>
+            </div>
+        </div>`).join(''); };
+        
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
         document.getElementById('q-list').innerHTML = d.queue.map((p, i) => { const isS = d.suspended && d.suspended.find(s => s.name === p); return `<span class="espera-item ${isS?'espera-vermelha':((Math.floor(i/5)%2===0)?'espera-amarela':'espera-verde')}">${i+1}.${p}${isS?' [S]':''} <span style="margin-left:8px; opacity:0.5;" onclick="if(confirm('Remover?')){d.queue=d.queue.filter(x=>x!=='${p}'); sync();}">X</span></span>`; }).join('');
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
