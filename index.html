@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.53 - CLOCK SYNC</title>
+    <title>AVABRA MASTER V21.54 - FINAL FIX</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -53,7 +53,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.53</div></div>
+        <div class="header"><div class="logo">AVABRA V21.54</div></div>
         <div class="placar-live">
             <div id="score-br" class="placar-numero">0</div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -201,7 +201,17 @@
             <button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div>
             <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join(''); };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
-        document.getElementById('q-list').innerHTML = d.queue.map((p, i) => { const isS = d.suspended && d.suspended.find(s => s.name === p); return `<span class="espera-item ${isS?'espera-vermelha':((Math.floor(i/5)%2===0)?'espera-amarela':'espera-verde')}">${i+1}.${p}${isS?' [S]':''} <span style="margin-left:8px; opacity:0.5;" onclick="if(confirm('Remover?')){d.queue=d.queue.filter(x=>x!=='${p}'); sync();}">X</span></span>`; }).join('');
+        
+        // CORREÇÃO VISUAL DA FILA (V21.54)
+        document.getElementById('q-list').innerHTML = d.queue.map((p, i) => { 
+            const isS = d.suspended && d.suspended.find(s => s.name === p);
+            const nonSuspendedBefore = d.queue.slice(0, i).filter(name => {
+                return !(d.suspended && d.suspended.find(s => s.name === name));
+            }).length;
+            let corClasse = isS ? "espera-vermelha" : (Math.floor(nonSuspendedBefore / 5) % 2 === 0 ? "espera-amarela" : "espera-verde");
+            return `<span class="espera-item ${corClasse}">${i+1}.${p}${isS?' [S]':''} <span style="margin-left:8px; opacity:0.5;" onclick="if(confirm('Remover?')){d.queue=d.queue.filter(x=>x!=='${p}'); sync();}">X</span></span>`; 
+        }).join('');
+
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
         let hS = ""; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_time[p]||0)>0) hS += `<div style="background:#1a1a1a; padding:10px; margin-bottom:5px; border-radius:4px; display:flex; justify-content:space-between; font-size:12px;"><span>${p}</span><span>${d.hist_pts[p]||0}P | ${d.hist_fls[p]||0}F | ${formatTime(d.hist_time[p]||0)}</span></div>`; });
