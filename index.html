@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BASKETMASTER AVABRA V21.13</title>
+    <title>BASKETMASTER AVABRA V21.14</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -38,7 +38,7 @@
         .linha.azul { background: var(--blue); color: #fff; }
         .top-row { display: flex; align-items: center; }
         .info { flex: 1; } .nome { font-weight: bold; font-size: 14px; }
-        .stats-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+        .stats-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
         .acoes { display: flex; gap: 4px; }
         .f-box { background: #8b0000; color: #fff; padding: 10px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-p { width: 42px; height: 44px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 16px; cursor: pointer; }
@@ -59,7 +59,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.13</div></div>
+        <div class="header"><div class="logo">AVABRA V21.14 - REGRAS ORIGINAIS</div></div>
         <div class="placar-live">
             <div class="placar-box"><div id="score-br" class="placar-numero br">0</div><div class="placar-label">Branco</div></div>
             <div style="font-size: 24px; font-weight: bold; color: #333;">X</div>
@@ -115,7 +115,7 @@
         const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
         const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false };
+        let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, hist_pts: {}, history_matches: [], remaining_seconds: 600, clock_running: false, is_recording: false };
         let abaAtiva = 'racha';
 
         async function load() {
@@ -123,9 +123,9 @@
                 const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
                 if (data && data.data) {
                     const banco = data.data;
-                    const localStatus = d.clock_running;
+                    const localClock = d.clock_running;
                     const localRem = d.remaining_seconds;
-                    
+
                     d.all = banco.all || [];
                     d.white = banco.white || [];
                     d.blue = banco.blue || [];
@@ -135,12 +135,11 @@
                     d.hist_pts = banco.hist_pts || {};
                     d.history_matches = banco.history_matches || [];
                     
-                    // Lógica para aparecer o botão Iniciar:
-                    // Se não estiver rodando localmente, obedece o banco. 
-                    // Se o banco disser is_recording: false, o botão VAI aparecer.
-                    if (!localStatus) {
-                        d.is_recording = banco.is_recording || false;
-                        d.remaining_seconds = localRem;
+                    // CHAVE DE SEGURANÇA: Se não estiver rodando no seu cel, força is_recording pra false
+                    if (!localClock) {
+                        d.is_recording = false;
+                        d.clock_running = false;
+                        d.remaining_seconds = 600;
                     } else {
                         d.is_recording = true;
                         d.clock_running = true;
@@ -154,14 +153,7 @@
         async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
         function formatTimeDisplay(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
-        
-        function iniciarTudo() { 
-            d.is_recording = true; 
-            d.clock_running = true; 
-            d.remaining_seconds = 600; 
-            sync(); 
-        }
-
+        function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; sync(); }
         function toggleClock() { d.clock_running = !d.clock_running; render(); }
         function resetClock() { if(confirm("Zerar cronômetro?")) { d.clock_running = false; d.remaining_seconds = 600; render(); } }
 
@@ -175,26 +167,15 @@
 
         function gravarSumula() {
             if(!d.history_matches) d.history_matches = [];
-            d.history_matches.push({ 
-                id: d.history_matches.length + 1, 
-                data: new Date().toLocaleTimeString('pt-BR'), 
-                placar: `${d.scoreW} x ${d.scoreA}` 
-            });
+            d.history_matches.push({ id: d.history_matches.length + 1, data: new Date().toLocaleTimeString('pt-BR'), placar: `${d.scoreW} x ${d.scoreA}` });
         }
 
         window.vitoriaPlacar = (v) => {
             if(!confirm("Confirmar vitória?")) return;
             gravarSumula();
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B'){ 
-                d.streakW = (d.streakW||0)+1; d.streakA=0; 
-                if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } 
-                else { d.queue.push(...d.blue); d.blue=[]; } 
-            } else { 
-                d.streakA = (d.streakA||0)+1; d.streakW=0; 
-                if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } 
-                else { d.queue.push(...d.white); d.white=[]; } 
-            }
+            if(v==='B'){ d.streakW = (d.streakW||0)+1; d.streakA=0; if(d.streakW>=2){ d.queue.push(...d.white,...d.blue); d.white=[]; d.blue=[]; d.streakW=0; } else { d.queue.push(...d.blue); d.blue=[]; } }
+            else { d.streakA = (d.streakA||0)+1; d.streakW=0; if(d.streakA>=2){ d.queue.push(...d.blue,...d.white); d.white=[]; d.blue=[]; d.streakA=0; } else { d.queue.push(...d.white); d.white=[]; } }
             d.scoreW=0; d.scoreA=0; rodizio();
         };
 
@@ -202,14 +183,11 @@
             if(!confirm("Encerrar partida?")) return;
             gravarSumula();
             d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
-            if(v==='B') d.queue.push(...d.white,...d.blue); 
-            else if(v==='A') d.queue.push(...d.blue,...d.white); 
-            else d.queue.push(...d.white,...d.blue);
+            if(v==='B') d.queue.push(...d.white,...d.blue); else if(v==='A') d.queue.push(...d.blue,...d.white); else d.queue.push(...d.white,...d.blue);
             d.white=[]; d.blue=[]; d.scoreW=0; d.scoreA=0; d.streakW=0; d.streakA=0; rodizio();
         };
 
         function rodizio() { while(d.white.length<5 && d.queue.length>0) d.white.push(d.queue.shift()); while(d.blue.length<5 && d.queue.length>0) d.blue.push(d.queue.shift()); [...d.white, ...d.blue].forEach(p=>{d.points[p]=0; d.fouls[p]=0;}); sync(); }
-
         window.addPt = (n, p) => { d.points[n] = (d.points[n]||0)+p; d.hist_pts[n] = (d.hist_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW = (d.scoreW||0)+p; else d.scoreA = (d.scoreA||0)+p; sync(); };
         window.addFl = (n) => { d.fouls[n] = (d.fouls[n]||0)+1; sync(); };
         window.entrarNoJogo = (n) => { if (d.white.length < 5) d.white.push(n); else if (d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
@@ -221,16 +199,12 @@
             document.getElementById('score-br').innerText = d.scoreW || 0;
             document.getElementById('score-az').innerText = d.scoreA || 0;
             document.getElementById('game-clock').innerText = formatTimeDisplay(d.remaining_seconds);
-            
-            // CONTROLE VISUAL DO BOTÃO INICIAR
             document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
             document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
-            
             const bT = document.getElementById('btn-toggle-clock'); if(bT) { bT.innerHTML = d.clock_running ? "⏸️ Pausar" : "▶️ Retomar"; bT.className = d.clock_running ? "btn-clock btn-pause" : "btn-clock btn-resume"; }
-
             const draw = (list, id, az) => {
                 document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
-                    <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span></div></div>
+                    <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span>P: ${d.points[p]||0} | F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button></div></div>
                     <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p laranja" onclick="addPt('${p}',3)">3</button></div></div></div></div>`).join('');
             };
             draw(d.white, 'w-list', false); draw(d.blue, 'a-list', true);
@@ -242,6 +216,7 @@
             let hH = ""; [...(d.history_matches || [])].reverse().forEach((j) => { hH += `<div class="sumula-card"><div class="sumula-header"><div><span style="font-weight:bold; color:var(--orange)">JOGO ${j.id}</span></div><div class="sumula-placar">${j.placar}</div></div></div>`; });
             document.getElementById('lista-historico-partidas').innerHTML = hH || "Vazio.";
         }
+        window.subPt = (n) => { if ((d.points[n]||0) > 0) { d.points[n]--; d.hist_pts[n]--; if (d.white.includes(n)) d.scoreW--; else d.scoreA--; } sync(); };
         load();
     </script>
 </body>
