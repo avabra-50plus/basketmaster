@@ -2,71 +2,47 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA - RESTAURAÇÃO</title>
+    <title>BACKUP DE EMERGÊNCIA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 10px; }
-        .box { background: #111; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .nome { font-size: 16px; font-weight: bold; border-bottom: 1px solid #222; padding: 8px 0; }
-        .status { color: #ff6b00; font-weight: bold; margin-bottom: 15px; text-align: center; }
-        h3 { color: #ff6b00; margin-bottom: 5px; text-transform: uppercase; font-size: 14px; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+        .aviso { color: #ff4444; border: 2px solid #ff4444; padding: 15px; margin-bottom: 20px; }
+        pre { background: #111; padding: 10px; border: 1px solid #333; overflow-x: auto; }
     </style>
 </head>
 <body>
-    <div class="status" id="st">CONECTANDO...</div>
-
-    <div class="box">
-        <h3>Time Branco</h3>
-        <div id="w"></div>
+    <div class="aviso">
+        <strong>MODO DE INVESTIGAÇÃO DE BACKUP</strong><br>
+        Tentando localizar registros antigos no banco de dados...
     </div>
-
-    <div class="box">
-        <h3>Time Azul</h3>
-        <div id="a"></div>
-    </div>
-
-    <div class="box">
-        <h3>Lista de Espera</h3>
-        <div id="q"></div>
-    </div>
-
-    <div class="box">
-        <h3>No Ginásio (Disponíveis)</h3>
-        <div id="g"></div>
-    </div>
+    <div id="resultado">Buscando...</div>
 
 <script>
     const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
     
-    async function carregar() {
-        const { data, error } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
-        if (error) { document.getElementById('st').innerText = "ERRO DE CONEXÃO"; return; }
-        if (data && data.data) {
-            const d = data.data;
-            document.getElementById('st').innerText = "DADOS RECUPERADOS ✅";
-            
-            const renderLista = (lista, id) => {
-                const el = document.getElementById(id);
-                if (!lista || lista.length === 0) { el.innerHTML = "<small>Vazio</small>"; return; }
-                el.innerHTML = lista.map(n => `<div class="nome">${n}</div>`).join('');
-            };
+    async function investigar() {
+        // Tenta ler todas as linhas da tabela, não apenas a ID 1
+        const { data, error } = await sb.from('racha_session').select('*');
+        
+        if (error) {
+            document.getElementById('resultado').innerText = "Erro na busca: " + error.message;
+            return;
+        }
 
-            renderLista(d.white, 'w');
-            renderLista(d.blue, 'a');
-            renderLista(d.queue, 'q');
-
-            // Lógica do Ginásio
-            const emJogo = [...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])];
-            const ginasio = (d.all||[]).filter(n => !emJogo.includes(n));
-            renderLista(ginasio, 'g');
+        if (data && data.length > 0) {
+            let html = "<h3>Registros Encontrados:</h3>";
+            data.forEach(item => {
+                html += `<div><strong>ID: ${item.id}</strong> (Atualizado em: ${item.updated_at || 'Desconhecido'})</div>`;
+                html += `<pre>${JSON.stringify(item.data.all, null, 2)}</pre><hr>`;
+            });
+            document.getElementById('resultado').innerHTML = html;
+        } else {
+            document.getElementById('resultado').innerText = "Nenhum dado encontrado em nenhuma tabela.";
         }
     }
-
-    carregar();
-    setInterval(carregar, 5000);
+    investigar();
 </script>
 </body>
 </html>
