@@ -3,34 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESGATE AVABRA</title>
+    <title>AVABRA - RESTAURAÇÃO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 20px; }
-        .faixa { background: #ff6b00; padding: 10px; font-weight: bold; margin-top: 20px; }
-        .nome-item { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
-        .btn-nav { background: #333; color: white; padding: 10px; margin-right: 5px; border: none; }
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; margin: 0; padding: 10px; }
+        .box { background: #111; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .nome { font-size: 16px; font-weight: bold; border-bottom: 1px solid #222; padding: 8px 0; }
+        .status { color: #ff6b00; font-weight: bold; margin-bottom: 15px; text-align: center; }
+        h3 { color: #ff6b00; margin-bottom: 5px; text-transform: uppercase; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h2>AVABRA - MODO RESGATE</h2>
-    <div id="status">Conectando ao banco de dados...</div>
-    
-    <div style="margin-bottom: 20px;">
-        <button class="btn-nav" onclick="aba('racha')">RACHA</button>
-        <button class="btn-nav" onclick="aba('atletas')">LISTA COMPLETA</button>
+    <div class="status" id="st">CONECTANDO...</div>
+
+    <div class="box">
+        <h3>Time Branco</h3>
+        <div id="w"></div>
     </div>
 
-    <div id="aba-racha">
-        <div class="faixa">NO GINÁSIO</div>
-        <div id="lista-ginasio"></div>
-        <div class="faixa">EM QUADRA / ESPERA</div>
-        <div id="lista-jogo"></div>
+    <div class="box">
+        <h3>Time Azul</h3>
+        <div id="a"></div>
     </div>
 
-    <div id="aba-atletas" style="display:none">
-        <div class="faixa">TODOS OS CADASTRADOS</div>
-        <div id="lista-total"></div>
+    <div class="box">
+        <h3>Lista de Espera</h3>
+        <div id="q"></div>
+    </div>
+
+    <div class="box">
+        <h3>No Ginásio (Disponíveis)</h3>
+        <div id="g"></div>
     </div>
 
 <script>
@@ -38,46 +41,32 @@
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
     
-    let d = { all: [], white: [], blue: [], queue: [] };
-
-    async function carregarDados() {
+    async function carregar() {
         const { data, error } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle();
-        if (error) {
-            document.getElementById('status').innerText = "Erro: " + error.message;
-            return;
-        }
+        if (error) { document.getElementById('st').innerText = "ERRO DE CONEXÃO"; return; }
         if (data && data.data) {
-            d = data.data;
-            document.getElementById('status').innerText = "Dados carregados com sucesso!";
-            desenhar();
+            const d = data.data;
+            document.getElementById('st').innerText = "DADOS RECUPERADOS ✅";
+            
+            const renderLista = (lista, id) => {
+                const el = document.getElementById(id);
+                if (!lista || lista.length === 0) { el.innerHTML = "<small>Vazio</small>"; return; }
+                el.innerHTML = lista.map(n => `<div class="nome">${n}</div>`).join('');
+            };
+
+            renderLista(d.white, 'w');
+            renderLista(d.blue, 'a');
+            renderLista(d.queue, 'q');
+
+            // Lógica do Ginásio
+            const emJogo = [...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])];
+            const ginasio = (d.all||[]).filter(n => !emJogo.includes(n));
+            renderLista(ginasio, 'g');
         }
     }
 
-    function desenhar() {
-        // Lista de Cadastro Total
-        const listaTotal = document.getElementById('lista-total');
-        if (d.all && d.all.length > 0) {
-            listaTotal.innerHTML = d.all.sort().map(n => `<div class="nome-item">${n}</div>`).join('');
-        } else {
-            listaTotal.innerHTML = "Nenhum nome encontrado no cadastro.";
-        }
-
-        // Ginásio
-        const jogo = [...(d.white||[]), ...(d.blue||[]), ...(d.queue||[])];
-        const ginasio = (d.all||[]).filter(n => !jogo.includes(n));
-        document.getElementById('lista-ginasio').innerHTML = ginasio.map(n => `<div class="nome-item">${n}</div>`).join('');
-        
-        // Em Jogo/Espera
-        document.getElementById('lista-jogo').innerHTML = jogo.map(n => `<div class="nome-item">${n}</div>`).join('');
-    }
-
-    function aba(nome) {
-        document.getElementById('aba-racha').style.display = nome === 'racha' ? 'block' : 'none';
-        document.getElementById('aba-atletas').style.display = nome === 'atletas' ? 'block' : 'none';
-    }
-
-    carregarDados();
-    setInterval(carregarDados, 5000);
+    carregar();
+    setInterval(carregar, 5000);
 </script>
 </body>
 </html>
