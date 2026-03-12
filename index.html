@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.60 - LAYOUT V21.56 PROTEGIDO</title>
+    <title>AVABRA MASTER V21.61 - FALTAS COLETIVAS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -11,50 +11,47 @@
         .header { display: flex; justify-content: center; align-items: center; padding: 15px; background: #000; border-bottom: 1px solid #222; }
         .logo { color: var(--orange); font-weight: bold; font-style: italic; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
         
-        .placar-live { display: flex; justify-content: center; align-items: center; gap: 20px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
-        .placar-numero { font-size: 36px; font-weight: bold; font-family: monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; background: #fff; color: #000; }
+        /* Placar e Faltas Coletivas */
+        .placar-live { display: flex; justify-content: center; align-items: center; gap: 15px; background: #111; padding: 15px; border-bottom: 2px solid #222; }
+        .placar-numero { font-size: 36px; font-weight: bold; font-family: monospace; padding: 5px 15px; border-radius: 8px; border: 2px solid #333; background: #fff; color: #000; position: relative; }
         .placar-numero.az { background: var(--blue); color: #fff; }
         
+        .faltas-coletivas { font-size: 14px; padding: 5px 8px; border-radius: 4px; font-weight: bold; text-align: center; min-width: 40px; }
+        .faltas-br-box { background: #eee; color: #000; border: 1px solid #ccc; }
+        .faltas-az-box { background: var(--blue); color: #fff; border: 1px solid #fff; }
+        .faltas-limite { background: var(--red) !important; color: #fff !important; animation: blink 1s infinite; }
+        
+        @keyframes blink { 50% { opacity: 0.7; } }
+
         .game-clock-area { background: #000; padding: 10px; text-align: center; border-bottom: 2px solid #222; }
         #game-clock { font-family: 'Courier New', monospace; font-size: 52px; font-weight: bold; color: var(--yellow); }
-        
         .area-start-match { padding: 15px; display: flex; justify-content: center; }
         .btn-big-start { width: 100%; background: var(--green); color: #000; padding: 22px; border: none; border-radius: 8px; font-weight: 900; font-size: 18px; text-transform: uppercase; cursor: pointer; }
         .clock-controls { display: none; justify-content: center; gap: 10px; padding: 10px; }
         .btn-clock { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; }
-        
         .faixa { background: #111; color: #888; padding: 8px 15px; font-size: 11px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #222; }
-        
         .linha { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid #eee; background: #fff; color: #000; }
         .linha.azul { background: var(--blue); color: #fff; border-bottom: 1px solid #1a4bc2; }
-        
         .top-row { display: flex; align-items: center; width: 100%; }
         .info { flex: 1; display: flex; flex-direction: column; } 
         .nome { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
-        
         .stats-row { display: flex; gap: 10px; align-items: center; }
         .stat-group { display: flex; align-items: center; gap: 5px; }
         .stat-value { font-weight: bold; font-size: 14px; min-width: 35px; }
-        
         .btn-corrige { font-size: 10px; color: var(--red); background: #fff; border: 1px solid var(--red); padding: 3px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        
         .acoes { display: flex; gap: 4px; margin-left: 10px; }
         .f-box { background: #8b0000; color: #fff; padding: 12px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 18px; display: flex; align-items: center; }
         .btn-p { width: 46px; height: 48px; border: none; border-radius: 4px; font-weight: bold; background: #222; color: #fff; font-size: 18px; cursor: pointer; }
-        
         .bottom-row { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excluir { flex: 1; font-size: 11px; padding: 12px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; color: #fff; cursor: pointer; }
-        
         .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 8px 14px; border-radius: 4px; font-size: 14px; font-weight: bold; }
         .espera-amarela { background: var(--yellow); color: #000; }
         .espera-verde { background: var(--green); color: #000; }
         .susp-branco { background: #fff !important; color: #000 !important; border: 2px solid #000; }
         .susp-azul { background: var(--blue) !important; color: #fff !important; border: 2px solid #fff; }
-        
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 12px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
-
         .sumula-card { background: #1a1a1a; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #444; }
         .sumula-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--yellow); border-bottom: 2px solid #444; padding-bottom: 8px; margin-bottom: 12px; font-size: 16px; }
         .sumula-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -67,11 +64,17 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.60</div></div>
+        <div class="header"><div class="logo">AVABRA V21.61</div></div>
         <div class="placar-live">
-            <div id="score-br" class="placar-numero">0</div>
+            <div style="text-align: center;">
+                <div id="score-br" class="placar-numero">0</div>
+                <div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div>
+            </div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
-            <div id="score-az" class="placar-numero az">0</div>
+            <div style="text-align: center;">
+                <div id="score-az" class="placar-numero az">0</div>
+                <div id="coletiva-az" class="faltas-coletivas faltas-az-box">F: 0</div>
+            </div>
         </div>
         <div class="game-clock-area">
             <div id="game-clock">10:00</div>
@@ -101,14 +104,12 @@
         <h3 style="color:var(--orange); margin-top:20px;">RANKING ACUMULADO</h3><div id="lista-estatisticas-geral"></div>
         <h3 style="color:var(--yellow); margin-top:30px;">HISTÓRICO DE SÚMULAS</h3><div id="lista-historico-partidas"></div>
     </div>
-
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
         <button style="background:var(--blue); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:30px;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
         <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
-
     <div style="height:120px"></div>
     <div class="rodape">
         <div class="nav-b active" onclick="mudarAba('racha', this)">Racha</div>
@@ -155,7 +156,7 @@
 
     window.vitoriaPlacar = (v) => { 
         if(!confirm("Vitória?")) return; fecharSumulaFinal(); 
-        const winK = v === 'B' ? 'white' : 'blue'; const losK = v === 'B' ? 'blue' : 'white';
+        const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white';
         let susList = (d.suspended || []); d.queue = d.queue.filter(q => !susList.some(s => s.name === q));
         if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; }
         if ((v==='B'?d.streakW:d.streakA) >= 2) {
@@ -170,7 +171,7 @@
 
     window.vitoriaTempo = (v) => { 
         if(!confirm("Encerrar?")) return; fecharSumulaFinal(); 
-        const winK = v === 'B' ? 'white' : 'blue'; const losK = v === 'B' ? 'blue' : 'white';
+        const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white';
         let susList = (d.suspended || []); d.queue = d.queue.filter(q => !susList.some(s => s.name === q));
         if (v === 'E') { d.queue.push(...d.white, ...d.blue); susList.forEach(s => d.queue.push(s.name)); } 
         else { d.queue.push(...d[winK]); susList.filter(s => s.team === winK).forEach(s => d.queue.push(s.name)); d.queue.push(...d[losK]); susList.filter(s => s.team === losK).forEach(s => d.queue.push(s.name)); }
@@ -188,7 +189,6 @@
     window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.hist_pts[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
     window.addFl = (n) => { d.fouls[n]=(d.fouls[n]||0)+1; d.hist_fls[n]=(d.hist_fls[n]||0)+1; sync(); };
     window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.hist_fls[n]--; sync(); } };
-    
     window.removerAtleta = (nome, local, motivo) => { 
         if(!confirm("Remover?")) return; 
         if(motivo === 'falta') { 
@@ -203,7 +203,7 @@
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
     window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
-    window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], current_match_log: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
+    window.resetarRacha = () => { if(confirm("ZERAR?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, hist_pts: {}, hist_fls: {}, hist_time: {}, history_matches: [], current_match_log: [], scoreW: 0, scoreA: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     window.enviarRankingZap = () => { let t = `🏀 *AVABRA MASTER - RANKING*\n\n`; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_fls[p]||0)>0) t += `👤 *${p}*\n┗ 🏀 ${d.hist_pts[p]||0} pts | ⚠️ ${d.hist_fls[p]||0} fls | ⏱️ ${formatTime(d.hist_time[p]||0)}\n\n`; }); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(t)}`); };
     window.enviarJogoZap = (idx) => { const j = d.history_matches.find(x => x.id === idx); let t = `🏀 *AVABRA - SÚMULA JOGO ${j.id}*\n🏆 *${j.placar}*\n\n⚪ *BRANCO:*\n`; j.branco.forEach(p => t += `${p.s==='SUSPENSO'?'🔴 ':''}${p.n}: ${p.p}p | ${p.f}f\n`); t += `\n🔵 *AZUL:*\n`; j.azul.forEach(p => t += `${p.s==='SUSPENSO'?'🔴 ':''}${p.n}: ${p.p}p | ${p.f}f\n`); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(t)}`); };
@@ -211,6 +211,20 @@
     function render() {
         document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
         if (!d.clock_running) document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
+        
+        // CALCULO FALTAS COLETIVAS (V21.61)
+        let fW = d.white.reduce((acc, p) => acc + (d.fouls[p] || 0), 0);
+        let fA = d.blue.reduce((acc, p) => acc + (d.fouls[p] || 0), 0);
+        
+        const elFW = document.getElementById('coletiva-br');
+        const elFA = document.getElementById('coletiva-az');
+        elFW.innerText = `F: ${fW}`;
+        elFA.innerText = `F: ${fA}`;
+        
+        // DESTAQUE VERMELHO A PARTIR DA 4ª FALTA
+        if(fW >= 4) elFW.classList.add('faltas-limite'); else elFW.classList.remove('faltas-limite');
+        if(fA >= 4) elFA.classList.add('faltas-limite'); else elFA.classList.remove('faltas-limite');
+
         document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
         document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
         
@@ -230,7 +244,7 @@
             let c = sData ? (sData.team === 'white' ? "susp-branco" : "susp-azul") : (Math.floor(nonSBefore / 5) % 2 === 0 ? "espera-amarela" : "espera-verde");
             return `<span class="espera-item ${c}">${i+1}.${p}${sData?' [S]':''} <span style="margin-left:8px; opacity:0.5;" onclick="if(confirm('Remover?')){d.queue=d.queue.filter(x=>x!=='${p}'); sync();}">X</span></span>`; 
         }).join('');
-
+        
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = d.all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!==p);sync()}">EXCLUIR</button></div>`).join('');
         let hS = ""; d.all.sort().forEach(p => { if((d.hist_pts[p]||0)>0 || (d.hist_time[p]||0)>0) hS += `<div style="background:#1a1a1a; padding:10px; margin-bottom:5px; border-radius:4px; display:flex; justify-content:space-between; font-size:12px;"><span>${p}</span><span>${d.hist_pts[p]||0}P | ${d.hist_fls[p]||0}F | ${formatTime(d.hist_time[p]||0)}</span></div>`; });
