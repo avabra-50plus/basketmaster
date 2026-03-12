@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.68.6 - ESTÁVEL COMPLETA</title>
+    <title>AVABRA MASTER V21.68.7 - FIX TOTAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -51,7 +51,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.68.6</div></div>
+        <div class="header"><div class="logo">AVABRA V21.68.7</div></div>
         <div class="placar-live">
             <div style="text-align: center;">
                 <div id="score-br" class="placar-numero">0</div>
@@ -107,11 +107,12 @@
 
     async function load() { 
         const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle(); 
-        if (data && data.data) d = data.data; 
-        render(); 
+        if (data && data.data) {
+            d = data.data; 
+            render(); 
+        }
     }
 
-    // Mantido 10 segundos para estabilidade total
     setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
 
     async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
@@ -222,9 +223,11 @@
             return `<span class="espera-item ${classeCor}">${i+1}.${p}${sData?' [S]':''}</span>`;
         }).join('');
 
-        document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
+        // CORREÇÃO: Usando d.all diretamente para filtrar quem não está em jogo/espera
+        const inAction = [...d.white, ...d.blue, ...d.queue];
+        document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => !inAction.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         
-        // ABA DE ATLETAS - RESTAURADA COM TODOS OS BOTÕES
+        // CORREÇÃO: Usando d.all diretamente para a aba de cadastrados
         document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
     }
     load();
