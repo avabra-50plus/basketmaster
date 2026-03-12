@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.68.5.2 - AJUSTE FINAL</title>
+    <title>AVABRA MASTER V21.68.5.3 - FINAL FIX</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -47,14 +47,15 @@
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 12px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
-        /* Aumentando o padding de segurança para 200px para garantir a rolagem total */
-        #view-racha, #view-atletas { padding-bottom: 200px; }
-        .btn-danger-area { margin-top: 40px; border-top: 1px solid #333; padding-top: 20px; }
+        
+        /* SOLUÇÃO DEFINITIVA DE CORTE */
+        .page-content { padding-bottom: 250px !important; }
+        .danger-zone { margin: 40px 20px; padding-bottom: 100px; }
     </style>
 </head>
 <body>
-    <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.68.5.2</div></div>
+    <div id="view-racha" class="page-content">
+        <div class="header"><div class="logo">AVABRA V21.68.5.3</div></div>
         <div class="placar-live">
             <div style="text-align: center;">
                 <div id="score-br" class="placar-numero">0</div>
@@ -89,12 +90,15 @@
         <div class="faixa">No Ginásio</div><div id="disp-list"></div>
     </div>
     
-    <div id="view-atletas" style="display:none; padding:20px;">
-        <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
-        <div id="lista-cadastrados"></div>
-        <div class="btn-danger-area">
-            <button style="background:var(--blue); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px; cursor: pointer;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
-            <button style="background:var(--red); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; cursor: pointer;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+    <div id="view-atletas" class="page-content" style="display:none;">
+        <div style="padding: 20px;">
+            <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
+            <div id="lista-cadastrados"></div>
+            
+            <div class="danger-zone">
+                <button style="background:var(--blue); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
+                <button style="background:var(--red); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+            </div>
         </div>
     </div>
 
@@ -137,7 +141,7 @@
     window.removerAtleta = (nome, local, motivo) => { if(!confirm("Remover?")) return; if(motivo === 'falta') { d[local] = d[local].filter(p => p !== nome); if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); d.queue.unshift(nome); } else { d[local] = d[local].filter(p => p !== nome); if(d.queue.length > 0) d[local].push(d.queue.pop()); } sync(); };
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
-    window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
+    window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('.page-content').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
     window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     function render() {
