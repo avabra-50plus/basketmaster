@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.68.5 - RESTAURADA</title>
+    <title>AVABRA MASTER V21.68.5.1 - AJUSTE TELA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -47,11 +47,13 @@
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 12px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
+        /* AJUSTE DE CORTE: Espaço extra no fim das listas para não esconder atrás do menu */
+        #view-racha, #view-atletas { padding-bottom: 150px; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.68.5</div></div>
+        <div class="header"><div class="logo">AVABRA V21.68.5.1</div></div>
         <div class="placar-live">
             <div style="text-align: center;">
                 <div id="score-br" class="placar-numero">0</div>
@@ -85,29 +87,31 @@
         <div class="faixa">Lista de Espera</div><div id="q-list" style="padding:15px; background:#000;"></div>
         <div class="faixa">No Ginásio</div><div id="disp-list"></div>
     </div>
+    
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        <button style="background:var(--blue); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:30px;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
-        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <div style="margin-top: 40px; border-top: 1px solid #333; padding-top: 20px;">
+            <button style="background:var(--blue); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
+            <button style="background:var(--red); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        </div>
     </div>
+
     <div class="rodape">
         <div class="nav-b active" onclick="mudarAba('racha', this)">Racha</div>
         <div class="nav-b" onclick="mudarAba('atletas', this)">Atletas</div>
     </div>
+
 <script>
     const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
-    let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], backup: null };
+    let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, history_matches: [], scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], backup: null };
     let abaAtiva = 'racha';
 
     async function load() { 
         const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle(); 
-        if (data && data.data) {
-            d = data.data; 
-            render(); 
-        }
+        if (data && data.data) { d = data.data; render(); }
     }
     setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
     async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
@@ -115,7 +119,7 @@
     function formatTime(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + (600 * 1000); d.team_fouls_W = 0; d.team_fouls_A = 0; sync(); }
     function btnPausar() { if (d.clock_running) { d.remaining_seconds = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); d.clock_running = false; } else { d.end_timestamp = Date.now()+(d.remaining_seconds*1000); d.clock_running = true; } sync(); }
-    function btnZerar() { if(confirm("Zerar?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
+    function btnZerar() { if(confirm("Zerar?")) { d.clock_running = false; d.remaining_seconds = 600; d.end_timestamp = null; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
     setInterval(() => { if (d.clock_running && d.end_timestamp) { let f = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); document.getElementById('game-clock').innerText = formatTime(f); if(f === 0) d.clock_running = false; } }, 1000);
     
     function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
