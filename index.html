@@ -2,47 +2,69 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>BACKUP DE EMERGÊNCIA</title>
+    <title>RESTAURADOR DE DADOS AVABRA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
-        .aviso { color: #ff4444; border: 2px solid #ff4444; padding: 15px; margin-bottom: 20px; }
-        pre { background: #111; padding: 10px; border: 1px solid #333; overflow-x: auto; }
+        body { font-family: sans-serif; background: #111; color: #fff; padding: 30px; line-height: 1.6; }
+        textarea { width: 100%; height: 200px; background: #000; color: #00ff00; padding: 10px; border: 1px solid #444; }
+        button { background: #ff6b00; color: white; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 5px; }
+        .success { color: #00ff00; font-weight: bold; display: none; margin-top: 20px; border: 1px solid #00ff00; padding: 10px; }
     </style>
 </head>
 <body>
-    <div class="aviso">
-        <strong>MODO DE INVESTIGAÇÃO DE BACKUP</strong><br>
-        Tentando localizar registros antigos no banco de dados...
+    <h2>PASSO 1: RECUPERAR ATLETAS</h2>
+    <p>Cole abaixo os nomes que você tem no Bloco de Notas (um por linha):</p>
+    
+    <textarea id="listaNomes" placeholder="Cole os nomes aqui..."></textarea>
+    <br>
+    <button onclick="restaurar()">GRAVAR NOMES NO BANCO DE DADOS</button>
+
+    <div id="msgSucesso" class="success">
+        ✅ NOMES GRAVADOS COM SUCESSO!<br>
+        Agora você pode voltar para o código da V21.68.5 que os nomes estarão lá.
     </div>
-    <div id="resultado">Buscando...</div>
 
 <script>
     const SB_URL = "https://zjkiujzoualdumzmwmgl.supabase.co";
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
-    
-    async function investigar() {
-        // Tenta ler todas as linhas da tabela, não apenas a ID 1
-        const { data, error } = await sb.from('racha_session').select('*');
-        
-        if (error) {
-            document.getElementById('resultado').innerText = "Erro na busca: " + error.message;
-            return;
-        }
 
-        if (data && data.length > 0) {
-            let html = "<h3>Registros Encontrados:</h3>";
-            data.forEach(item => {
-                html += `<div><strong>ID: ${item.id}</strong> (Atualizado em: ${item.updated_at || 'Desconhecido'})</div>`;
-                html += `<pre>${JSON.stringify(item.data.all, null, 2)}</pre><hr>`;
-            });
-            document.getElementById('resultado').innerHTML = html;
+    async function restaurar() {
+        const texto = document.getElementById('listaNomes').value;
+        if (!texto.trim()) return alert("Cole os nomes antes!");
+
+        // Transforma o texto em uma Array de nomes limpos
+        const nomesArray = texto.split('\n')
+                                .map(n => n.trim().toUpperCase())
+                                .filter(n => n.length > 0);
+
+        // Prepara o objeto exatamente como o app espera
+        const novoDado = {
+            all: nomesArray,
+            white: [],
+            blue: [],
+            queue: [],
+            points: {},
+            fouls: {},
+            scoreW: 0,
+            scoreA: 0,
+            team_fouls_W: 0,
+            team_fouls_A: 0,
+            streakW: 0,
+            streakA: 0,
+            remaining_seconds: 600,
+            is_recording: false,
+            suspended: []
+        };
+
+        const { error } = await sb.from('racha_session').update({ data: novoDado }).eq('id', 1);
+
+        if (error) {
+            alert("Erro ao gravar: " + error.message);
         } else {
-            document.getElementById('resultado').innerText = "Nenhum dado encontrado em nenhuma tabela.";
+            document.getElementById('msgSucesso').style.display = 'block';
         }
     }
-    investigar();
 </script>
 </body>
 </html>
