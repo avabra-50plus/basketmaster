@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.68.5 - ESTABILIDADE 10S</title>
+    <title>AVABRA MASTER V21.68.6 - ESTÁVEL COMPLETA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -51,7 +51,7 @@
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.68.5</div></div>
+        <div class="header"><div class="logo">AVABRA V21.68.6</div></div>
         <div class="placar-live">
             <div style="text-align: center;">
                 <div id="score-br" class="placar-numero">0</div>
@@ -89,6 +89,8 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
+        <button style="background:var(--blue); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:30px;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
+        <button style="background:var(--red); color:#fff; border:none; padding:15px; width:100%; border-radius:8px; font-weight:bold; margin-top:10px;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
     </div>
 
     <div class="rodape">
@@ -109,13 +111,10 @@
         render(); 
     }
 
-    // AJUSTE: Voltando para 10 segundos (10000ms) para maior estabilidade
+    // Mantido 10 segundos para estabilidade total
     setInterval(() => { if (abaAtiva !== 'atletas') load(); }, 10000);
 
-    async function sync() { 
-        render(); 
-        await sb.from('racha_session').update({ data: d }).eq('id', 1); 
-    }
+    async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
     function formatTime(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
     
@@ -131,6 +130,9 @@
     
     setInterval(() => { if (d.clock_running && d.end_timestamp) { let a = Date.now(); let f = Math.max(0, Math.round((d.end_timestamp-a)/1000)); document.getElementById('game-clock').innerText = formatTime(f); if(f === 0) d.clock_running = false; } }, 1000);
 
+    function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
+    window.desfazerRodizio = () => { if(!d.backup) return alert("VAR indisponível."); d = d.backup; sync(); };
+
     window.addPt = (n, p) => { d.points[n]=(d.points[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
     window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
     window.addFl = (n) => { d.fouls[n]=(d.fouls[n]||0)+1; if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; sync(); };
@@ -138,6 +140,7 @@
 
     window.vitoriaPlacar = (v) => { 
         if(!confirm("Vitória?")) return; 
+        salvarBackup();
         const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; 
         let suspNames = (d.suspended || []).map(s => s.name);
         d.queue = d.queue.filter(q => !suspNames.includes(q));
@@ -155,6 +158,7 @@
 
     window.vitoriaTempo = (v) => { 
         if(!confirm("Encerrar?")) return; 
+        salvarBackup();
         let suspNames = (d.suspended || []).map(s => s.name);
         d.queue = d.queue.filter(q => !suspNames.includes(q));
         if (v === 'E') { d.queue.push(...d.white, ...d.blue, ...suspNames); } 
@@ -189,6 +193,7 @@
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
     window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
+    window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, history_matches: [], scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     function render() {
         document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
@@ -202,8 +207,8 @@
 
         const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = list.map(p => `<div class="linha ${az?'azul':''}">
             <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row">
-            <span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button>
-            <span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
+            <div class="stat-group"><span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button></div>
+            <div class="stat-group"><span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div></div>
             <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div>
             <button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button>
             <button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div>
@@ -218,6 +223,8 @@
         }).join('');
 
         document.getElementById('disp-list').innerHTML = d.all.filter(p => ![...d.white, ...d.blue, ...d.queue].includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
+        
+        // ABA DE ATLETAS - RESTAURADA COM TODOS OS BOTÕES
         document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
     }
     load();
