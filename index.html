@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.68.5.1 - AJUSTE TELA</title>
+    <title>AVABRA MASTER V21.68.5.2 - AJUSTE FINAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -47,13 +47,14 @@
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 12px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
-        /* AJUSTE DE CORTE: Espaço extra no fim das listas para não esconder atrás do menu */
-        #view-racha, #view-atletas { padding-bottom: 150px; }
+        /* Aumentando o padding de segurança para 200px para garantir a rolagem total */
+        #view-racha, #view-atletas { padding-bottom: 200px; }
+        .btn-danger-area { margin-top: 40px; border-top: 1px solid #333; padding-top: 20px; }
     </style>
 </head>
 <body>
     <div id="view-racha">
-        <div class="header"><div class="logo">AVABRA V21.68.5.1</div></div>
+        <div class="header"><div class="logo">AVABRA V21.68.5.2</div></div>
         <div class="placar-live">
             <div style="text-align: center;">
                 <div id="score-br" class="placar-numero">0</div>
@@ -91,9 +92,9 @@
     <div id="view-atletas" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
-        <div style="margin-top: 40px; border-top: 1px solid #333; padding-top: 20px;">
-            <button style="background:var(--blue); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
-            <button style="background:var(--red); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
+        <div class="btn-danger-area">
+            <button style="background:var(--blue); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px; cursor: pointer;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
+            <button style="background:var(--red); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; cursor: pointer;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
         </div>
     </div>
 
