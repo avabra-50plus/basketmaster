@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.69.1 - SÚMULA COMPLETA</title>
+    <title>AVABRA MASTER V21.69.0 - ESTATÍSTICAS E SÚMULAS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -46,31 +46,32 @@
         .susp-branco { background: #fff !important; color: #000 !important; border: 2px solid #000; }
         .susp-azul { background: var(--blue) !important; color: #fff !important; border: 2px solid #fff; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
-        .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
+        .nav-b { flex: 1; color: #fff; font-size: 10px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
         .page-content { padding-bottom: 250px !important; }
         .danger-zone { margin: 40px 20px; padding-bottom: 100px; }
         
-        /* Estilos da Súmula Corrigida */
-        .card-sumula { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
-        .sumula-header { text-align: center; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 10px; }
-        .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 18px; }
-        .sumula-venc { font-size: 10px; color: var(--orange); text-transform: uppercase; letter-spacing: 1px; }
-        .sumula-corpo { display: flex; justify-content: space-between; gap: 10px; }
-        .sumula-col { flex: 1; }
-        .sumula-col-titulo { font-size: 11px; font-weight: bold; color: #888; border-bottom: 1px solid #333; margin-bottom: 5px; padding-bottom: 2px; }
-        .sumula-jogador { font-size: 11px; margin-bottom: 3px; }
-        .sumula-stats { color: var(--yellow); font-weight: bold; font-size: 10px; }
-        .exp-tag { color: var(--red); font-weight: 900; font-size: 10px; }
+        /* Tabelas */
+        .tab-data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .tab-data th { text-align: left; color: var(--orange); font-size: 11px; padding: 10px; border-bottom: 1px solid #333; }
+        .tab-data td { padding: 12px 10px; border-bottom: 1px solid #222; font-size: 13px; }
+        .card-sumula { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 16px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.69.1</div></div>
+        <div class="header"><div class="logo">AVABRA V21.69.0</div></div>
         <div class="placar-live">
-            <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
+            <div style="text-align: center;">
+                <div id="score-br" class="placar-numero">0</div>
+                <div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div>
+            </div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
-            <div style="text-align: center;"><div id="score-az" class="placar-numero az">0</div><div id="coletiva-az" class="faltas-coletivas faltas-az-box">F: 0</div></div>
+            <div style="text-align: center;">
+                <div id="score-az" class="placar-numero az">0</div>
+                <div id="coletiva-az" class="faltas-coletivas faltas-az-box">F: 0</div>
+            </div>
         </div>
         <div class="game-clock-area">
             <div id="game-clock">10:00</div>
@@ -97,8 +98,8 @@
     
     <div id="view-numeros" class="page-content" style="display:none; padding:15px;">
         <h3 style="color:var(--orange)">Ranking da Noite</h3>
-        <table style="width:100%; border-collapse: collapse;">
-            <thead><tr style="border-bottom:1px solid #333; color:var(--orange); font-size:12px;"><th align="left">ATLETA</th><th align="center">PTS</th><th align="center">FLT</th></tr></thead>
+        <table class="tab-data">
+            <thead><tr><th>POS</th><th>ATLETA</th><th>PTS</th><th>FLT</th></tr></thead>
             <tbody id="rank-body"></tbody>
         </table>
     </div>
@@ -113,7 +114,7 @@
             <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
             <div id="lista-cadastrados"></div>
             <div class="danger-zone">
-                <button style="background:var(--yellow); color:#000; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px;" onclick="resetStats()">📊 ZERAR NÚMEROS/SÚMULAS</button>
+                <button style="background:var(--yellow); color:#000; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px;" onclick="resetStats()">📊 ZERAR ESTATÍSTICAS</button>
                 <button style="background:var(--blue); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px;" onclick="desfazerRodizio()">↩️ DESFAZER ÚLTIMO RODÍZIO (VAR)</button>
                 <button style="background:var(--red); color:#fff; border:none; padding:18px; width:100%; border-radius:8px; font-weight:bold;" onclick="resetarRacha()">⚠️ ZERAR TODO O RACHA</button>
             </div>
@@ -133,7 +134,8 @@
     const sb = supabase.createClient(SB_URL, SB_KEY);
     
     let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, sumulas: [], scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], backup: null };
-    let abaAtiva = 'racha', lastClick = 0;
+    let abaAtiva = 'racha';
+    let lastClick = 0;
 
     async function load() { 
         if (Date.now() - lastClick < 2000) return;
@@ -147,41 +149,105 @@
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + (600 * 1000); d.team_fouls_W = 0; d.team_fouls_A = 0; sync(); }
     function btnPausar() { if (d.clock_running) { d.remaining_seconds = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); d.clock_running = false; } else { d.end_timestamp = Date.now()+(d.remaining_seconds*1000); d.clock_running = true; } sync(); }
     function btnZerar() { if(confirm("Zerar?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
+    
     setInterval(() => { if (d.clock_running && d.end_timestamp) { let f = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); document.getElementById('game-clock').innerText = formatTime(f); if(f === 0) d.clock_running = false; } }, 1000);
     
     function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
     window.desfazerRodizio = () => { if(!d.backup) return alert("VAR indisponível."); d = d.backup; sync(); };
 
-    window.addPt = (n, p) => { if(!d.cum_pts) d.cum_pts = {}; d.points[n]=(d.points[n]||0)+p; d.cum_pts[n]=(d.cum_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
-    window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.cum_pts[n] = Math.max(0, (d.cum_pts[n]||0)-1); if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
-    window.addFl = (n) => { if(!d.cum_fls) d.cum_fls = {}; d.fouls[n]=(d.fouls[n]||0)+1; d.cum_fls[n]=(d.cum_fls[n]||0)+1; if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; sync(); };
-    window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.cum_fls[n] = Math.max(0, (d.cum_fls[n]||0)-1); if(d.white.includes(n)) d.team_fouls_W--; else d.team_fouls_A--; sync(); } };
+    // TRIPLA SOMA
+    window.addPt = (n, p) => { 
+        if(!d.cum_pts) d.cum_pts = {};
+        d.points[n]=(d.points[n]||0)+p;
+        d.cum_pts[n]=(d.cum_pts[n]||0)+p;
+        if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; 
+        sync(); 
+    };
+    window.subPt = (n) => { 
+        if((d.points[n]||0)>0){ 
+            d.points[n]--; 
+            d.cum_pts[n] = Math.max(0, (d.cum_pts[n]||0) - 1);
+            if(d.white.includes(n)) d.scoreW--; else d.scoreA--; 
+            sync(); 
+        } 
+    };
+    window.addFl = (n) => { 
+        if(!d.cum_fls) d.cum_fls = {};
+        d.fouls[n]=(d.fouls[n]||0)+1; 
+        d.cum_fls[n]=(d.cum_fls[n]||0)+1;
+        if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; 
+        sync(); 
+    };
+    window.subFl = (n) => { 
+        if((d.fouls[n]||0)>0){ 
+            d.fouls[n]--; 
+            d.cum_fls[n] = Math.max(0, (d.cum_fls[n]||0) - 1);
+            if(d.white.includes(n)) d.team_fouls_W--; else d.team_fouls_A--; 
+            sync(); 
+        } 
+    };
 
     function gerarSumula(vencedor) {
         if(!d.sumulas) d.sumulas = [];
         const nova = {
             id: Date.now(),
             placar: `${d.scoreW} x ${d.scoreA}`,
-            venc: vencedor === 'E' ? 'EMPATE' : (vencedor === 'B' ? 'VITÓRIA BRANCO' : 'VITÓRIA AZUL'),
-            brancos: [...d.white.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: false})), ...(d.suspended||[]).filter(s => s.team === 'white').map(s => ({n: s.name, p: d.points[s.name]||0, f: d.fouls[s.name]||0, x: true}))],
-            azuis: [...d.blue.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: false})), ...(d.suspended||[]).filter(s => s.team === 'blue').map(s => ({n: s.name, p: d.points[s.name]||0, f: d.fouls[s.name]||0, x: true}))]
+            venc: vencedor === 'E' ? 'EMPATE' : (vencedor === 'B' ? 'BRANCO' : 'AZUL'),
+            jogadores: [...d.white.map(p => ({n: p, t: 'W', pts: d.points[p]||0, fls: d.fouls[p]||0})),
+                        ...d.blue.map(p => ({n: p, t: 'A', pts: d.points[p]||0, fls: d.fouls[p]||0}))]
         };
         d.sumulas.unshift(nova);
         if(d.sumulas.length > 20) d.sumulas.pop();
     }
 
-    window.vitoriaPlacar = (v) => { if(!confirm("Vitória?")) return; salvarBackup(); gerarSumula(v); const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; let sWin = (d.suspended || []).filter(s => s.team === (v==='B'?'white':'blue')).map(s => s.name); let sLos = (d.suspended || []).filter(s => s.team === (v==='B'?'blue':'white')).map(s => s.name); if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; } if ((v==='B'?d.streakW:d.streakA) >= 2) { d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos); d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; } else { d[winK].push(...sWin); d.queue.push(...d[losK], ...sLos); d[losK] = []; } d.suspended = []; d.team_fouls_W = 0; d.team_fouls_A = 0; rodarTimes(); };
-    window.vitoriaTempo = (v) => { if(!confirm("Tempo?")) return; salvarBackup(); gerarSumula(v); let sBr = (d.suspended || []).filter(s => s.team === 'white').map(s => s.name); let sAz = (d.suspended || []).filter(s => s.team === 'blue').map(s => s.name); if (v === 'E') { d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz); } else { const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; const sWin = v === 'B' ? sBr : sAz; const sLos = v === 'B' ? sAz : sBr; d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos); } d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; d.suspended=[]; d.team_fouls_W = 0; d.team_fouls_A = 0; rodarTimes(); };
+    window.vitoriaPlacar = (v) => { 
+        if(!confirm("Confirmar Vitória?")) return; 
+        salvarBackup(); gerarSumula(v);
+        const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white';
+        let sWin = (d.suspended || []).filter(s => s.team === (v==='B'?'white':'blue')).map(s => s.name);
+        let sLos = (d.suspended || []).filter(s => s.team === (v==='B'?'blue':'white')).map(s => s.name);
+        if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; } 
+        if ((v==='B'?d.streakW:d.streakA) >= 2) { 
+            d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos);
+            d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; 
+        } else { d[winK].push(...sWin); d.queue.push(...d[losK], ...sLos); d[losK] = []; } 
+        d.suspended = []; d.team_fouls_W = 0; d.team_fouls_A = 0; rodarTimes(); 
+    };
 
-    function rodarTimes() { while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600; sync(); }
+    window.vitoriaTempo = (v) => { 
+        if(!confirm("Encerrar Jogo?")) return; 
+        salvarBackup(); gerarSumula(v);
+        let sBr = (d.suspended || []).filter(s => s.team === 'white').map(s => s.name);
+        let sAz = (d.suspended || []).filter(s => s.team === 'blue').map(s => s.name);
+        if (v === 'E') { d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz); } 
+        else { 
+            const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white';
+            const sWin = v === 'B' ? sBr : sAz; const sLos = v === 'B' ? sAz : sBr;
+            d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos);
+        } 
+        d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; d.suspended=[]; d.team_fouls_W = 0; d.team_fouls_A = 0; rodarTimes(); 
+    };
+
+    function rodarTimes() { 
+        while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); 
+        while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); 
+        d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600; sync(); 
+    }
     
-    window.removerAtleta = (nome, local, motivo) => { if(!confirm("Sair?")) return; if(motivo === 'falta') { d[local] = d[local].filter(p => p !== nome); if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); } else { d[local] = d[local].filter(p => p !== nome); if(d.queue.length > 0) d[local].push(d.queue.pop()); } sync(); };
+    window.removerAtleta = (nome, local, motivo) => { 
+        if(!confirm("Remover?")) return; 
+        if(motivo === 'falta') { 
+            d[local] = d[local].filter(p => p !== nome); 
+            if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); 
+        } else { d[local] = d[local].filter(p => p !== nome); if(d.queue.length > 0) d[local].push(d.queue.pop()); } sync(); 
+    };
+
     window.tirarDaFila = (nome) => { if(!confirm("Sair?")) return; d.queue = d.queue.filter(p => p !== nome); d.suspended = (d.suspended || []).filter(s => s.name !== nome); sync(); };
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
     window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('.page-content').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
-    window.resetStats = () => { if(confirm("Zerar?")) { d.cum_pts = {}; d.cum_fls = {}; d.sumulas = []; sync(); } };
-    window.resetarRacha = () => { if(confirm("TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, sumulas: [], scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
+    window.resetStats = () => { if(confirm("Zerar Números e Súmulas?")) { d.cum_pts = {}; d.cum_fls = {}; d.sumulas = []; sync(); } };
+    window.resetarRacha = () => { if(confirm("ZERAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, sumulas: [], scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
 
     function render() {
         document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0;
@@ -193,33 +259,36 @@
         if (!d.clock_running) document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
         
         const draw = (list, id, az, slug) => { 
-            document.getElementById(id).innerHTML = (list || []).map(p => `<div class="linha ${az?'azul':''}">
+            const arr = list || [];
+            document.getElementById(id).innerHTML = arr.map(p => `<div class="linha ${az?'azul':''}">
             <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><div class="stat-group"><span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button></div><div class="stat-group"><span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div></div>
             <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div>
             <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">Sair</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">Faltas</button></div></div>`).join(''); 
         };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
         
-        const fvQ = [...(d.suspended||[]).map(s => ({name: s.name, s: true, t: s.team})), ...(d.queue||[]).map(q => ({name: q, s: false}))];
+        const qArr = d.queue || []; const sArr = d.suspended || [];
+        const fvQ = [...sArr.map(s => ({name: s.name, s: true, t: s.team})), ...qArr.map(q => ({name: q, s: false}))];
         document.getElementById('q-list').innerHTML = fvQ.map((item, i) => {
             let cl = item.s ? (item.t==='white'?"susp-branco":"susp-azul") : ((Math.floor(fvQ.slice(0,i).filter(x=>!x.s).length/5)%2===0)?"espera-verde":"espera-amarela");
             return `<span class="espera-item ${cl}">${i+1}.${item.name}${item.s?' [S]':''} <button class="btn-x-fila" onclick="tirarDaFila('${item.name}')">X</button></span>`;
         }).join('');
         
-        const all = d.all || []; const inA = [...(d.white||[]), ...(d.blue||[]), ...(d.queue||[]), ...(d.suspended||[]).map(s => s.name)];
-        document.getElementById('disp-list').innerHTML = all.filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
-        document.getElementById('lista-cadastrados').innerHTML = all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
+        const allArr = d.all || []; const inAction = [...(d.white||[]), ...(d.blue||[]), ...(d.queue||[]), ...sArr.map(s => s.name)];
+        document.getElementById('disp-list').innerHTML = allArr.filter(p => !inAction.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
+        document.getElementById('lista-cadastrados').innerHTML = allArr.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
 
-        const rk = all.map(p => ({ n: p, pts: (d.cum_pts?d.cum_pts[p]:0)||0, fls: (d.cum_fls?d.cum_fls[p]:0)||0 })).filter(p => p.pts > 0 || p.fls > 0).sort((a, b) => b.pts - a.pts || b.fls - a.fls);
-        document.getElementById('rank-body').innerHTML = rk.map((p, i) => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${i+1}º ${p.n}</td><td align="center">${p.pts}</td><td align="center">${p.fls}</td></tr>`).join('');
+        // Ranking
+        const ranking = allArr.map(p => ({ name: p, pts: (d.cum_pts?d.cum_pts[p]:0) || 0, fls: (d.cum_fls?d.cum_fls[p]:0) || 0 }))
+                             .filter(p => p.pts > 0 || p.fls > 0)
+                             .sort((a, b) => b.pts - a.pts || b.fls - a.fls);
+        document.getElementById('rank-body').innerHTML = ranking.map((p, i) => `<tr><td>${i+1}º</td><td>${p.name}</td><td>${p.pts}</td><td>${p.fls}</td></tr>`).join('');
 
+        // Súmulas
         document.getElementById('sumulas-list').innerHTML = (d.sumulas || []).map(s => `
             <div class="card-sumula">
-                <div class="sumula-header"><div class="sumula-placar">${s.placar}</div><div class="sumula-venc">${s.venc}</div></div>
-                <div class="sumula-corpo">
-                    <div class="sumula-col"><div class="sumula-col-titulo">BRANCO</div>${s.brancos.map(j => `<div class="sumula-jogador">${j.n} <span class="sumula-stats">P:${j.p} F:${j.f}</span> ${j.x?'<span class="exp-tag">[X]</span>':''}</div>`).join('')}</div>
-                    <div class="sumula-col" style="border-left: 1px solid #222; padding-left: 10px;"><div class="sumula-col-titulo">AZUL</div>${s.azuis.map(j => `<div class="sumula-jogador">${j.n} <span class="sumula-stats">P:${j.p} F:${j.f}</span> ${j.x?'<span class="exp-tag">[X]</span>':''}</div>`).join('')}</div>
-                </div>
+                <div class="sumula-placar">${s.placar} (${s.venc})</div>
+                <div style="font-size:11px; color:#aaa;">${s.jogadores.map(j => `${j.n}(${j.pts})`).join(', ')}</div>
             </div>`).join('');
     }
     load();
