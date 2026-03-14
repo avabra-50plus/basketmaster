@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.70.2 - ALTO CONTRASTE</title>
+    <title>AVABRA MASTER V21.70.5 - REPOSIÇÃO ESPECIAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -50,21 +50,21 @@
         .nav-b.active { color: var(--orange); font-weight: bold; }
         .page-content { padding-bottom: 250px !important; }
 
-        /* Mural de Súmulas - Otimizado para leitura */
+        /* Súmulas Alto Contraste */
         .card-sumula { background: #111; border: 1px solid #444; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .sumula-header { text-align: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px; }
-        .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 22px; } /* Aumentei o placar */
+        .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 22px; }
         .sumula-corpo { display: flex; justify-content: space-between; gap: 10px; }
-        .sumula-col { flex: 1; font-size: 13px; } /* Aumentei a fonte dos nomes */
+        .sumula-col { flex: 1; font-size: 13px; }
         .sum-j { margin-bottom: 6px; line-height: 1.3; color: #fff; }
-        .sum-p { color: var(--yellow); font-weight: 900; } /* Pontos em Amarelo vivo */
-        .sum-f { color: var(--cyan); font-weight: 900; margin-left: 4px; } /* Faltas em Ciano vibrante */
+        .sum-p { color: var(--yellow); font-weight: 900; }
+        .sum-f { color: var(--cyan); font-weight: 900; margin-left: 4px; }
         .sum-x { color: var(--red); font-weight: 900; margin-left: 5px; border: 1px solid var(--red); padding: 0 2px; border-radius: 2px; }
     </style>
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.70.2</div></div>
+        <div class="header"><div class="logo">AVABRA V21.70.5</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -130,7 +130,16 @@
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
     
-    let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], sumulas: [], backup: null };
+    let d = { 
+        white: [], blue: [], queue: [], all: [], 
+        points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, 
+        scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, 
+        streakW: 0, streakA: 0, remaining_seconds: 600, 
+        end_timestamp: null, clock_running: false, is_recording: false, 
+        suspended: [], sumulas: [], backup: null,
+        active_session_br: [], active_session_az: []
+    };
+    
     let abaAtiva = 'racha', lastClick = 0;
 
     async function load() { 
@@ -142,26 +151,25 @@
     async function sync() { lastClick = Date.now(); render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
 
     function formatTime(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
-    function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + (600 * 1000); d.team_fouls_W = 0; d.team_fouls_A = 0; sync(); }
-    function btnPausar() { if (d.clock_running) { d.remaining_seconds = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); d.clock_running = false; } else { d.end_timestamp = Date.now()+(d.remaining_seconds*1000); d.clock_running = true; } sync(); }
-    function btnZerar() { if(confirm("Zerar Partida?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
-    setInterval(() => { if (d.clock_running && d.end_timestamp) { let f = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); document.getElementById('game-clock').innerText = formatTime(f); if(f === 0) d.clock_running = false; } }, 1000);
     
-    function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
-    window.desfazerRodizio = () => { if(!d.backup) return alert("VAR indisponível."); d = d.backup; sync(); };
-
-    window.addPt = (n, p) => { if(!d.cum_pts) d.cum_pts = {}; d.points[n]=(d.points[n]||0)+p; d.cum_pts[n]=(d.cum_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
-    window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.cum_pts[n] = Math.max(0, (d.cum_pts[n]||0)-1); if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
-    window.addFl = (n) => { if(!d.cum_fls) d.cum_fls = {}; d.fouls[n]=(d.fouls[n]||0)+1; d.cum_fls[n]=(d.cum_fls[n]||0)+1; if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; sync(); };
-    window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.cum_fls[n] = Math.max(0, (d.cum_fls[n]||0)-1); if(d.white.includes(n)) d.team_fouls_W--; else d.team_fouls_A--; sync(); } };
+    function iniciarTudo() { 
+        d.is_recording = true; d.clock_running = true; 
+        d.remaining_seconds = 600; d.end_timestamp = Date.now() + (600 * 1000); 
+        d.team_fouls_W = 0; d.team_fouls_A = 0;
+        d.active_session_br = [...d.white];
+        d.active_session_az = [...d.blue];
+        sync(); 
+    }
 
     function muralFoto(venc) {
         if(!d.sumulas) d.sumulas = [];
+        const totalBr = [...new Set([...d.active_session_br, ...(d.suspended||[]).filter(s=>s.team==='white').map(s=>s.name)])];
+        const totalAz = [...new Set([...d.active_session_az, ...(d.suspended||[]).filter(s=>s.team==='blue').map(s=>s.name)])];
         const f = {
             p: `${d.scoreW} x ${d.scoreA}`,
             v: venc === 'E' ? 'EMPATE' : (venc === 'B' ? 'VITÓRIA BRANCO' : 'VITÓRIA AZUL'),
-            br: [...d.white.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: false})), ...(d.suspended||[]).filter(s => s.team === 'white').map(s => ({n: s.name, p: d.points[s.name]||0, f: d.fouls[s.name]||0, x: true}))],
-            az: [...d.blue.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: false})), ...(d.suspended||[]).filter(s => s.team === 'blue').map(s => ({n: s.name, p: d.points[s.name]||0, f: d.fouls[s.name]||0, x: true}))]
+            br: totalBr.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p)})),
+            az: totalAz.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p)}))
         };
         d.sumulas.unshift(f);
         if(d.sumulas.length > 20) d.sumulas.pop();
@@ -186,9 +194,43 @@
         d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; d.suspended=[]; d.team_fouls_W = 0; d.team_fouls_A = 0; rodarTimes(); 
     };
 
-    function rodarTimes() { while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600; sync(); }
+    function rodarTimes() { 
+        while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); 
+        while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); 
+        d.scoreW=0; d.scoreA=0; d.points={}; d.fouls={}; d.is_recording=false; d.clock_running=false; d.remaining_seconds=600;
+        d.active_session_br=[]; d.active_session_az=[];
+        sync(); 
+    }
     
-    window.removerAtleta = (nome, local, motivo) => { if(!confirm("Sair?")) return; if(motivo === 'falta') { d[local] = d[local].filter(p => p !== nome); if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); } else { d[local] = d[local].filter(p => p !== nome); if(d.queue.length > 0) d[local].push(d.queue.pop()); } sync(); };
+    window.removerAtleta = (nome, local, motivo) => { 
+        if(!confirm("Sair?")) return; 
+        if(motivo === 'falta') { 
+            d[local] = d[local].filter(p => p !== nome); 
+            if(!d.suspended) d.suspended = []; 
+            d.suspended.push({ name: nome, team: local }); 
+        } else { 
+            // SUBSTITUIÇÃO: REMOVE O ATLETA
+            d[local] = d[local].filter(p => p !== nome); 
+            // REGRA NOVA: PUXA O ÚLTIMO DA FILA PARA SUBSTITUIR
+            if(d.queue.length > 0) {
+                const novo = d.queue.pop(); // .pop() remove o último da lista
+                d[local].push(novo);
+                if(local === 'white') d.active_session_br.push(novo);
+                else d.active_session_az.push(novo);
+            } 
+        } 
+        sync(); 
+    };
+
+    function btnPausar() { if (d.clock_running) { d.remaining_seconds = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); d.clock_running = false; } else { d.end_timestamp = Date.now()+(d.remaining_seconds*1000); d.clock_running = true; } sync(); }
+    function btnZerar() { if(confirm("Zerar Partida?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
+    setInterval(() => { if (d.clock_running && d.end_timestamp) { let f = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); document.getElementById('game-clock').innerText = formatTime(f); if(f === 0) d.clock_running = false; } }, 1000);
+    function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
+    window.desfazerRodizio = () => { if(!d.backup) return alert("VAR indisponível."); d = d.backup; sync(); };
+    window.addPt = (n, p) => { if(!d.cum_pts) d.cum_pts = {}; d.points[n]=(d.points[n]||0)+p; d.cum_pts[n]=(d.cum_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
+    window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.cum_pts[n] = Math.max(0, (d.cum_pts[n]||0)-1); if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
+    window.addFl = (n) => { if(!d.cum_fls) d.cum_fls = {}; d.fouls[n]=(d.fouls[n]||0)+1; d.cum_fls[n]=(d.cum_fls[n]||0)+1; if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; sync(); };
+    window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.cum_fls[n] = Math.max(0, (d.cum_fls[n]||0)-1); if(d.white.includes(n)) d.team_fouls_W--; else d.team_fouls_A--; sync(); } };
     window.tirarDaFila = (nome) => { if(!confirm("Sair do Ginásio?")) return; d.queue = d.queue.filter(p => p !== nome); d.suspended = (d.suspended || []).filter(s => s.name !== nome); sync(); };
     window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
@@ -226,29 +268,15 @@
         const rk = inA.map(p => ({ n: p, pts: (d.cum_pts?d.cum_pts[p]:0)||0, fls: (d.cum_fls?d.cum_fls[p]:0)||0 })).sort((a, b) => b.pts - a.pts || b.fls - a.fls);
         document.getElementById('rank-body').innerHTML = rk.map((p, i) => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${i+1}º ${p.n}</td><td align="center">${p.pts}</td><td align="center">${p.fls}</td></tr>`).join('');
 
-        // Mural de Súmulas - Scout com Alto Contraste
         document.getElementById('sumulas-list').innerHTML = (d.sumulas || []).map(s => `
             <div class="card-sumula">
-                <div class="sumula-header">
-                    <div class="sumula-placar">${s.p}</div>
-                    <div style="font-size:10px; color:var(--orange); font-weight:bold; text-transform:uppercase;">${s.v}</div>
-                </div>
+                <div class="sumula-header"><div class="sumula-placar">${s.p}</div><div style="font-size:10px; color:var(--orange); font-weight:bold; text-transform:uppercase;">${s.v}</div></div>
                 <div class="sumula-corpo">
-                    <div class="sumula-col">
-                        <b style="color:#fff; border-bottom:2px solid #fff; display:block; margin-bottom:8px; font-size:11px;">BRANCO</b>
-                        ${s.br.map(j => `
-                            <div class="sum-j">
-                                ${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}
-                            </div>
-                        `).join('')}
+                    <div class="sumula-col"><b style="color:#fff; border-bottom:2px solid #fff; display:block; margin-bottom:8px; font-size:11px;">BRANCO</b>
+                        ${s.br.map(j => `<div class="sum-j">${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}
                     </div>
-                    <div class="sumula-col" style="border-left:2px solid #333; padding-left:12px;">
-                        <b style="color:var(--blue); border-bottom:2px solid var(--blue); display:block; margin-bottom:8px; font-size:11px;">AZUL</b>
-                        ${s.az.map(j => `
-                            <div class="sum-j">
-                                ${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}
-                            </div>
-                        `).join('')}
+                    <div class="sumula-col" style="border-left:2px solid #333; padding-left:12px;"><b style="color:var(--blue); border-bottom:2px solid var(--blue); display:block; margin-bottom:8px; font-size:11px;">AZUL</b>
+                        ${s.az.map(j => `<div class="sum-j">${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}
                     </div>
                 </div>
             </div>`).join('');
