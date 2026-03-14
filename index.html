@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.70.6 - SÚMULA COM SETAS</title>
+    <title>AVABRA MASTER V21.70.7 - CORREÇÃO UNDEFINED</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -60,13 +60,11 @@
         .sum-p { color: var(--yellow); font-weight: 900; }
         .sum-f { color: var(--cyan); font-weight: 900; margin-left: 4px; }
         .sum-x { color: var(--red); font-weight: 900; margin-left: 5px; border: 1px solid var(--red); padding: 0 2px; border-radius: 2px; }
-        .seta-up { color: var(--green); font-weight: bold; margin-left: 4px; font-size: 14px; }
-        .seta-down { color: var(--red); font-weight: bold; margin-left: 4px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.70.6</div></div>
+        <div class="header"><div class="logo">AVABRA V21.70.7</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -139,8 +137,8 @@
         streakW: 0, streakA: 0, remaining_seconds: 600, 
         end_timestamp: null, clock_running: false, is_recording: false, 
         suspended: [], sumulas: [], backup: null,
-        active_session_br: [], active_session_az: [], // QUEM COMEÇOU
-        history_session_br: [], history_session_az: [] // TODO MUNDO QUE PASSOU
+        active_session_br: [], active_session_az: [],
+        history_session_br: [], history_session_az: []
     };
     
     let abaAtiva = 'racha', lastClick = 0;
@@ -159,31 +157,34 @@
         d.is_recording = true; d.clock_running = true; 
         d.remaining_seconds = 600; d.end_timestamp = Date.now() + (600 * 1000); 
         d.team_fouls_W = 0; d.team_fouls_A = 0;
-        d.active_session_br = [...d.white];
-        d.active_session_az = [...d.blue];
-        d.history_session_br = [...d.white];
-        d.history_session_az = [...d.blue];
+        d.active_session_br = [...(d.white || [])];
+        d.active_session_az = [...(d.blue || [])];
+        d.history_session_br = [...(d.white || [])];
+        d.history_session_az = [...(d.blue || [])];
         sync(); 
     }
 
     function muralFoto(venc) {
         if(!d.sumulas) d.sumulas = [];
-        const process = (history, start, team) => {
-            return [...new Set(history)].map(p => {
-                const isStart = start.includes(p);
-                const isEnd = d[team].includes(p);
-                let seta = '';
-                if (isStart && !isEnd) seta = '<span class="seta-down">⬇️</span>';
-                if (!isStart && isEnd) seta = '<span class="seta-up">⬆️</span>';
-                return {n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p), seta: seta};
+        const processarSetas = (history, start, team) => {
+            const hist = history || [];
+            const ini = start || [];
+            const fim = d[team] || [];
+            return [...new Set(hist)].map(p => {
+                let seta = "";
+                const eraTitular = ini.includes(p);
+                const terminouEmQuadra = fim.includes(p);
+                if (eraTitular && !terminouEmQuadra) seta = " ⬇️";
+                if (!eraTitular && terminouEmQuadra) seta = " ⬆️";
+                return {n: p + seta, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p)};
             });
         };
 
         const f = {
             p: `${d.scoreW} x ${d.scoreA}`,
             v: venc === 'E' ? 'EMPATE' : (venc === 'B' ? 'VITÓRIA BRANCO' : 'VITÓRIA AZUL'),
-            br: process(d.history_session_br, d.active_session_br, 'white'),
-            az: process(d.history_session_az, d.active_session_az, 'blue')
+            br: processarSetas(d.history_session_br, d.active_session_br, 'white'),
+            az: processarSetas(d.history_session_az, d.active_session_az, 'blue')
         };
         d.sumulas.unshift(f);
         if(d.sumulas.length > 20) d.sumulas.pop();
@@ -285,10 +286,10 @@
                 <div class="sumula-header"><div class="sumula-placar">${s.p}</div><div style="font-size:10px; color:var(--orange); font-weight:bold; text-transform:uppercase;">${s.v}</div></div>
                 <div class="sumula-corpo">
                     <div class="sumula-col"><b style="color:#fff; border-bottom:2px solid #fff; display:block; margin-bottom:8px; font-size:11px;">BRANCO</b>
-                        ${s.br.map(j => `<div class="sum-j">${j.n}${j.seta} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}
+                        ${s.br.map(j => `<div class="sum-j">${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}
                     </div>
                     <div class="sumula-col" style="border-left:2px solid #333; padding-left:12px;"><b style="color:var(--blue); border-bottom:2px solid var(--blue); display:block; margin-bottom:8px; font-size:11px;">AZUL</b>
-                        ${s.az.map(j => `<div class="sum-j">${j.n}${j.seta} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}
+                        ${s.az.map(j => `<div class="sum-j">${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}
                     </div>
                 </div>
             </div>`).join('');
