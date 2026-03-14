@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.70.0 - MURAL E RODÍZIO</title>
+    <title>AVABRA MASTER V21.70.1 - SÚMULA COMPLETA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; }
@@ -50,20 +50,21 @@
         .nav-b.active { color: var(--orange); font-weight: bold; }
         .page-content { padding-bottom: 250px !important; }
 
-        /* Estilo Súmula Mural */
+        /* Mural de Súmulas */
         .card-sumula { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .sumula-header { text-align: center; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 10px; }
         .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 18px; }
         .sumula-corpo { display: flex; justify-content: space-between; gap: 10px; }
         .sumula-col { flex: 1; font-size: 11px; }
-        .sum-j { margin-bottom: 3px; }
+        .sum-j { margin-bottom: 4px; line-height: 1.2; }
         .sum-p { color: var(--yellow); font-weight: bold; }
-        .sum-x { color: var(--red); font-weight: bold; }
+        .sum-f { color: #888; font-size: 9px; margin-left: 2px; }
+        .sum-x { color: var(--red); font-weight: bold; margin-left: 3px; }
     </style>
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.70.0</div></div>
+        <div class="header"><div class="logo">AVABRA V21.70.1</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -143,7 +144,7 @@
     function formatTime(s) { const v = Math.max(0, Math.floor(s)); return `${Math.floor(v/60).toString().padStart(2,'0')}:${(v%60).toString().padStart(2,'0')}`; }
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + (600 * 1000); d.team_fouls_W = 0; d.team_fouls_A = 0; sync(); }
     function btnPausar() { if (d.clock_running) { d.remaining_seconds = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); d.clock_running = false; } else { d.end_timestamp = Date.now()+(d.remaining_seconds*1000); d.clock_running = true; } sync(); }
-    function btnZerar() { if(confirm("Zerar?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
+    function btnZerar() { if(confirm("Zerar Partida?")) { d.clock_running = false; d.remaining_seconds = 600; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.is_recording = false; sync(); } }
     setInterval(() => { if (d.clock_running && d.end_timestamp) { let f = Math.max(0, Math.round((d.end_timestamp-Date.now())/1000)); document.getElementById('game-clock').innerText = formatTime(f); if(f === 0) d.clock_running = false; } }, 1000);
     
     function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
@@ -163,19 +164,19 @@
             az: [...d.blue.map(p => ({n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: false})), ...(d.suspended||[]).filter(s => s.team === 'blue').map(s => ({n: s.name, p: d.points[s.name]||0, f: d.fouls[s.name]||0, x: true}))]
         };
         d.sumulas.unshift(f);
-        if(d.sumulas.length > 15) d.sumulas.pop();
+        if(d.sumulas.length > 20) d.sumulas.pop();
     }
 
     window.vitoriaPlacar = (v) => { if(!confirm("Confirmar Vitória?")) return; salvarBackup(); muralFoto(v); const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; let sWin = (d.suspended || []).filter(s => s.team === (v==='B'?'white':'blue')).map(s => s.name); let sLos = (d.suspended || []).filter(s => s.team === (v==='B'?'blue':'white')).map(s => s.name); if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; } if ((v==='B'?d.streakW:d.streakA) >= 2) { d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos); d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; } else { d[winK].push(...sWin); d.queue.push(...d[losK], ...sLos); d[losK] = []; } d.suspended = []; d.team_fouls_W = 0; d.team_fouls_A = 0; rodarTimes(); };
 
     window.vitoriaTempo = (v) => { 
-        if(!confirm("Encerrar por Tempo?")) return; 
+        if(!confirm("Encerrar Jogo?")) return; 
         salvarBackup(); muralFoto(v);
         let sBr = (d.suspended || []).filter(s => s.team === 'white').map(s => s.name);
         let sAz = (d.suspended || []).filter(s => s.team === 'blue').map(s => s.name);
         
         if (v === 'E') {
-            // REGRA NOVA: Dono da quadra (streak > 0) vai para a frente da fila
+            // REGRA: Dono da quadra (streak > 0) tem prioridade na fila
             if (d.streakW > 0) { d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz); }
             else if (d.streakA > 0) { d.queue.push(...d.blue, ...sAz, ...d.white, ...sBr); }
             else { d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz); }
@@ -191,11 +192,11 @@
     
     window.removerAtleta = (nome, local, motivo) => { if(!confirm("Sair?")) return; if(motivo === 'falta') { d[local] = d[local].filter(p => p !== nome); if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); } else { d[local] = d[local].filter(p => p !== nome); if(d.queue.length > 0) d[local].push(d.queue.pop()); } sync(); };
     window.tirarDaFila = (nome) => { if(!confirm("Sair do Ginásio?")) return; d.queue = d.queue.filter(p => p !== nome); d.suspended = (d.suspended || []).filter(s => s.name !== nome); sync(); };
-    window.cadastrarNovo = () => { const n = prompt("NOME DO ATLETA:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
+    window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
     window.entrarNoJogo = (n) => { if(d.white.length < 5) d.white.push(n); else if(d.blue.length < 5) d.blue.push(n); else d.queue.push(n); sync(); };
     window.mudarAba = (aba, el) => { abaAtiva=aba; document.querySelectorAll('.page-content').forEach(v => v.style.display = 'none'); document.getElementById(`view-${aba}`).style.display = 'block'; document.querySelectorAll('.nav-b').forEach(n => n.classList.remove('active')); el.classList.add('active'); };
     window.resetStats = () => { if(confirm("Zerar Números e Mural?")) { d.cum_pts = {}; d.cum_fls = {}; d.sumulas = []; sync(); } };
-    window.resetarRacha = () => { if(confirm("CUIDADO: Isso limpa TUDO. Continuar?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], sumulas: [] }; sync(); } };
+    window.resetarRacha = () => { if(confirm("APAGAR TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], sumulas: [] }; sync(); } };
 
     function render() {
         document.getElementById('score-br').innerText = d.scoreW || 0; document.getElementById('score-az').innerText = d.scoreA || 0;
@@ -224,17 +225,34 @@
         document.getElementById('disp-list').innerHTML = all.filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
 
-        // Ranking Inclusivo (Quem chegou no racha aparece)
+        // Ranking Inclusivo
         const rk = inA.map(p => ({ n: p, pts: (d.cum_pts?d.cum_pts[p]:0)||0, fls: (d.cum_fls?d.cum_fls[p]:0)||0 })).sort((a, b) => b.pts - a.pts || b.fls - a.fls);
         document.getElementById('rank-body').innerHTML = rk.map((p, i) => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${i+1}º ${p.n}</td><td align="center">${p.pts}</td><td align="center">${p.fls}</td></tr>`).join('');
 
-        // Mural de Súmulas
+        // Mural de Súmulas - Scout Completo
         document.getElementById('sumulas-list').innerHTML = (d.sumulas || []).map(s => `
             <div class="card-sumula">
-                <div class="sumula-header"><div class="sumula-placar">${s.p}</div><div style="font-size:10px; color:var(--orange);">${s.v}</div></div>
+                <div class="sumula-header">
+                    <div class="sumula-placar">${s.p}</div>
+                    <div style="font-size:10px; color:var(--orange); text-transform:uppercase;">${s.v}</div>
+                </div>
                 <div class="sumula-corpo">
-                    <div class="sumula-col"><b>BR</b><br>${s.br.map(j => `<div class="sum-j">${j.n} <span class="sum-p">${j.p}P</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}</div>
-                    <div class="sumula-col" style="border-left:1px solid #222; padding-left:10px;"><b>AZ</b><br>${s.az.map(j => `<div class="sum-j">${j.n} <span class="sum-p">${j.p}P</span> ${j.x?'<span class="sum-x">[X]</span>':''}</div>`).join('')}</div>
+                    <div class="sumula-col">
+                        <b style="color:#eee; border-bottom:1px solid #333; display:block; margin-bottom:5px;">BRANCO</b>
+                        ${s.br.map(j => `
+                            <div class="sum-j">
+                                ${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="sumula-col" style="border-left:1px solid #222; padding-left:10px;">
+                        <b style="color:var(--blue); border-bottom:1px solid #333; display:block; margin-bottom:5px;">AZUL</b>
+                        ${s.az.map(j => `
+                            <div class="sum-j">
+                                ${j.n} <span class="sum-p">${j.p}P</span> <span class="sum-f">${j.f}F</span> ${j.x?'<span class="sum-x">[X]</span>':''}
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>`).join('');
     }
