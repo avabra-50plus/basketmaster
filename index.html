@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.70.9 - VERSÃO FINAL</title>
+    <title>AVABRA MASTER V21.71.0 - REGRA DA MESA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -64,7 +64,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.70.9</div></div>
+        <div class="header"><div class="logo">AVABRA V21.71.0</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -226,7 +226,8 @@
         } else { 
             d[local] = d[local].filter(p => p !== nome); 
             if(d.queue.length > 0) {
-                const novo = d.queue.pop();
+                // REGRA DO PRESIDENTE: Se o jogo não começou, puxa o 1º da fila. Se começou, puxa o ÚLTIMO.
+                const novo = d.is_recording ? d.queue.pop() : d.queue.shift();
                 d[local].push(novo);
                 if(local === 'white') d.history_session_br.push(novo);
                 else d.history_session_az.push(novo);
