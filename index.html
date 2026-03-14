@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.71.5 - REGRA 9 OFICIAL</title>
+    <title>AVABRA MASTER V21.71.6 - COMPLETA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -50,7 +50,7 @@
         .nav-b.active { color: var(--orange); font-weight: bold; }
         .page-content { padding-bottom: 250px !important; }
 
-        /* Súmulas Otimizadas para a Resenha */
+        /* Súmulas Alto Contraste */
         .card-sumula { background: #111; border: 1px solid #444; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .sumula-header { text-align: center; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px; }
         .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 22px; }
@@ -64,7 +64,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.71.5</div></div>
+        <div class="header"><div class="logo">AVABRA V21.71.6</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -167,8 +167,16 @@
     function muralFoto(venc) {
         if(!d.sumulas) d.sumulas = [];
         const processarSumula = (history, start, team) => {
-            return [...new Set(history)].map(p => {
-                return {n: p, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p)};
+            const hist = history || [];
+            const ini = start || [];
+            const fim = d[team] || [];
+            return [...new Set(hist)].map(p => {
+                let seta = "";
+                const eraTitular = ini.includes(p);
+                const terminouEmQuadra = fim.includes(p);
+                if (eraTitular && !terminouEmQuadra) seta = ' <span style="color:#ff4444; font-weight:900;">▼</span>';
+                if (!eraTitular && terminouEmQuadra) seta = ' <span style="color:#25d366; font-weight:900;">▲</span>';
+                return {n: p + seta, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p)};
             });
         };
         const f = {
@@ -217,24 +225,21 @@
         } else { 
             d[local] = d[local].filter(p => p !== nome); 
             if(d.queue.length > 0) {
-                // --- REGRA 9 AVABRA: EXCEÇÃO DOS 2 MINUTOS ---
-                // Se o jogo está rodando, calculamos o tempo decorrido
+                // REGRA 9 AVABRA: EXCEÇÃO DOS 2 MINUTOS
                 let tempoDecorrido = 0;
                 if (d.clock_running && d.end_timestamp) {
                     tempoDecorrido = 600 - Math.max(0, Math.round((d.end_timestamp-Date.now())/1000));
                 } else {
                     tempoDecorrido = 600 - d.remaining_seconds;
                 }
-                
                 const semPontos = (d.scoreW === 0 && d.scoreA === 0);
-                const dentroDaExcecao = tempoDecorrido <= 120; // 120 seg = 2 minutos
+                const dentroDaExcecao = tempoDecorrido <= 120;
 
                 let novo;
-                // Se o jogo não começou OU (está nos primeiros 2 min E sem pontos)
                 if (!d.is_recording || (dentroDaExcecao && semPontos)) {
-                    novo = d.queue.shift(); // Puxa o 1º da fila
+                    novo = d.queue.shift(); // 1º da fila
                 } else {
-                    novo = d.queue.pop();   // Puxa o ÚLTIMO da fila
+                    novo = d.queue.pop();   // Último da fila
                 }
                 
                 d[local].push(novo);
