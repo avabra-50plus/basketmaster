@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA MASTER V21.70.7 - CORREÇÃO UNDEFINED</title>
+    <title>AVABRA MASTER V21.70.8 - RANKING TOTAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -64,7 +64,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.70.7</div></div>
+        <div class="header"><div class="logo">AVABRA V21.70.8</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -174,8 +174,8 @@
                 let seta = "";
                 const eraTitular = ini.includes(p);
                 const terminouEmQuadra = fim.includes(p);
-                if (eraTitular && !terminouEmQuadra) seta = " ⬇️";
-                if (!eraTitular && terminouEmQuadra) seta = " ⬆️";
+                if (eraTitular && !terminouEmQuadra) seta = ' <span style="color:#ff4444">⬇️</span>';
+                if (!eraTitular && terminouEmQuadra) seta = ' <span style="color:#25d366">⬆️</span>';
                 return {n: p + seta, p: d.points[p]||0, f: d.fouls[p]||0, x: (d.suspended||[]).some(s=>s.name===p)};
             });
         };
@@ -278,7 +278,10 @@
         document.getElementById('disp-list').innerHTML = all.filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
         document.getElementById('lista-cadastrados').innerHTML = all.sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
 
-        const rk = inA.map(p => ({ n: p, pts: (d.cum_pts?d.cum_pts[p]:0)||0, fls: (d.cum_fls?d.cum_fls[p]:0)||0 })).sort((a, b) => b.pts - a.pts || b.fls - a.fls);
+        // RANKING TOTAL (Nomes preservados mesmo se estiverem no Ginásio)
+        const ptsK = Object.keys(d.cum_pts || {}); const flsK = Object.keys(d.cum_fls || {});
+        const rkNames = [...new Set([...ptsK, ...flsK])];
+        const rk = rkNames.map(p => ({ n: p, pts: (d.cum_pts[p]||0), fls: (d.cum_fls[p]||0) })).sort((a, b) => b.pts - a.pts || b.fls - a.fls);
         document.getElementById('rank-body').innerHTML = rk.map((p, i) => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${i+1}º ${p.n}</td><td align="center">${p.pts}</td><td align="center">${p.fls}</td></tr>`).join('');
 
         document.getElementById('sumulas-list').innerHTML = (d.sumulas || []).map(s => `
