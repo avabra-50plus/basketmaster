@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA V21.77.4 - ORDENAÇÃO DE FILA</title>
+    <title>AVABRA V21.77.6 - AUTO-SYNC 10S</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -41,10 +41,6 @@
         .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 8px 14px; border-radius: 4px; font-size: 14px; font-weight: bold; position: relative; }
         .btn-x-fila { margin-left: 8px; background: rgba(0,0,0,0.2); color: inherit; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; line-height: 1; cursor: pointer; font-weight: 900; }
         .btn-move-fila { margin-left: 4px; background: rgba(0,0,0,0.1); color: inherit; border: none; border-radius: 4px; padding: 2px 6px; font-size: 12px; cursor: pointer; }
-        .espera-amarela { background: var(--yellow); color: #000; }
-        .espera-verde { background: var(--green); color: #000; }
-        .susp-branco { background: #fff !important; color: #000 !important; border: 2px solid #000; }
-        .susp-azul { background: var(--blue) !important; color: #fff !important; border: 2px solid #fff; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
@@ -58,7 +54,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.77.4</div></div>
+        <div class="header"><div class="logo">AVABRA V21.77.6</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -105,19 +101,26 @@
     
     let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [], sumulas: [], initialW: [], initialA: [], historyW: [], historyA: [], backup: null };
     
-    async function load() { const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle(); if (data && data.data) { d = data.data; render(); } }
-    async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
+    async function load() { 
+        const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle(); 
+        if (data && data.data) { d = data.data; render(); } 
+    }
+    
+    async function sync() { 
+        render(); 
+        await sb.from('racha_session').update({ data: d }).eq('id', 1); 
+    }
+
+    // REGRA DOS 10 SEGUNDOS (AUTO-REFRESH DA NUVEM)
+    setInterval(load, 10000); 
 
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + 600000; d.initialW = [...d.white]; d.initialA = [...d.blue]; d.historyW = [...d.white]; d.historyA = [...d.blue]; sync(); }
-
-    window.desfazerRodizio = () => { if(!d.backup) return alert("Nada para desfazer."); if(confirm("↩️ Retornar ao estado anterior ao último rodízio?")){ d = JSON.parse(JSON.stringify(d.backup)); sync(); } };
+    window.desfazerRodizio = () => { if(!d.backup) return alert("Nada para desfazer."); if(confirm("↩️ Desfazer rodízio?")){ d = JSON.parse(JSON.stringify(d.backup)); sync(); } };
     function salvarBackup() { d.backup = JSON.parse(JSON.stringify(d)); }
-
     function recolherExpulsos(timeK) { if(!d.suspended) return [...d[timeK]]; return [...d[timeK], ...d.suspended.filter(s => s.team === timeK).map(s => s.name)]; }
 
     window.vitoriaPlacar = (v) => { if(!confirm("Vitória?")) return; salvarBackup(); muralFoto(v); const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; let tWin = recolherExpulsos(winK), tLos = recolherExpulsos(losK); if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; } if((v==='B' ? d.streakW : d.streakA) >= 2) { d.queue.push(...tWin, ...tLos); d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; } else { d[winK] = tWin; d.queue.push(...tLos); d[losK] = []; } resetPosJogo(); };
     window.vitoriaTempo = (v) => { if(!confirm("Tempo?")) return; salvarBackup(); muralFoto(v); let brC = recolherExpulsos('white'), azC = recolherExpulsos('blue'); if(v === 'B') d.queue.push(...brC, ...azC); else if(v === 'A') d.queue.push(...azC, ...brC); else if(v === 'E') { if(d.streakW > 0) d.queue.push(...brC, ...azC); else if(d.streakA > 0) d.queue.push(...azC, ...brC); else d.queue.push(...brC, ...azC); } d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; resetPosJogo(); };
-
     function resetPosJogo() { d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.points = {}; d.fouls = {}; d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600; d.initialW=[]; d.initialA=[]; d.historyW=[]; d.historyA=[]; while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift()); while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift()); d.suspended = []; sync(); }
 
     function muralFoto(venc) {
@@ -168,7 +171,6 @@
         const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = (list || []).map(p => `<div class="linha ${az?'azul':''}"> <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div> <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div> <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">SAIR</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">FALTA 3</button></div></div>`).join(''); };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
         
-        // FILA DE ESPERA COM BOTÃO DE MOVER
         document.getElementById('q-list').innerHTML = [...(d.suspended||[]).map(s=>({n:s.name,s:true,t:s.team})), ...d.queue.map((q, i) =>({n:q,s:false, idx: i}))].map((item, i) => `
             <span class="espera-item ${item.s?(item.t==='white'?'susp-branco':'susp-azul'):(Math.floor(i/5)%2===0?'espera-verde':'espera-amarela')}">
                 ${i+1}.${item.n}${item.s?' [S]':''} 
