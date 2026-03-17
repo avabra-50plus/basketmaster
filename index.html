@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA V21.77.6 - AUTO-SYNC 10S</title>
+    <title>AVABRA V21.77.7 - CORES RESTAURADAS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -41,6 +41,10 @@
         .espera-item { display: inline-flex; align-items: center; margin-right: 8px; margin-bottom: 8px; padding: 8px 14px; border-radius: 4px; font-size: 14px; font-weight: bold; position: relative; }
         .btn-x-fila { margin-left: 8px; background: rgba(0,0,0,0.2); color: inherit; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; line-height: 1; cursor: pointer; font-weight: 900; }
         .btn-move-fila { margin-left: 4px; background: rgba(0,0,0,0.1); color: inherit; border: none; border-radius: 4px; padding: 2px 6px; font-size: 12px; cursor: pointer; }
+        .espera-amarela { background: var(--yellow) !important; color: #000 !important; }
+        .espera-verde { background: var(--green) !important; color: #000 !important; }
+        .susp-branco { background: #fff !important; color: #000 !important; border: 2px solid #000; }
+        .susp-azul { background: var(--blue) !important; color: #fff !important; border: 2px solid #fff; }
         .rodape { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; border-top: 1px solid #333; padding: 12px 0; z-index: 1000; }
         .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
@@ -54,7 +58,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.77.6</div></div>
+        <div class="header"><div class="logo">AVABRA V21.77.7</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -111,7 +115,6 @@
         await sb.from('racha_session').update({ data: d }).eq('id', 1); 
     }
 
-    // REGRA DOS 10 SEGUNDOS (AUTO-REFRESH DA NUVEM)
     setInterval(load, 10000); 
 
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + 600000; d.initialW = [...d.white]; d.initialA = [...d.blue]; d.historyW = [...d.white]; d.historyA = [...d.blue]; sync(); }
@@ -171,12 +174,26 @@
         const draw = (list, id, az, slug) => { document.getElementById(id).innerHTML = (list || []).map(p => `<div class="linha ${az?'azul':''}"> <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div> <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div> <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">SAIR</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">FALTA 3</button></div></div>`).join(''); };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
         
-        document.getElementById('q-list').innerHTML = [...(d.suspended||[]).map(s=>({n:s.name,s:true,t:s.team})), ...d.queue.map((q, i) =>({n:q,s:false, idx: i}))].map((item, i) => `
-            <span class="espera-item ${item.s?(item.t==='white'?'susp-branco':'susp-azul'):(Math.floor(i/5)%2===0?'espera-verde':'espera-amarela')}">
+        // LOGICA DE CORES DA LISTA DE ESPERA
+        const listaFinalEspera = [];
+        (d.suspended||[]).forEach(s => listaFinalEspera.push({n: s.name, s: true, t: s.team}));
+        d.queue.forEach((q, i) => listaFinalEspera.push({n: q, s: false, idx: i, posGlobal: i}));
+
+        document.getElementById('q-list').innerHTML = listaFinalEspera.map((item, i) => {
+            let classeCor = '';
+            if(item.s) {
+                classeCor = (item.t === 'white' ? 'susp-branco' : 'susp-azul');
+            } else {
+                // A cada 5 jogadores muda a cor (Verde para 1-5, Amarelo para 6-10, etc)
+                classeCor = (Math.floor(item.posGlobal / 5) % 2 === 0 ? 'espera-verde' : 'espera-amarela');
+            }
+
+            return `<span class="espera-item ${classeCor}">
                 ${i+1}.${item.n}${item.s?' [S]':''} 
                 ${!item.s ? `<button class="btn-move-fila" onclick="moverNaFila(${item.idx})">⇄</button>` : ''}
                 <button class="btn-x-fila" onclick="tirarDaFila('${item.n}')">X</button>
-            </span>`).join('');
+            </span>`;
+        }).join('');
 
         const inA = [...d.white, ...d.blue, ...d.queue, ...(d.suspended||[]).map(s=>s.name)];
         document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px 12px; border-radius:4px; font-weight:bold; color:#000;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
