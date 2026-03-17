@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA V21.76.3 - RESET RESTAURADO</title>
+    <title>AVABRA V21.76.4 - CORREÇÃO BIZARRA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -57,7 +57,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.76.3</div></div>
+        <div class="header"><div class="logo">AVABRA V21.76.4</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -125,15 +125,14 @@
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + 600000; sync(); }
 
     function btnZerar() {
-        if(!confirm("Zerar placar e tempo atual?")) return;
+        if(!confirm("Zerar?")) return;
         d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0;
         d.remaining_seconds = 600; d.clock_running = false; d.is_recording = false;
         d.points = {}; d.fouls = {}; sync();
     }
 
-    // FUNÇÃO PARA ZERAR TUDO (RESTAURADA)
     window.resetarRacha = () => { 
-        if(!confirm("⚠️ ATENÇÃO: Isso vai apagar TODOS os dados do racha atual (Fila, Times, Placar e Rankings). Continuar?")) return;
+        if(!confirm("⚠️ RESET TOTAL?")) return;
         d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [], sumulas: [] };
         sync();
     };
@@ -145,6 +144,14 @@
         d.sumulas.unshift({ p: `${d.scoreW}x${d.scoreA}`, v: desc, br: proc(d.white), az: proc(d.blue) });
         if(d.sumulas.length > 15) d.sumulas.pop();
     }
+
+    // A INTELIGÊNCIA DE CHEGADA: PREENCHE A QUADRA ANTES DA FILA
+    window.entrarNoJogo = (n) => {
+        if(d.white.length < 5) d.white.push(n);
+        else if(d.blue.length < 5) d.blue.push(n);
+        else d.queue.push(n);
+        sync();
+    };
 
     window.vitoriaPlacar = (v) => { if(!confirm("Vitória?")) return; muralFoto(v); const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; let sWin = (d.suspended || []).filter(s => s.team === winK).map(s => s.name); let sLos = (d.suspended || []).filter(s => s.team === losK).map(s => s.name); if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; } if((v==='B' ? d.streakW : d.streakA) >= 2) { d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos); d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; } else { d[winK].push(...sWin); d.queue.push(...d[losK], ...sLos); d[losK] = []; } resetPosJogo(); };
     window.vitoriaTempo = (v) => { if(!confirm("Fim?")) return; muralFoto(v); let sBr = (d.suspended || []).filter(s => s.team === 'white').map(s => s.name); let sAz = (d.suspended || []).filter(s => s.team === 'blue').map(s => s.name); d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz); d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; resetPosJogo(); };
@@ -171,7 +178,6 @@
         fbr.innerText = `F: ${d.team_fouls_W}`; faz.innerText = `F: ${d.team_fouls_A}`;
         if(d.team_fouls_W >= 4) fbr.classList.add('faltas-limite'); else fbr.classList.remove('faltas-limite');
         if(d.team_fouls_A >= 4) faz.classList.add('faltas-limite'); else faz.classList.remove('faltas-limite');
-        
         document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
         document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
         if(!d.clock_running) document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
@@ -187,13 +193,11 @@
         document.getElementById('q-list').innerHTML = [...(d.suspended||[]).map(s=>({n:s.name,s:true,t:s.team})), ...d.queue.map(q=>({n:q,s:false}))].map((item, i) => `<span class="espera-item ${item.s?(item.t==='white'?'susp-branco':'susp-azul'):(Math.floor(i/5)%2===0?'espera-verde':'espera-amarela')}">${i+1}.${item.n}${item.s?' [S]':''} <button class="btn-x-fila" onclick="tirarDaFila('${item.n}')">X</button></span>`).join('');
 
         const inA = [...d.white, ...d.blue, ...d.queue, ...(d.suspended||[]).map(s=>s.name)];
-        document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold; color:#000;" onclick="d.queue.push('${p}');sync();">CHEGOU</button></div>`).join('');
+        document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold; color:#000;" onclick="entrarNoJogo('${p}')">CHEGOU</button></div>`).join('');
 
         const ptsK = Object.keys(d.cum_pts || {}); const flsK = Object.keys(d.cum_fls || {}); const rk = [...new Set([...ptsK, ...flsK])].map(p => ({ n: p, pts: (d.cum_pts[p]||0), fls: (d.cum_fls[p]||0) })).sort((a, b) => b.pts - a.pts);
         document.getElementById('rank-body').innerHTML = rk.map((p, i) => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${i+1}º ${p.n}</td><td align="center">${p.pts}</td><td align="center">${p.fls}</td></tr>`).join('');
-
         document.getElementById('sumulas-list').innerHTML = (d.sumulas || []).map(s => `<div class="card-sumula"><div class="sumula-placar">${s.p}</div><div style="font-size:10px; color:var(--orange); text-align:center; margin-bottom:5px;">${s.v}</div><div class="sumula-corpo"><div class="sumula-col"><b>BRANCO</b><br>${s.br.join('<br>')}</div><div class="sumula-col"><b>AZUL</b><br>${s.az.join('<br>')}</div></div></div>`).join('');
-
         document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
     }
 
