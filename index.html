@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA V21.76.1 - RESTAURAÇÃO DE NOMES</title>
+    <title>AVABRA V21.76.2 - PAINEL COMPLETO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -49,11 +49,17 @@
         .nav-b { flex: 1; color: #fff; font-size: 11px; text-align: center; text-transform: uppercase; cursor: pointer; }
         .nav-b.active { color: var(--orange); font-weight: bold; }
         .page-content { padding-bottom: 250px !important; }
+        
+        /* ESTILOS RANKING E SUMULAS */
+        .card-sumula { background: #111; border: 1px solid #444; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
+        .sumula-placar { font-weight: bold; color: var(--yellow); font-size: 22px; text-align: center; }
+        .sumula-corpo { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+        .sumula-col { flex: 1; font-size: 13px; }
     </style>
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.76.1</div></div>
+        <div class="header"><div class="logo">AVABRA V21.76.2</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -82,6 +88,19 @@
         <div class="faixa">No Ginásio</div><div id="disp-list"></div>
     </div>
     
+    <div id="view-numeros" class="page-content" style="display:none; padding:15px;">
+        <h3 style="color:var(--orange)">Ranking da Noite</h3>
+        <table style="width:100%; border-collapse: collapse;">
+            <thead><tr style="border-bottom:1px solid #333; color:var(--orange); font-size:12px;"><th align="left">ATLETA</th><th align="center">PTS</th><th align="center">FLT</th></tr></thead>
+            <tbody id="rank-body"></tbody>
+        </table>
+    </div>
+
+    <div id="view-sumulas" class="page-content" style="display:none; padding:15px;">
+        <h3 style="color:var(--orange)">Mural de Partidas</h3>
+        <div id="sumulas-list"></div>
+    </div>
+
     <div id="view-atletas" class="page-content" style="display:none; padding:20px;">
         <button style="background:var(--orange); color:white; padding:15px; border:none; width:100%; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="cadastrarNovo()">+ CADASTRAR NOVO</button>
         <div id="lista-cadastrados"></div>
@@ -90,6 +109,8 @@
 
     <div class="rodape">
         <div class="nav-b active" onclick="mudarAba('racha', this)">Racha</div>
+        <div class="nav-b" onclick="mudarAba('numeros', this)">Números</div>
+        <div class="nav-b" onclick="mudarAba('sumulas', this)">Súmulas</div>
         <div class="nav-b" onclick="mudarAba('atletas', this)">Atletas</div>
     </div>
 
@@ -98,7 +119,7 @@
     const SB_KEY = "sb_publishable_9CbfmCbckgBJvXd7bUIMcg_mXbY_ALO";
     const sb = supabase.createClient(SB_URL, SB_KEY);
     
-    let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [] };
+    let d = { white: [], blue: [], queue: [], all: [], points: {}, fouls: {}, cum_pts: {}, cum_fls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, end_timestamp: null, clock_running: false, is_recording: false, suspended: [], sumulas: [] };
     
     async function load() { const { data } = await sb.from('racha_session').select('data').eq('id', 1).maybeSingle(); if (data && data.data) { d = data.data; render(); } }
     async function sync() { render(); await sb.from('racha_session').update({ data: d }).eq('id', 1); }
@@ -106,40 +127,22 @@
     function iniciarTudo() { d.is_recording = true; d.clock_running = true; d.remaining_seconds = 600; d.end_timestamp = Date.now() + 600000; sync(); }
 
     function btnZerar() {
-        if(!confirm("Zerar placar, faltas e tempo?")) return;
+        if(!confirm("Zerar?")) return;
         d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0;
         d.remaining_seconds = 600; d.clock_running = false; d.is_recording = false;
         d.points = {}; d.fouls = {}; sync();
     }
 
-    window.removerAtleta = (nome, local, motivo) => {
-        if(!confirm(motivo === 'falta' ? "Expulsar por faltas?" : "Substituir?")) return;
-        d[local] = d[local].filter(p => p !== nome);
-        if(motivo === 'falta') { if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); }
-        else if(d.queue.length > 0) { d[local].push(d.queue.shift()); }
-        sync();
-    };
+    function muralFoto(venc) {
+        if(!d.sumulas) d.sumulas = [];
+        const proc = (list) => list.map(p => `${p} (${d.points[p]||0}P)`);
+        d.sumulas.unshift({ p: `${d.scoreW}x${d.scoreA}`, v: venc, br: proc(d.white), az: proc(d.blue) });
+        if(d.sumulas.length > 15) d.sumulas.pop();
+    }
 
-    window.tirarDaFila = (nome) => { if(confirm(`Remover ${nome}?`)) { d.queue = d.queue.filter(p => p !== nome); sync(); } };
+    window.vitoriaPlacar = (v) => { if(!confirm("Vitória?")) return; muralFoto(v); const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white'; let sWin = (d.suspended || []).filter(s => s.team === winK).map(s => s.name); let sLos = (d.suspended || []).filter(s => s.team === losK).map(s => s.name); if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; } if((v==='B' ? d.streakW : d.streakA) >= 2) { d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos); d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; } else { d[winK].push(...sWin); d.queue.push(...d[losK], ...sLos); d[losK] = []; } resetPosJogo(); };
 
-    window.vitoriaPlacar = (v) => { 
-        if(!confirm("Vitória?")) return;
-        const winK = v === 'B' ? 'white' : 'blue', losK = v === 'B' ? 'blue' : 'white';
-        let sWin = (d.suspended || []).filter(s => s.team === winK).map(s => s.name);
-        let sLos = (d.suspended || []).filter(s => s.team === losK).map(s => s.name);
-        if(v === 'B') { d.streakW++; d.streakA = 0; } else { d.streakA++; d.streakW = 0; }
-        if((v==='B' ? d.streakW : d.streakA) >= 2) { d.queue.push(...d[winK], ...sWin, ...d[losK], ...sLos); d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; }
-        else { d[winK].push(...sWin); d.queue.push(...d[losK], ...sLos); d[losK] = []; }
-        resetPosJogo();
-    };
-
-    window.vitoriaTempo = (v) => {
-        if(!confirm("Fim?")) return;
-        let sBr = (d.suspended || []).filter(s => s.team === 'white').map(s => s.name);
-        let sAz = (d.suspended || []).filter(s => s.team === 'blue').map(s => s.name);
-        d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz);
-        d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; resetPosJogo();
-    };
+    window.vitoriaTempo = (v) => { if(!confirm("Fim?")) return; muralFoto(v); let sBr = (d.suspended || []).filter(s => s.team === 'white').map(s => s.name); let sAz = (d.suspended || []).filter(s => s.team === 'blue').map(s => s.name); d.queue.push(...d.white, ...sBr, ...d.blue, ...sAz); d.white=[]; d.blue=[]; d.streakW=0; d.streakA=0; resetPosJogo(); };
 
     function resetPosJogo() {
         d.suspended = []; d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0;
@@ -149,12 +152,12 @@
         sync();
     }
 
-    window.addPt = (n, p) => { d.points[n]=(d.points[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
-    window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
-    window.addFl = (n) => { d.fouls[n]=(d.fouls[n]||0)+1; if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; sync(); };
-    window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; if(d.white.includes(n)) d.team_fouls_W--; else d.team_fouls_A--; sync(); } };
-    window.cadastrarNovo = () => { const n = prompt("NOME:"); if(n){ d.all.push(n.toUpperCase().trim()); sync(); } };
-    window.resetarRacha = () => { if(confirm("TUDO?")) { d = { white: [], blue: [], queue: [], all: d.all, points: {}, fouls: {}, scoreW: 0, scoreA: 0, team_fouls_W: 0, team_fouls_A: 0, streakW: 0, streakA: 0, remaining_seconds: 600, clock_running: false, is_recording: false, suspended: [] }; sync(); } };
+    window.addPt = (n, p) => { if(!d.cum_pts) d.cum_pts = {}; d.points[n]=(d.points[n]||0)+p; d.cum_pts[n]=(d.cum_pts[n]||0)+p; if(d.white.includes(n)) d.scoreW+=p; else d.scoreA+=p; sync(); };
+    window.subPt = (n) => { if((d.points[n]||0)>0){ d.points[n]--; d.cum_pts[n]--; if(d.white.includes(n)) d.scoreW--; else d.scoreA--; sync(); } };
+    window.addFl = (n) => { if(!d.cum_fls) d.cum_fls = {}; d.fouls[n]=(d.fouls[n]||0)+1; d.cum_fls[n]=(d.cum_fls[n]||0)+1; if(d.white.includes(n)) d.team_fouls_W++; else d.team_fouls_A++; sync(); };
+    window.subFl = (n) => { if((d.fouls[n]||0)>0){ d.fouls[n]--; d.cum_fls[n]--; if(d.white.includes(n)) d.team_fouls_W--; else d.team_fouls_A--; sync(); } };
+    window.removerAtleta = (nome, local, motivo) => { if(!confirm("Substituir?")) return; d[local] = d[local].filter(p => p !== nome); if(motivo === 'falta') { if(!d.suspended) d.suspended = []; d.suspended.push({ name: nome, team: local }); } else if(d.queue.length > 0) { d[local].push(d.queue.shift()); } sync(); };
+    window.tirarDaFila = (nome) => { if(confirm("Remover?")) { d.queue = d.queue.filter(p => p !== nome); sync(); } };
 
     function render() {
         document.getElementById('score-br').innerText = d.scoreW; document.getElementById('score-az').innerText = d.scoreA;
@@ -162,50 +165,32 @@
         fbr.innerText = `F: ${d.team_fouls_W}`; faz.innerText = `F: ${d.team_fouls_A}`;
         if(d.team_fouls_W >= 4) fbr.classList.add('faltas-limite'); else fbr.classList.remove('faltas-limite');
         if(d.team_fouls_A >= 4) faz.classList.add('faltas-limite'); else faz.classList.remove('faltas-limite');
+        
         document.getElementById('init-action-area').style.display = d.is_recording ? 'none' : 'flex';
         document.getElementById('clock-controls-area').style.display = d.is_recording ? 'flex' : 'none';
         if(!d.clock_running) document.getElementById('game-clock').innerText = formatTime(d.remaining_seconds);
 
         const draw = (list, id, az, slug) => {
-            document.getElementById(id).innerHTML = (list || []).map(p => `
-                <div class="linha ${az?'azul':''}">
-                    <div class="top-row">
-                        <div class="info"><span class="nome">${p}</span>
-                            <div class="stats-row">
-                                <span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button>
-                                <span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button>
-                            </div>
-                        </div>
-                        <div class="acoes">
-                            <div class="f-box" onclick="addFl('${p}')">F+</div>
-                            <button class="btn-p" onclick="addPt('${p}',1)">1</button>
-                            <button class="btn-p" onclick="addPt('${p}',2)">2</button>
-                            <button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button>
-                        </div>
-                    </div>
-                    <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">SAIR</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">FALTA 3</button></div>
-                </div>`).join('');
+            document.getElementById(id).innerHTML = (list || []).map(p => `<div class="linha ${az?'azul':''}">
+                <div class="top-row"><div class="info"><span class="nome">${p}</span><div class="stats-row"><span class="stat-value">P: ${d.points[p]||0}</span><button class="btn-corrige" onclick="subPt('${p}')">P-</button><span class="stat-value">F: ${d.fouls[p]||0}</span><button class="btn-corrige" onclick="subFl('${p}')">F-</button></div></div>
+                <div class="acoes"><div class="f-box" onclick="addFl('${p}')">F+</div><button class="btn-p" onclick="addPt('${p}',1)">1</button><button class="btn-p" onclick="addPt('${p}',2)">2</button><button class="btn-p" style="background:var(--orange)" onclick="addPt('${p}',3)">3</button></div></div>
+                <div class="bottom-row"><button class="btn-excluir" style="background:#555;" onclick="removerAtleta('${p}','${slug}','sub')">SAIR</button><button class="btn-excluir" style="background:var(--red);" onclick="removerAtleta('${p}','${slug}','falta')">FALTA 3</button></div></div>`).join('');
         };
         draw(d.white, 'w-list', false, 'white'); draw(d.blue, 'a-list', true, 'blue');
 
-        const fC = [...(d.suspended || []).map(s => ({n: s.name, s: true, t: s.team})), ...d.queue.map(q => ({n: q, s: false}))];
-        document.getElementById('q-list').innerHTML = fC.map((item, i) => {
-            let cl = item.s ? (item.t==='white'?'susp-branco':'susp-azul') : (Math.floor(i/5)%2===0?'espera-verde':'espera-amarela');
-            return `<span class="espera-item ${cl}">${i+1}.${item.n}${item.s?' [S]':''} <button class="btn-x-fila" onclick="tirarDaFila('${item.n}')">X</button></span>`;
-        }).join('');
+        document.getElementById('q-list').innerHTML = [...(d.suspended||[]).map(s=>({n:s.name,s:true,t:s.team})), ...d.queue.map(q=>({n:q,s:false}))].map((item, i) => `<span class="espera-item ${item.s?(item.t==='white'?'susp-branco':'susp-azul'):(Math.floor(i/5)%2===0?'espera-verde':'espera-amarela')}">${i+1}.${item.n}${item.s?' [S]':''} <button class="btn-x-fila" onclick="tirarDaFila('${item.n}')">X</button></span>`).join('');
 
-        // RESTAURAÇÃO DA LISTA "NO GINÁSIO"
-        const inA = [...d.white, ...d.blue, ...d.queue, ...(d.suspended || []).map(s => s.name)];
-        document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => !inA.includes(p)).sort().map(p => `
-            <div style="display:flex; justify-content:space-between; padding:12px; background:#1a1a1a; border-bottom:1px solid #222;">
-                <span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold; color:#000;" onclick="d.queue.push('${p}');sync();">CHEGOU</button>
-            </div>`).join('');
+        const inA = [...d.white, ...d.blue, ...d.queue, ...(d.suspended||[]).map(s=>s.name)];
+        document.getElementById('disp-list').innerHTML = (d.all || []).filter(p => !inA.includes(p)).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="background:var(--green); border:none; padding:8px; border-radius:4px; font-weight:bold; color:#000;" onclick="d.queue.push('${p}');sync();">CHEGOU</button></div>`).join('');
 
-        // RESTAURAÇÃO DA LISTA "CADASTRADOS" NA ABA ATLETAS
-        document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `
-            <div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;">
-                <span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button>
-            </div>`).join('');
+        // RENDER RANKING
+        const ptsK = Object.keys(d.cum_pts || {}); const flsK = Object.keys(d.cum_fls || {}); const rk = [...new Set([...ptsK, ...flsK])].map(p => ({ n: p, pts: (d.cum_pts[p]||0), fls: (d.cum_fls[p]||0) })).sort((a, b) => b.pts - a.pts);
+        document.getElementById('rank-body').innerHTML = rk.map((p, i) => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${i+1}º ${p.n}</td><td align="center">${p.pts}</td><td align="center">${p.fls}</td></tr>`).join('');
+
+        // RENDER SUMULAS
+        document.getElementById('sumulas-list').innerHTML = (d.sumulas || []).map(s => `<div class="card-sumula"><div class="sumula-placar">${s.p}</div><div class="sumula-corpo"><div class="sumula-col"><b>BRANCO</b><br>${s.br.join('<br>')}</div><div class="sumula-col"><b>AZUL</b><br>${s.az.join('<br>')}</div></div></div>`).join('');
+
+        document.getElementById('lista-cadastrados').innerHTML = (d.all || []).sort().map(p => `<div style="display:flex; justify-content:space-between; padding:12px 15px; background:#1a1a1a; border-bottom:1px solid #222;"><span>${p}</span><button style="color:red; background:none; border:none; font-weight:bold;" onclick="if(confirm('Excluir?')){d.all=d.all.filter(x=>x!=='${p}');sync()}">EXCLUIR</button></div>`).join('');
     }
 
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
