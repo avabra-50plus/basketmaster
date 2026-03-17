@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AVABRA V21.77.0 - CORREÇÃO EXPULSOS FINAL</title>
+    <title>AVABRA V21.77.1 - EXPULSO VENCEDOR</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --orange: #ff6b00; --blue: #2962ff; --dark: #000; --yellow: #ffd600; --red: #ff4444; --green: #25d366; --cyan: #00e5ff; }
@@ -57,7 +57,7 @@
 </head>
 <body>
     <div id="view-racha" class="page-content">
-        <div class="header"><div class="logo">AVABRA V21.77.0</div></div>
+        <div class="header"><div class="logo">AVABRA V21.77.1</div></div>
         <div class="placar-live">
             <div style="text-align: center;"><div id="score-br" class="placar-numero">0</div><div id="coletiva-br" class="faltas-coletivas faltas-br-box">F: 0</div></div>
             <div style="font-size: 20px; font-weight: bold; color: #444;">X</div>
@@ -137,8 +137,7 @@
 
     function recolherExpulsos(timeK) {
         if(!d.suspended) return [...d[timeK]];
-        let exp = d.suspended.filter(s => s.team === timeK).map(s => s.name);
-        return [...d[timeK], ...exp];
+        return [...d[timeK], ...d.suspended.filter(s => s.team === timeK).map(s => s.name)];
     }
 
     window.vitoriaPlacar = (v) => { 
@@ -156,6 +155,8 @@
             d.queue.push(...tWin, ...tLos); 
             d.white = []; d.blue = []; d.streakW = 0; d.streakA = 0; 
         } else { 
+            // CORREÇÃO: Vencedor fica, mas precisamos garantir que o expulso volte para a quadra
+            d[winK] = tWin;
             d.queue.push(...tLos); 
             d[losK] = []; 
         } 
@@ -184,11 +185,9 @@
         d.scoreW = 0; d.scoreA = 0; d.team_fouls_W = 0; d.team_fouls_A = 0; d.points = {}; d.fouls = {}; d.is_recording = false; d.clock_running = false; d.remaining_seconds = 600;
         d.initialW=[]; d.initialA=[]; d.historyW=[]; d.historyA=[];
         
-        // Puxa da fila para quadra
         while(d.white.length < 5 && d.queue.length > 0) d.white.push(d.queue.shift());
         while(d.blue.length < 5 && d.queue.length > 0) d.blue.push(d.queue.shift());
         
-        // LIMPA SUSPENSOS SÓ DEPOIS QUE TUDO ACABOU
         d.suspended = [];
         sync();
     }
